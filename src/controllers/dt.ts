@@ -1,0 +1,601 @@
+import express, { Request, Response } from 'express';
+import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, } from '../models/dt';
+import { getemojis } from '../models/emoji';
+import { List, Reqs } from '../type';
+import path, { join } from 'path';
+import { imgCompression } from '../utils/img';
+import { userWeizhi, SetuserWeizhi } from '../models/weizhi';
+import ffmpeg from 'fluent-ffmpeg';
+import ffmpegStatic from 'ffmpeg-static';
+import axios from "axios";
+const multer = require('multer');
+const jiami = require('../utils/usErcrypto.js').jiami;
+import fs from 'fs';
+import { dtAdd } from '../services/dtAdd';
+// import { dtAdd_ah } from '../services/dt_ah';
+import { dtFind, dtFinds } from '../services/dtSearch';
+import { jiamiString } from '../utils/cryptoUtils';
+import { dbSql } from '@/utils/dbSql';
+import { getUrl } from '@/pathUtils';
+
+
+//获取列表信息和评论信息
+export async function getDtList(req: Reqs, res: Response) {
+    let loa = req.query.loa || 0;
+    let aes = req.query.aes || 0;
+    let resData;
+    if (loa == 13 && req.user?.username && req.user?.username == 'yw') {
+        const data = await dtList(req.user.username, 13);
+        resData = {
+            code: 200,
+            loa: 13,
+            message: 'Success',
+            data,
+        };
+    }
+    else if (req.user?.username && req.user?.username != 'guest') {
+        const data = await dtList(req.user.username, Number(loa));
+        // await dtAdd(data);
+        resData = {
+            code: 200,
+            loa: 1,
+            message: 'Success',
+            data,
+        }
+    }
+    else {
+        const data = await dtList('guest', Number(0));
+        // await dtAdd(data);
+        resData = {
+            code: 200,
+            loa: 0,
+            message: 'Success',
+            data,
+        }
+    }
+
+
+
+    if (aes && aes != 0) {
+        let skey = '4563ee3b4e5cf38486ec2630c016785abbc0b21dabd9124e8550760ebd65';
+        let resc = jiami(resData, skey);
+        return res.send(resc);
+    }
+
+    res.send(resData)
+
+}
+
+
+export async function getdt(req: Reqs, res: Response) {
+    const dtid = req.query.id;
+    const user = req.user?.username || 'guest';
+    if (!dtid) {
+        return res.send({ code: 400 });
+    }
+
+    let resc = await getdts(user, Number(dtid));
+    res.send({
+        code: 200,
+        data: resc,
+    })
+
+
+}
+
+export async function dtfinds(req: Reqs, res: Response) {
+    const bq = req.query.bq;
+    //是否为标签
+    const isBq = req.query.isbq;
+    let numArr;
+    if (!bq) {
+        return res.send({ code: 400 });
+    }
+    if (!Number(isBq)) {
+        //简单搜索
+        numArr = await dtFinds(bq as string);
+    }
+    else {
+        numArr = await dtFind(bq as string);
+    }
+
+    let List = await dtList('yw', 1);
+    let newList = [];
+    for (let id of numArr) {
+        newList.push({
+            ...finds(id.id),
+            score: id.num,
+        })
+    }
+
+    return res.send({ code: 200, data: newList });
+
+    function finds(id: string) {
+        for (let dt of List) {
+            if (dt.id == id) {
+                return dt
+            }
+        }
+    }
+
+
+
+}
+
+export async function dtindex(req: Reqs, res: Response) {
+    const dtid = req.query.id;
+    const dtindex = req.query.dtindex;
+    if (!dtid || !dtindex) {
+        return res.send({
+            code: 400,
+        })
+
+    }
+    let falg = await setdtindex(Number(dtid), dtindex.toString(), 0);
+    if (falg) {
+        return res.send({ tf: 1 })
+    } else {
+        return res.send({ tf: 0 })
+    }
+}
+
+export async function postCom(req: Reqs, res: Response) {
+    if (!req.user?.username) {
+        return res.send({
+            code: 400,
+        })
+    }
+    const user = req.user.username;
+    const content = req.body.content;
+    const dtId = req.body.dtId;
+    const date = getnowDate();
+    const a: any = await setDtCom(date, content, dtId, user);
+    if (a.tf == 1) {
+        res.send({ tf: 1 });
+    }
+}
+//获取当前时间
+function getnowDate() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // 月份是从0开始的  
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+
+    // 拼接成 MySQL DATETIME 格式  
+    const dateTimeString = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+
+    return dateTimeString;
+}
+
+//获取时间信息
+export async function dtDates(req: Request, res: Response) {
+    let year = req.query.year || 2023;
+    const data = await dtDate(Number(year));
+    res.send(data);
+}
+
+//获取缩略图
+export async function dtimg(req: Request, res: Response) {
+    let Reqdtid = req.query.dtid;
+    let Reqindex = req.query.index;
+    let isImg = req.query.a;
+
+    let token = req.query.token;
+
+    let dtid;
+    let index;
+
+    if (Reqdtid && Reqindex) {
+        dtid = Number(Reqdtid);
+        index = Number(Reqindex);
+    } else {
+        return res.send({ code: 402 });
+    }
+
+    let imgSrc = await dbSql<any>(`SELECT img_src FROM dt_img WHERE dt_id = ${dtid} AND img_index = ${index};`);
+
+    let filename = imgSrc[0].img_src;
+
+    let urls = path.join(getUrl('root','assets'));
+    let filePath = path.join(urls, filename);
+
+    if (!fileIsDir(urls + '/dtimg', filename.slice(8))) {
+        filePath = path.join(urls, './dtimg/imgError.png')
+    }
+
+    if (isImg == '0' || !isImg) {
+        try {
+            // 使用 sharp 来压缩图片
+            const data = await imgCompression(filePath, 460, 460);
+
+            res.writeHead(200, {
+                'Content-Type': 'image/png',
+                'Content-Length': data.length
+            });
+            res.end(data);
+        } catch {
+            // 使用 sharp 来压缩图片
+            const data = await imgCompression(path.join(urls, './dtimg/imgError.png'), 460, 460);
+            res.writeHead(200, {
+                'Content-Type': 'image/png',
+                'Content-Length': data.length
+            });
+            return res.end(data);
+        }
+    } else {
+        res.sendFile(filePath);
+    }
+
+
+}
+
+//获取原图
+export async function dtimgs(req: Request, res: Response) {
+    // let filename = req.query.name as string;
+    // let urls = path.join(__dirname, "../../img");
+    // let filePath = path.join(urls, filename);
+    // res.sendFile(filePath);
+}
+
+
+//获取视频的地址
+async function getVideoSrc(dtid: number, index: number) {
+    let videoSrc = await dbSql<any>(`SELECT video_src FROM dt_video WHERE dt_id = ${dtid} AND video_index = ${index};`);
+
+    //视频路径（包含文件名）
+
+    let fileSrc = path.join(getUrl('root', 'assets'), videoSrc[0].video_src);
+    //文件名
+    let fileName = videoSrc[0].video_src.split('/').pop();
+
+    //预览图名
+    let fileImgName = fileName.slice(0, -4) + '.png';
+    let temp = fileSrc.split('/');
+    temp.pop();
+    // 不包含文件名的路径
+    let fileUrl = temp.join('/');
+
+    return {
+        fileSrc,
+        fileName,
+        fileImgName,
+        fileUrl
+    }
+}
+
+
+
+
+//视频
+export async function dtvideo(req: Request, res: Response) {
+
+    let Reqdtid = req.query.dtid;
+    let Reqindex = req.query.index;
+    let token = req.query.token;
+
+    let dtid;
+    let index;
+
+    if (Reqdtid && Reqindex) {
+        dtid = Number(Reqdtid);
+        index = Number(Reqindex);
+    } else {
+        return res.send({ code: 402 });
+    }
+
+
+    let file = await getVideoSrc(dtid, index);
+
+
+    const stat = fs.statSync(file.fileSrc);
+    const fileSize = stat.size;
+
+    const range = req.headers.range;
+    if (range) {
+        const parts = range.replace(/bytes=/, "").split("-");
+        const start = parseInt(parts[0], 10);
+        const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+
+        const chunksize = (end - start) + 1;
+        const audioStream = fs.createReadStream(file.fileSrc, { start, end });
+        const head = {
+            'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+            'Accept-Ranges': 'bytes',
+            'Content-Length': chunksize,
+            'Content-Type': 'video/mp4',
+        };
+
+        res.writeHead(206, head);
+        audioStream.pipe(res);
+    } else {
+        const head = {
+            'Content-Length': fileSize,
+            'Content-Type': 'video/mp4',
+        };
+        res.writeHead(200, head);
+        fs.createReadStream(file.fileSrc).pipe(res);
+    }
+}
+
+//视频预览图
+export async function dtvideoImg(req: Request, res: Response) {
+
+
+    let Reqdtid = req.query.dtid;
+    let Reqindex = req.query.index;
+    let token = req.query.token;
+
+    let dtid;
+    let index;
+
+    if (Reqdtid && Reqindex) {
+        dtid = Number(Reqdtid);
+        index = Number(Reqindex);
+    } else {
+        return res.send({ code: 402 });
+    }
+
+    let file = await getVideoSrc(dtid, index);
+
+    if (fileIsDir(file.fileUrl, file.fileImgName)) {
+        return res.sendFile(path.join(file.fileUrl, file.fileImgName));
+    }
+
+    // 使用 ffmpeg 生成第一帧作为封面
+    ffmpeg(file.fileSrc)
+        .screenshots({
+            timestamps: ['00:00:01'], // 第1秒
+            filename: file.fileImgName, // 保存的文件名
+            folder: file.fileUrl, // 保存到的文件夹
+            size: '320x240' // 缩略图的尺寸
+        })
+        .on('end', () => {
+            setTimeout(() => {
+                return res.sendFile(path.join(file.fileUrl, file.fileImgName)); // 发送封面图片
+            }, 300);
+        })
+        .on('error', (err: Error) => {
+            console.error(err);
+            res.status(500).send('Error generating thumbnail');
+        });
+}
+
+
+
+
+
+
+
+// 设置图片存储引擎和文件名
+const storage = multer.diskStorage({
+    destination: function (req: Request, file: Response, cb: any) {
+        cb(null, getUrl('root','assets/dtimg_temp')); // 存储的目录，如果不存在会自动创建
+    },
+    filename: function (req: Request, file: Response, cb: any) {
+        cb(null, req.body.filename);
+    }
+});
+
+//视频存储
+const storageVideo = multer.diskStorage({
+    destination: function (req: Request, file: Response, cb: any) {
+        cb(null, getUrl('root','assets/dtvideo_temp')); // 存储的目录，如果不存在会自动创建
+    },
+    filename: function (req: Request, file: Response, cb: any) {
+        cb(null, req.body.filename);
+    }
+});
+
+// 创建Multer实例
+const upload = multer({ storage: storage });
+
+//视频上传中间件
+const uploadVideo = multer({ storage: storageVideo });
+
+//导出文件上传中间件
+export const uploadSingleFile = upload.single('file');
+//导出视频文件上传中间件
+export const uploadVideos = uploadVideo.single('file');
+//文件上传处理
+export async function updt(req: Request, res: Response) {
+    res.send({
+        tf: 1
+    });
+}
+export async function upvideo(req: Request, res: Response) {
+    res.send({
+        tf: 1
+    });
+}
+
+
+export async function postdt(req: Request, res: Response) {
+    let text = req.body.text as string;
+    let img = req.body.img as string[];
+    let img_show_num = req.body.imgShowNum as string;
+    const img_all_num = img.length.toString();
+    const date = req.body.date;
+
+    const loa = req.body.loa || '0';
+    let video = req.body.video as string[];
+    const videoNum = video.length.toString();
+
+    if (img_show_num > img_all_num) {
+        img_show_num = Number(img_all_num) > 6 ? '6' : img_all_num;
+    }
+
+
+    //图片处理
+    if (img) {
+        let imgArr: string[] = img;
+
+        //判断图片是否包含在上传临时文件夹中
+        for (let i = 0; i < imgArr.length; i++) {
+            if (!fileIsDir(getUrl('root', 'assets/dtimg_temp'), imgArr[i]) || fileIsDir(getUrl('root', 'assets/dtimg'), imgArr[i])) {
+                return res.send({
+                    code: 400,
+                })
+            }
+        }
+        //移动图片
+        for (let i = 0; i < imgArr.length; i++) {
+            const path1 = path.join(getUrl('root', 'assets/dtimg_temp'), imgArr[i]);
+            const path2 = path.join(getUrl('root', 'assets/dtimg'), imgArr[i]);
+            try {
+                fs.renameSync(path1, path2);
+            } catch (error) {
+                return res.send({ code: 500 });
+            }
+            img[i] = './dtimg/' + imgArr[i];
+        }
+
+    }
+
+    if (video.length != 0) {
+        for (let i = 0; i < video.length; i++) {
+            if (!fileIsDir(getUrl('root', 'assets/dtvideo_temp'), video[i]) || fileIsDir(getUrl('root', 'assets/dtvideo'), video[i])) {
+                return res.send({
+                    code: 400,
+                })
+        }
+        const path1 = path.join( getUrl('root','assets/dtvideo_temp')    , video[i]);
+        const path2 = path.join( getUrl('root','assets/dtvideo')  , video[i]);
+        try {
+            fs.renameSync(path1, path2);
+        } catch (error) {
+            return res.send({ code: 500 });
+        }
+        video[i] = './dtvideo/' + video[i];
+    }
+}
+let id = await getIdMax();
+
+
+//loa是否为13
+if (loa == 13) {
+    text = "^AES^" + jiamiString(text, 'A8412640');
+}
+
+
+
+const im = setImg(id, img);
+const vi = setVideo(id, video);
+const dt = setDt(id, 'yw', text, img_show_num, img_all_num, videoNum, date, loa);
+Promise.all([im, vi, dt]).then((a) => {
+    res.send({ tf: 1 });
+})
+}
+
+export async function delDts(req: Request, res: Response) {
+    const dtId = req.body.id;
+    if (!dtId) {
+        return res.send({ tf: 0 });
+    }
+    const a: any = await delDt(dtId);
+    if (a.tf == 1) {
+        return res.send({ tf: 1 });
+    } else {
+        return res.send({ tf: 0 });
+    }
+}
+
+export function getemoji(req: Request, res: Response) {
+    const lei = req.query.lei as string;
+    const name = req.query.name as string;
+    if (!lei || !name) {
+        res.setHeader('Content-Type', 'png/image');
+        res.send(getemojis('weixin', '微信.png'))
+    }
+    res.setHeader('Content-Type', 'png/image');
+    res.send(getemojis(lei, name));
+}
+
+export function getemojilist(req: Request, res: Response) {
+    res.sendFile( getUrl('root','public/emoji/list.json'));
+}
+
+export async function getweizhi(req: Request, res: Response) {
+    let user = req.query.user;
+    let jd = req.query.jd;
+    let wd = req.query.wd;
+    if (!user || !jd || !wd) {
+        return res.send({ code: 400 });
+    }
+    const weizhi = await userWeizhi(user as string) as { jindu: number, weidu: number };
+    SetuserWeizhi(user as string, Number(jd), Number(wd));
+
+    const result = calculateDirectionAndDistance(Number(jd), Number(wd), weizhi.jindu, weizhi.weidu);
+    res.send({
+        code: 200,
+        juli: result.distance.toFixed(2),
+        xita: result.bearing.toFixed(2)
+    });
+}
+
+export async function gpsc(req: Request, res: Response) {
+    let jindu = req.query.jd;
+    let weidu = req.query.wd;
+    if (!jindu || !weidu) {
+        return res.send({
+            code: 400,
+        })
+    }
+    const url = `https://api.map.baidu.com/reverse_geocoding/v3?ak=yXEsQxbvOJpmPR9cenWw9KTj5q9D6c6g&output=json&coordtype=wgs84ll&extensions_poi=0&location=${weidu},${jindu}`;
+    const data = await axios.get(url);
+    res.send(data.data);
+}
+
+
+//判断某个目录中是否包含某个文件
+function fileIsDir(dir: string, file: string) {
+    try {
+        // 读取目录中的所有文件和文件夹  
+        const files = fs.readdirSync(dir);
+        // 检查目标文件是否在目录中  
+        return files.includes(file);
+    } catch (err) {
+        console.error("无法读取目录", err);
+        return false;
+    }
+}
+
+
+function calculateDirectionAndDistance(lon1: number, lat1: number, lon2: number, lat2: number) {
+    // 常量
+    const R = 6371; // 地球半径（千米）
+
+    // 将经纬度转换为弧度
+    const lat1Rad = lat1 * (Math.PI / 180);
+    const lon1Rad = lon1 * (Math.PI / 180);
+    const lat2Rad = lat2 * (Math.PI / 180);
+    const lon2Rad = lon2 * (Math.PI / 180);
+
+    // Haversine 公式计算距离
+    const dLat = lat2Rad - lat1Rad;
+    const dLon = lon2Rad - lon1Rad;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1Rad) * Math.cos(lat2Rad) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c; // 距离（千米）
+
+    // 计算方向
+    const y = Math.sin(dLon) * Math.cos(lat2Rad);
+    const x = Math.cos(lat1Rad) * Math.sin(lat2Rad) -
+        Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLon);
+    let bearing = Math.atan2(y, x) * (180 / Math.PI); // 方向（度）
+
+    // 将方向调整到0到360度之间
+    bearing = (bearing + 360) % 360;
+
+
+
+    return { distance, bearing };
+}
+
+
+
+

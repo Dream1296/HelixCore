@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        #all {
+            width: 800px;
+        }
+
+        .mon span {
+            font-size: 12px;
+            margin-right: 8px;
+            margin-left: 25px;
+
+        }
+
+        .week {
+            width: 20px;
+            display: flex;
+            flex-direction: column;
+            /* 设置主轴方向为向下 */
+        }
+
+        .week span {
+            font-size: 8px;
+
+        }
+
+
+        .tds {
+            width: 10px;
+        }
+
+
+
+        .a {
+            width: 745px;
+            height: 98px;
+            position: relative;
+            display: flex;
+            flex-wrap: wrap;
+            flex-direction: column;
+        }
+
+        .a div {
+            width: 10px;
+            height: 10px;
+            /* 圆角 */
+            border-radius: 2px;
+            /* background-color: white; */
+            margin: 2px;
+        }
+
+        .b {
+            width: 100%;
+            height: 10px;
+            display: flex;
+            /* justify-content: space-between; */
+
+            /* 下间距 */
+            margin-bottom: 2px;
+        }
+
+
+        .b0 {
+            width: 10px;
+            height: 10px;
+            /* 圆角 */
+            border-radius: 2px;
+            /* background-color: white; */
+            margin: 2px;
+            background-color: white;
+        }
+
+        .b1 {
+            background-color: #ebedf0;
+        }
+
+        .b2 {
+            background-color: #9be9a8;
+        }
+
+        .b3 {
+            background-color: #40c463;
+        }
+
+        .b4 {
+            background-color: #30a14e;
+        }
+
+        .b5 {
+            background-color: #216e39;
+        }
+
+        #title {
+            text-align: center;
+            font-size: 18px;
+        }
+
+        body {
+            margin: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-content: center;
+            justify-content: center;
+            flex-wrap: wrap;
+                       
+        }
+
+        #all {
+            /* position: absolute; */
+            /* left: 50%; */
+            /* top: 50%; */
+            /* transform: translate(-50%,-50%); */
+            transform: scale(1.5);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="all">
+       <h3 id="title"><%= title %></h3>
+        <div class="up">
+            <div class="mon">
+                <span>一月</span>
+                <span>二月</span>
+                <span>三月</span>
+                <span>四月</span>
+                <span>五月</span>
+                <span>六月</span>
+                <span>七月</span>
+                <span>八月</span>
+                <span>九月</span>
+                <span>十月</span>
+                <span>十一月</span>
+                <span>十二月</span>
+            </div>
+            <div style="display: flex;">
+                <div class="week">
+                    <span style="margin-bottom: 18px;">周一</span>
+                    <span style="margin-bottom: 30px;">周三</span>
+                    <span>周六</span>
+                </div>
+
+                <div class="a">
+
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+
+    <script>
+
+        let arr = new Array(371).fill(0);
+        let year = 2024;
+        let kuai = document.getElementsByClassName('a')[0];
+
+
+        //第一天
+        let headDay = new Date(year, 0, 1).getDay() - 1;
+        headDay = headDay == -1 ? 6 : headDay;
+
+
+        // fetch('https://frp-fix.top:20047/api/dtdate?year=2024')
+        //     .then(res => res.json())
+
+        let data =<%- data %>;
+        function main() {
+            let yaerNum = isLeapYear(year) ? 366 : 365;
+            console.log(headDay);
+
+            for (let i = headDay; i < yaerNum; i++) {
+                arr[i] += 1;
+            }
+            console.log(arr);
+
+
+            for (let d of data) {
+                let ymd = d.split(',');
+                let index = Number(headDay) + dayOfYear(Number(ymd[0]), Number(ymd[1]), Number(ymd[2]) - 1);
+                arr[index] += 1;
+            }
+            console.log(arr);
+
+            setDom();
+
+            let end = document.createElement('div');
+            end.id = 'end';
+            kuai.appendChild(end);
+        }
+
+        main();
+
+        //渲染
+        function setDom() {
+            for (let d of arr) {
+                let cla = 'b' + d;
+                let newKuai = document.createElement('div');
+                newKuai.className = cla;
+                kuai.appendChild(newKuai);
+            }
+        }
+
+
+        //判断是否为闰年
+        function isLeapYear(year) {
+            // 判断是否为闰年  
+            return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+        }
+        //日期对应天数
+        function dayOfYear(year, month, day) {
+            // 每个月的天数，非闰年  
+            const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+            // 如果是闰年，则二月有29天  
+            if (isLeapYear(year)) {
+                daysInMonth[1] = 29;
+            }
+
+            // 计算给定日期是该年份中的第几天  
+            let dayOfYear = 0;
+            for (let i = 0; i < month - 1; i++) {
+                dayOfYear += daysInMonth[i];
+            }
+            dayOfYear += day;
+
+            return dayOfYear;
+        }
+
+
+
+    </script>
+
+</body>
+
+
+
+</html>

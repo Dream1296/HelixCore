@@ -1,0 +1,11 @@
+img/
+public/dtimg_modules
+node_modules
+public/
+srcs/models/bookData
+*.mp4
+*.png
+*.jpg
+back/
+
+

@@ -1,0 +1,55 @@
+文件存放规范
+src/config  配置文件夹
+src/config/db  数据库连接配置文件
+src/routes   路由处理
+src/controllers 控制器
+src/services  服务
+src/models  数据模型
+src/middlewares  中间件
+src/utils  工具函数
+
+public/userImg  头像存放目录
+
+# 第三方文件
+key.json    连接信息
+ssl/        ssl证书
+public/     静态资源目录
+
+public/emoji   表情包
+public/userImg  头像
+
+
+
+img/        资源目录
+
+img/bgImg   背景图片
+
+
+
+
+web API列表
+登录
+POST /api/login
+传入值
+{
+    "username":"XXX",
+    "passwd":"XXXX"
+}
+返回值
+{
+    "code": "200",
+    "message": "OK",
+    "token": "xxx"
+}
+
+
+修改添加到暂存区
+git add .
+提交修改
+git commit -m "这是一次修改"
+推送到github
+git push -u origin master
+
+
+
+
