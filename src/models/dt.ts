@@ -45,7 +45,21 @@ async function dtList(user: string, loa: number | string) {
         }
         lists.longVideo.push({id:a.id,name:a.name,src:a.src});
     }
-    return list;
+
+    //排序
+    const sortedArray = list.sort((a, b) => {  
+        // 先比较 po 属性，从大到小排序  
+        if (a.po !== b.po) {  
+            return b.po - a.po;  
+        }  
+        // 如果 po 属性相等，且都为 0，则比较 date 属性，从小到大排序  
+        if (a.po === 0 && b.po === 0) {  
+            return new Date(b.date).getTime() - new Date(a.date).getTime();  
+        }    
+        return 0;  
+    }); 
+
+    return sortedArray;
 }
 
 
@@ -81,7 +95,8 @@ export async function dtLists(user: string, loa: number | string, findId?: numbe
             dt.img_all_num as imgAllNum,
             dt.video_num as videoNum,
             dt.date as date,
-            dt.idea as idea
+            dt.idea as idea,
+            dt.pin_order as po
         from dt
             join dt_name on dt.user = dt_name.user
         where

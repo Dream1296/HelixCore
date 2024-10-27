@@ -423,7 +423,7 @@ export async function postdt(req: Request, res: Response) {
 
     const loa = req.body.loa || '0';
     let video = req.body.video as string[];
-    const videoNum = video.length.toString();
+    let videoNum = video.length.toString();
 
     if (img_show_num > img_all_num) {
         img_show_num = Number(img_all_num) > 6 ? '6' : img_all_num;
@@ -439,6 +439,7 @@ export async function postdt(req: Request, res: Response) {
             if (!fileIsDir(getUrl('root', 'assets/dtimg_temp'), imgArr[i]) || fileIsDir(getUrl('root', 'assets/dtimg'), imgArr[i])) {
                 return res.send({
                     code: 400,
+                    error:1
                 })
             }
         }
@@ -449,56 +450,13 @@ export async function postdt(req: Request, res: Response) {
             try {
                 fs.renameSync(path1, path2);
             } catch (error) {
-                return res.send({ code: 500 });
+                console.log(error);
+                
+                // return res.send({ code: 500 });
             }
             img[i] = './dtimg/' + imgArr[i];
         }
     }
-
-    //处理图片文件夹
-    if (imgDir) {
-        let urls = getUrl('root', 'assets', 'dtimgUpTemp');
-        let urls2 = getUrl('root', 'assets/dtimg');
-        let falg = fs.existsSync(urls);
-        if (!falg) {
-            return res.send({
-                code: 400,
-            })
-        }
-
-        // 生成唯一的时间戳（毫秒级）  
-        const uniqueTimestamp = Date.now().toString();
-        // 用于生成不重名的文件名  
-        let fileCounter = 0;
-        const files = fs.readdirSync(urls);
-        for (const file of files) {
-            const filePath = path.join(urls, file);
-            const fileStats = fs.statSync(filePath);
-            // 只处理文件，忽略目录  
-            if (fileStats.isFile()) {
-
-                const ext = path.extname(file); // 获取文件扩展名  
-                const newFileName = `${uniqueTimestamp}_${fileCounter}.${ext}`; // 生成新文件名  
-                const newFilePath = path.join(urls, newFileName); // 生成新文件路径  
-                const targetFilePath = path.join(urls2, newFileName); // 生成目标文件路径  
-
-                if (fileIsDir(urls2, newFileName)) {
-                    return res.send({
-                        code: 400,
-                    })
-                }
-
-                // 重命名文件  
-                fs.renameSync(filePath, newFilePath);
-
-                // 移动文件到目标目录  
-                fs.renameSync(newFilePath, targetFilePath);
-                img.push( './dtimg/' + newFileName);
-                fileCounter++;
-            }
-        }
-    }
-
 
     if (video.length != 0) {
         for (let i = 0; i < video.length; i++) {
@@ -513,27 +471,167 @@ export async function postdt(req: Request, res: Response) {
             try {
                 fs.renameSync(path1, path2);
             } catch (error) {
-                return res.send({ code: 500 });
+                return res.send({ code: 501 });
             }
             video[i] = './dtvideo/' + video[i];
-            
+
         }
     }
+
+    //处理图片文件夹
+    if (imgDir) {
+        let urls = getUrl('root', 'assets', 'dtimgUpTemp');
+        let urls2 = getUrl('root', 'assets/dtimg');
+        let urls3 = getUrl('root', 'assets/dtvideo');
+        let falg = fs.existsSync(urls);
+        if (!falg) {
+            return res.send({
+                code: 400,
+                error:2
+            })
+        }
+
+        // 生成唯一的时间戳（毫秒级）  
+        const uniqueTimestamp = Date.now().toString();
+        // 用于生成不重名的文件名  
+        let fileCounter = 0;
+        const files = fs.readdirSync(urls);
+        for (const file of files) {
+            const filePath = path.join(urls, file);
+            const fileStats = fs.statSync(filePath);
+            // 只处理文件，忽略目录  
+            if (!fileStats.isFile()) {
+                continue;
+            }
+            const ext = path.extname(file); // 获取文件扩展名  
+            if (ext == '.jpg' || ext == '.png') {
+                const newFileName = `${uniqueTimestamp}_${fileCounter}.${ext}`; // 生成新文件名  
+                const newFilePath = path.join(urls, newFileName); // 生成新文件路径  
+                const targetFilePath = path.join(urls2, newFileName); // 生成目标文件路径  
+
+                if (fileIsDir(urls2, newFileName)) {
+                    return res.send({
+                        code: 400,
+                        error:3
+                    })
+                }
+                // 重命名文件  
+                fs.renameSync(filePath, newFilePath);
+
+                // 移动文件到目标目录  
+                fs.renameSync(newFilePath, targetFilePath);
+                img.push('./dtimg/' + newFileName);
+                fileCounter++;
+            }
+            if (ext == '.mp4') {
+                const newFileName = `${uniqueTimestamp}_${fileCounter}.${ext}`; // 生成新文件名  
+                const newFilePath = path.join(urls, newFileName); // 生成新文件路径  
+                const targetFilePath = path.join(urls3, newFileName); // 生成目标文件路径  
+
+                if (fileIsDir(urls3, newFileName)) {
+                    return res.send({
+                        code: 400,
+                        error:4
+                    })
+                }
+                // 重命名文件  
+                fs.renameSync(filePath, newFilePath);
+
+                // 移动文件到目标目录  
+                fs.renameSync(newFilePath, targetFilePath);
+                video.push('./dtvideo/' + newFileName);
+                fileCounter++;
+            }
+
+
+        }
+    }
+
+
+
     let id = await getIdMax();
-
-
+    
     //loa是否为13
     if (loa == 13) {
         text = "^AES^" + jiamiString(text, Key.B13);
     }
 
     img_all_num = img.length.toString();
+    videoNum = video.length.toString();
     const im = setImg(id, img);
     const vi = setVideo(id, video);
     const dt = setDt(id, 'yw', text, img_show_num, img_all_num, videoNum, date, loa);
     Promise.all([im, vi, dt]).then((a) => {
         res.send({ tf: 1 });
     })
+}
+
+
+export function getFile(dtid:number){
+    let urls = getUrl('root', 'assets', 'dtimgUpTemp');
+    let urls2 = getUrl('root', 'assets/dtimg');
+    let urls3 = getUrl('root', 'assets/dtvideo');
+    let falg = fs.existsSync(urls);
+
+    let video = [];
+    let img = [];
+
+
+
+    if (!falg) {
+        return console.error(500);
+        
+    }
+
+    // 生成唯一的时间戳（毫秒级）  
+    const uniqueTimestamp = Date.now().toString();
+    // 用于生成不重名的文件名  
+    let fileCounter = 0;
+    const files = fs.readdirSync(urls);
+    for (const file of files) {
+        const filePath = path.join(urls, file);
+        const fileStats = fs.statSync(filePath);
+        // 只处理文件，忽略目录  
+        if (!fileStats.isFile()) {
+            continue;
+        }
+        const ext = path.extname(file); // 获取文件扩展名  
+        if (ext == '.jpg' || ext == '.png') {
+            const newFileName = `${uniqueTimestamp}_${fileCounter}.${ext}`; // 生成新文件名  
+            const newFilePath = path.join(urls, newFileName); // 生成新文件路径  
+            const targetFilePath = path.join(urls2, newFileName); // 生成目标文件路径  
+
+            if (fileIsDir(urls2, newFileName)) {
+                return console.error(300);
+                
+            }
+            // 重命名文件  
+            fs.renameSync(filePath, newFilePath);
+
+            // 移动文件到目标目录  
+            fs.renameSync(newFilePath, targetFilePath);
+            img.push('./dtimg/' + newFileName);
+            fileCounter++;
+        }
+        if (ext == '.mp4') {
+            const newFileName = `${uniqueTimestamp}_${fileCounter}.${ext}`; // 生成新文件名  
+            const newFilePath = path.join(urls, newFileName); // 生成新文件路径  
+            const targetFilePath = path.join(urls3, newFileName); // 生成目标文件路径  
+
+            if (fileIsDir(urls3, newFileName)) {
+                return console.error(301);
+            }
+            // 重命名文件  
+            fs.renameSync(filePath, newFilePath);
+
+            // 移动文件到目标目录  
+            fs.renameSync(newFilePath, targetFilePath);
+            video.push('./dtvideo/' + newFileName);
+            fileCounter++;
+        }
+
+
+    }
 }
 
 
@@ -647,8 +745,8 @@ function calculateDirectionAndDistance(lon1: number, lat1: number, lon2: number,
 
 export function lvi(req: Request, res: Response) {
     const src = req.query.src;
-    if(!src){
-        return res.send({code:400});
+    if (!src) {
+        return res.send({ code: 400 });
     }
     const videoPath = getUrl('root', 'assets', 'longVideo', src.toString()); // 获取视频文件的路径
     const stat = fs.statSync(videoPath); // 获取文件状态
@@ -685,10 +783,10 @@ export function lvi(req: Request, res: Response) {
 }
 
 
-export async function lviobj(req: Request, res: Response){
+export async function lviobj(req: Request, res: Response) {
     const id = req.query.id;
-    if(!id){
-        return res.send({code:400});
+    if (!id) {
+        return res.send({ code: 400 });
     }
 
     let obj = await getLongVideoList(Number(id));

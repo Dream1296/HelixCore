@@ -49,6 +49,7 @@ export interface Lists {
     videoNum: number;
     date: string;
     idea: string;
+    po:number;
     com?: Comtent[];
     longVideo? : {id:number,name:string,src:string}[];
     keyword?: { keyword: string, isAi: number }[];

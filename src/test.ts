@@ -4,7 +4,12 @@ import { dbSql } from "./utils/dbSql";
 
 // sqlGetDtIndexAll().then(a => console.log(a));
 // dtList('yw', 1).then(a => console.log(a[2]))
-getLongVideoList()
+// getLongVideoList()
+
+dtList('yw',1)
+.then(
+    a => console.log(a[0])
+)
 
 
 
