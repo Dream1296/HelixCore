@@ -40,7 +40,7 @@ module.exports = {
       new TerserPlugin({
         terserOptions: {
           compress: {
-            drop_console: true, // 删除 console.log 语句
+            drop_console: false, // 删除 console.log 语句
           },
         },
       }),

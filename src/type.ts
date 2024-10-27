@@ -50,6 +50,7 @@ export interface Lists {
     date: string;
     idea: string;
     com?: Comtent[];
+    longVideo? : {id:number,name:string,src:string}[];
     keyword?: { keyword: string, isAi: number }[];
 }
 

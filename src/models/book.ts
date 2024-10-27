@@ -4,6 +4,7 @@ import fs from 'fs';
 import zlib from 'zlib';
 const m3s = require('../utils/audios.js');
 import { aus } from '../utils/setAu';
+import { getUrl } from '@/pathUtils';
 
 
 type A = {
@@ -15,7 +16,7 @@ type A = {
 
 export function getData(bookId: string) {
     // let paths = path.join(__dirname, `bookData/dataJson`);
-    let filePath = path.join(__dirname, `../../public/bookData/dataJson/${bookId}.json`);
+    let filePath = path.join(getUrl('root', 'assets'), `bookData/dataJson/${bookId}.json`);
     // if(israr == '1'){
     //     let filePath = path.join(__dirname, `bookData/dataJson/${bookId}.json.gz`);
     //     if( fileIsDir(paths,filePath)){
@@ -28,20 +29,20 @@ export function getData(bookId: string) {
     return data;
 }
 
-export  function bookRDatas(bookId: string) {
-    return new Promise((resolve,rejects)=>{
-        let paths = path.join(__dirname, `../../public/bookData/dataJson`);
-        let filePath = path.join(__dirname, `../../public/bookData/dataJson/${bookId}.json.gz`);
-        let jsonPath = path.join(__dirname, `../../public/bookData/dataJson/${bookId}.json`);
+export function bookRDatas(bookId: string) {
+    return new Promise((resolve, rejects) => {
+        let paths = path.join( getUrl('root', 'assets'), `bookData/dataJson`);
+        let filePath = path.join( getUrl('root', 'assets'), `bookData/dataJson/${bookId}.json.gz`);
+        let jsonPath = path.join( getUrl('root', 'assets'), `bookData/dataJson/${bookId}.json`);
         if (fileIsDir(paths, filePath)) {
             resolve(filePath);
         }
         let data = fs.readFileSync(jsonPath);
         zlib.gzip(data, (err, buffer) => {
             if (err) throw err;
-    
+
             // 将压缩后的数据写入新的文件
-            fs.writeFileSync(filePath,buffer);
+            fs.writeFileSync(filePath, buffer);
             resolve(filePath);
         })
     })
@@ -72,7 +73,7 @@ export async function getAu(bookId: string, id: number | string) {
 
 
     if (start == -1 || end == -1) {
-        let outPath = path.join(__dirname, '../../public/bookData/audios');
+        let outPath = path.join(getUrl('root','assets'), 'bookData/audios');
         let fileName = `${bookId}-${id}.mp3`;
         let pathFile = path.join(outPath, fileName);
 
@@ -99,7 +100,7 @@ export async function getAu(bookId: string, id: number | string) {
         }
     }
 
-    let outPath = path.join(__dirname, '../../public/bookData/frap');
+    let outPath = path.join(getUrl('root','assets'), 'bookData/frap');
     let fileName = `${bookId}-${id}.mp3`;
     let pathFile: string;
 
@@ -108,7 +109,7 @@ export async function getAu(bookId: string, id: number | string) {
     if (fileIsDir(outPath, fileName)) {
         pathFile = path.join(outPath, fileName);
     } else {
-        let path1 = path.join(__dirname, `../../public/bookData/audio/${bookId}.mp3`);
+        let path1 = path.join(getUrl('root','assets'), `bookData/audio/${bookId}.mp3`);
         let path2 = path.join(outPath, fileName);
         pathFile = await m3s(path1, path2, start, end);
     }
@@ -173,11 +174,11 @@ async function auss(bookId: string, id: string, pathFile: string) {
 }
 
 export function getBookList() {
-    return JSON.parse(fs.readFileSync(path.join(__dirname, '../../public/bookData/bookList.json')).toString());
+    return JSON.parse(fs.readFileSync(path.join(getUrl('root','assets'), 'bookData/bookList.json')).toString());
 }
 
 export function bookCovers(bookid: string) {
-    let fileDir = path.join(__dirname, `../../public/bookData/cover`);
+    let fileDir = path.join(getUrl('root','assets'), `bookData/cover`);
     let fileName = bookid + '.png';
     if (fileIsDir(fileDir, fileName)) {
         return path.join(fileDir, fileName);

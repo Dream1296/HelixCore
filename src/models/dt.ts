@@ -2,34 +2,12 @@ import { Comtent, List, Lists } from "../type";
 const mi = require("../utils/usErcrypto");
 const db = require('../config/db/mysql');
 import { dbSql } from "@/utils/dbSql";
-// sql语句执行
-// export function sqlC<T>(sqlStr: string,canshu?:string[]):Promise<T> {
-
-//     return new Promise((resolve, rejects) => {
-//         if(canshu){
-//             db.query(sqlStr,canshu, (error: any, results: any) => {
-//                 if (error) {
-
-//                 }
-//                 resolve(results)
-//             })
-//         }else{
-//             db.query(sqlStr, (error: any, results: any) => {
-//                 if (error) {
-
-//                 }
-//                 resolve(results)
-//             })
-//         }
-
-//     })
-// }
-
 
 
 
 //获取动态列表
 async function dtList(user: string, loa: number | string) {
+    
     //获取列表
     let list: Lists[] = await dtLists(user, loa);
 
@@ -41,11 +19,11 @@ async function dtList(user: string, loa: number | string) {
     }
 
     let keywords: { keyword: string, dt_id: string, isAi: number }[] = await sqlGetDtIndexAll() as { keyword: string, dt_id: string, isAi: number }[];
-
+    
     for (let keyword of keywords) {
         let lists = list.find(obj => obj.id == keyword.dt_id);
         if (!lists) {
-            break
+            continue;
         }
         if (!lists.keyword) {
             lists.keyword = [];
@@ -54,6 +32,18 @@ async function dtList(user: string, loa: number | string) {
             keyword: keyword.keyword,
             isAi: keyword.isAi,
         })
+    }
+
+    let vlList = await getLongVideoList();
+    for(let a of vlList){
+        let lists = list.find(obj => obj.id == a.dt_id.toString());
+        if (!lists) {
+            continue;
+        }
+        if (!lists.longVideo) {
+            lists.longVideo = [];
+        }
+        lists.longVideo.push({id:a.id,name:a.name,src:a.src});
     }
     return list;
 }
@@ -153,7 +143,7 @@ async function getdts(user: string, id: number) {
 //添加标签
 async function setdtindex(id: number, keyword: string, isAi: number) {
     //判断keyworld表中是否已存在
-    let falg = await iskeywords(id, keyword);
+    let falg = await iskeywords(id, keyword);    
     if (falg) {
         return true
     }
@@ -180,6 +170,18 @@ export async function sqlGetDtIndexAll() {
     return await dbSql<{ keyword: string, dt_id: string, isAi: number }[]>(sqlStr)
 
 }
+
+// 获取长视频列表
+export async function getLongVideoList(id?:number){
+    let sql
+    if(id){
+        sql = `SELECT id,dt_id,name,src FROM dt_longVideo where id = ${id}`;
+    }else{
+        sql = `SELECT id,dt_id,name,src FROM dt_longVideo`;
+    }
+    let lvList = await dbSql<{id:number,dt_id:number,name:string,src:string}[]>(sql);
+    return lvList
+}
 //判断标签是否存在
 async function iskeywords(id: number, keyword: string) {
     let arr = await sqlGetDtIndex(id);
@@ -192,7 +194,7 @@ async function iskeywords(id: number, keyword: string) {
 }
 
 async function setKeyword(id: number, keyword: string, isAi: number): Promise<boolean> {
-    let sqlStr = `INSERT INTO dtindex (id, keyword, dt_id, isAi) VALUES (null, ?, ?, ?);`;
+    let sqlStr = `INSERT INTO dt_index (id, keyword, dt_id, isAi) VALUES (null, ?, ?, ?);`;
     let falg = await dbSql<number>(sqlStr, [keyword, id, isAi], true)
     if (falg == 1) {
         return true;

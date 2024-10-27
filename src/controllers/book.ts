@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 import { getData ,getAu ,getBookList,bookCovers ,getBookJd,setBookJd,bookVDatas,bookRDatas } from '../models/book';
+import { getUrl } from '@/pathUtils';
 async function bookData(req:Request, res:Response){
     let bookId = req.query.id;
     if(!bookId){
@@ -60,7 +61,7 @@ async function bookAU(req:Request, res:Response){
     let paths = await getAu(bookId.toString(),id.toString());    
     let datas = fs.readFileSync(paths).toString('base64');
     if(datas == ''){
-        datas = fs.readFileSync(path.join(__dirname ,'../../public/bookData/audios/null.mp3')).toString('base64');
+        datas = fs.readFileSync(path.join(getUrl('root','assets') ,'bookData/audios/null.mp3')).toString('base64');
     }
     res.send({
         code:200,

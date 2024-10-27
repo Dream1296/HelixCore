@@ -2,6 +2,7 @@ img/
 public/dtimg_modules
 node_modules
 public/
+assets/
 srcs/models/bookData
 *.mp4
 *.png

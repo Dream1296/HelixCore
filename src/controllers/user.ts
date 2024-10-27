@@ -26,8 +26,7 @@ async function userImg(req:Reqs, res:Response){
     
     // url = path.join(__dirname,'../../public/userImg',url);
     url = getUrl('root','public/userImg',url);
-    console.log(url);
-    
+
 
     let data = fs.readFileSync(url);
     res.setHeader('Content-Type','image/png');

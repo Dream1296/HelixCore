@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, } from '../models/dt';
+import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, getLongVideoList, } from '../models/dt';
 import { getemojis } from '../models/emoji';
 import { List, Reqs } from '../type';
 import path, { join } from 'path';
@@ -17,6 +17,7 @@ import { dtFind, dtFinds } from '../services/dtSearch';
 import { jiamiString } from '../utils/cryptoUtils';
 import { dbSql } from '@/utils/dbSql';
 import { getUrl } from '@/pathUtils';
+import { Key } from '@/utils/passwd';
 
 
 //获取列表信息和评论信息
@@ -123,8 +124,8 @@ export async function dtfinds(req: Reqs, res: Response) {
 }
 
 export async function dtindex(req: Reqs, res: Response) {
-    const dtid = req.query.id;
-    const dtindex = req.query.dtindex;
+    const dtid = req.body.id;
+    const dtindex = req.body.dtindex;
     if (!dtid || !dtindex) {
         return res.send({
             code: 400,
@@ -199,7 +200,7 @@ export async function dtimg(req: Request, res: Response) {
 
     let filename = imgSrc[0].img_src;
 
-    let urls = path.join(getUrl('root','assets'));
+    let urls = path.join(getUrl('root', 'assets'));
     let filePath = path.join(urls, filename);
 
     if (!fileIsDir(urls + '/dtimg', filename.slice(8))) {
@@ -372,7 +373,7 @@ export async function dtvideoImg(req: Request, res: Response) {
 // 设置图片存储引擎和文件名
 const storage = multer.diskStorage({
     destination: function (req: Request, file: Response, cb: any) {
-        cb(null, getUrl('root','assets/dtimg_temp')); // 存储的目录，如果不存在会自动创建
+        cb(null, getUrl('root', 'assets/dtimg_temp')); // 存储的目录，如果不存在会自动创建
     },
     filename: function (req: Request, file: Response, cb: any) {
         cb(null, req.body.filename);
@@ -382,7 +383,7 @@ const storage = multer.diskStorage({
 //视频存储
 const storageVideo = multer.diskStorage({
     destination: function (req: Request, file: Response, cb: any) {
-        cb(null, getUrl('root','assets/dtvideo_temp')); // 存储的目录，如果不存在会自动创建
+        cb(null, getUrl('root', 'assets/dtvideo_temp')); // 存储的目录，如果不存在会自动创建
     },
     filename: function (req: Request, file: Response, cb: any) {
         cb(null, req.body.filename);
@@ -416,8 +417,9 @@ export async function postdt(req: Request, res: Response) {
     let text = req.body.text as string;
     let img = req.body.img as string[];
     let img_show_num = req.body.imgShowNum as string;
-    const img_all_num = img.length.toString();
+    let img_all_num = img.length.toString();
     const date = req.body.date;
+    const imgDir = req.body.imgDir as string | undefined;
 
     const loa = req.body.loa || '0';
     let video = req.body.video as string[];
@@ -451,8 +453,52 @@ export async function postdt(req: Request, res: Response) {
             }
             img[i] = './dtimg/' + imgArr[i];
         }
-
     }
+
+    //处理图片文件夹
+    if (imgDir) {
+        let urls = getUrl('root', 'assets', 'dtimgUpTemp');
+        let urls2 = getUrl('root', 'assets/dtimg');
+        let falg = fs.existsSync(urls);
+        if (!falg) {
+            return res.send({
+                code: 400,
+            })
+        }
+
+        // 生成唯一的时间戳（毫秒级）  
+        const uniqueTimestamp = Date.now().toString();
+        // 用于生成不重名的文件名  
+        let fileCounter = 0;
+        const files = fs.readdirSync(urls);
+        for (const file of files) {
+            const filePath = path.join(urls, file);
+            const fileStats = fs.statSync(filePath);
+            // 只处理文件，忽略目录  
+            if (fileStats.isFile()) {
+
+                const ext = path.extname(file); // 获取文件扩展名  
+                const newFileName = `${uniqueTimestamp}_${fileCounter}.${ext}`; // 生成新文件名  
+                const newFilePath = path.join(urls, newFileName); // 生成新文件路径  
+                const targetFilePath = path.join(urls2, newFileName); // 生成目标文件路径  
+
+                if (fileIsDir(urls2, newFileName)) {
+                    return res.send({
+                        code: 400,
+                    })
+                }
+
+                // 重命名文件  
+                fs.renameSync(filePath, newFilePath);
+
+                // 移动文件到目标目录  
+                fs.renameSync(newFilePath, targetFilePath);
+                img.push( './dtimg/' + newFileName);
+                fileCounter++;
+            }
+        }
+    }
+
 
     if (video.length != 0) {
         for (let i = 0; i < video.length; i++) {
@@ -460,34 +506,37 @@ export async function postdt(req: Request, res: Response) {
                 return res.send({
                     code: 400,
                 })
+            }
+
+            const path1 = path.join(getUrl('root', 'assets/dtvideo_temp'), video[i]);
+            const path2 = path.join(getUrl('root', 'assets/dtvideo'), video[i]);
+            try {
+                fs.renameSync(path1, path2);
+            } catch (error) {
+                return res.send({ code: 500 });
+            }
+            video[i] = './dtvideo/' + video[i];
+            
         }
-        const path1 = path.join( getUrl('root','assets/dtvideo_temp')    , video[i]);
-        const path2 = path.join( getUrl('root','assets/dtvideo')  , video[i]);
-        try {
-            fs.renameSync(path1, path2);
-        } catch (error) {
-            return res.send({ code: 500 });
-        }
-        video[i] = './dtvideo/' + video[i];
     }
+    let id = await getIdMax();
+
+
+    //loa是否为13
+    if (loa == 13) {
+        text = "^AES^" + jiamiString(text, Key.B13);
+    }
+
+    img_all_num = img.length.toString();
+    const im = setImg(id, img);
+    const vi = setVideo(id, video);
+    const dt = setDt(id, 'yw', text, img_show_num, img_all_num, videoNum, date, loa);
+    Promise.all([im, vi, dt]).then((a) => {
+        res.send({ tf: 1 });
+    })
 }
-let id = await getIdMax();
 
 
-//loa是否为13
-if (loa == 13) {
-    text = "^AES^" + jiamiString(text, 'A8412640');
-}
-
-
-
-const im = setImg(id, img);
-const vi = setVideo(id, video);
-const dt = setDt(id, 'yw', text, img_show_num, img_all_num, videoNum, date, loa);
-Promise.all([im, vi, dt]).then((a) => {
-    res.send({ tf: 1 });
-})
-}
 
 export async function delDts(req: Request, res: Response) {
     const dtId = req.body.id;
@@ -514,7 +563,7 @@ export function getemoji(req: Request, res: Response) {
 }
 
 export function getemojilist(req: Request, res: Response) {
-    res.sendFile( getUrl('root','public/emoji/list.json'));
+    res.sendFile(getUrl('root', 'public/emoji/list.json'));
 }
 
 export async function getweizhi(req: Request, res: Response) {
@@ -596,6 +645,53 @@ function calculateDirectionAndDistance(lon1: number, lat1: number, lon2: number,
     return { distance, bearing };
 }
 
+export function lvi(req: Request, res: Response) {
+    const src = req.query.src;
+    if(!src){
+        return res.send({code:400});
+    }
+    const videoPath = getUrl('root', 'assets', 'longVideo', src.toString()); // 获取视频文件的路径
+    const stat = fs.statSync(videoPath); // 获取文件状态
+    const fileSize = stat.size; // 文件大小
+    const range = req.headers.range; // 获取请求头中的 Range 信息
+
+    if (range) {
+        const parts = range.replace(/bytes=/, '').split('-'); // 解析 Range
+        const start = parseInt(parts[0], 10); // 起始字节
+        const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1; // 结束字节
+
+        if (start >= fileSize || end >= fileSize || start > end) {
+            res.status(416).send('Requested Range Not Satisfiable'); // 请求的范围不满足
+            return;
+        }
+
+        const chunkSize = end - start + 1; // 计算分片大小
+        const fileStream = fs.createReadStream(videoPath, { start, end }); // 创建文件流
+        res.writeHead(206, { // 206 Partial Content
+            'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+            'Accept-Ranges': 'bytes',
+            'Content-Length': chunkSize,
+            'Content-Type': 'video/mp4', // 设置内容类型
+        });
+        fileStream.pipe(res); // 将文件流返回给客户端
+    } else {
+        // 如果没有 Range 头，返回整个文件
+        res.writeHead(200, {
+            'Content-Length': fileSize,
+            'Content-Type': 'video/mp4',
+        });
+        fs.createReadStream(videoPath).pipe(res); // 返回整个视频
+    }
+}
 
 
+export async function lviobj(req: Request, res: Response){
+    const id = req.query.id;
+    if(!id){
+        return res.send({code:400});
+    }
+
+    let obj = await getLongVideoList(Number(id));
+    return res.send(obj[0]);
+}
 

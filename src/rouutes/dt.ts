@@ -3,7 +3,7 @@ const app = express();
 import { getDtList,dtDates,dtimg ,dtimgs,dtvideo,uploadSingleFile,uploadVideos,upvideo,
     updt,postdt,postCom ,delDts ,getemoji,getemojilist,getweizhi,gpsc,getdt,dtindex,
     dtfinds,
-    dtvideoImg} 
+    dtvideoImg,lvi,lviobj} 
     from '@/controllers/dt';
 
 
@@ -62,6 +62,12 @@ app.get('/gps',getweizhi);
 
 //经纬度转地理位置
 app.get('/gpsc',gpsc);
+
+//长视频播放
+app.get('/lvi',lvi);
+
+//视频信息
+app.get('/lviobj',lviobj);
 
 
 export default app;
