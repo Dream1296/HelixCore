@@ -42,7 +42,7 @@ async function xnlist(req: Request, res: Response) {
         try {
             const data = await getdata();
             res.write(`data: ${JSON.stringify(data)}\n\n`);
-        } catch (error:any) {
+        } catch (error: any) {
             res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
         }
     };
@@ -128,7 +128,54 @@ async function getdata() {
         data.memoryUsage = 'N/A';
     }
 
+    try {
+        const fenSan = "gpio read 3";
+        const { stdout: fenSanNun } = await execAsync(fenSan);
+        data.fenSanNun = fenSanNun.slice(0, 1);
+    } catch {
+        data.fenSanNun = NaN;
+    }
+
     return data;
 }
 
-export { xnlist, getIpv6 };
+export async function getFan() {
+    let a = await execAsync('gpio read 3');
+    let nowFan = Number(a.stdout.slice(0, 1));
+    return nowFan;
+}
+
+export async function setFan(num: number) {
+    let nowFan = await getFan();
+    if (nowFan != num) {
+        await execAsync('gpio write 3 ' + num);
+    }
+}
+
+
+async function setFanL(req: Request, res: Response) {
+    let falg = Number(req.query.Fan);
+    let nowFan = await getFan();
+    if ((falg == 1 || falg == 0)) {
+        if (nowFan == falg) {
+            return res.send({
+                code: 200,
+                fan: nowFan,
+            })
+        }
+        await setFan(falg);
+        nowFan = await getFan();
+        return res.send({
+            code: 200,
+            fan: nowFan,
+        })
+    }
+    if (!falg) {
+        return res.send({
+            code: 400,
+            fan: -1,
+        })
+    }
+}
+
+export { xnlist, getIpv6, setFanL };

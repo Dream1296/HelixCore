@@ -1,27 +1,14 @@
-import { Request } from 'express'; 
+import { Request } from 'express';
 
-interface  user {
-    username:string,
+type user = {
+    username: string | 'guest',
+    type: "ltk" | "rat",
 }
 
-export interface Reqs extends Request {  
+export interface Reqs extends Request {
     user?: user; // 注意这里的 ? 表示 user 属性是可选的  
 }
 
-// export interface List {
-//     user: string;
-//     name: string;
-//     touxian: string;
-//     text: string;
-//     textArr?: { type: string, text: string }[],
-//     img: string[];
-//     video: string[];
-//     date: string;
-//     id: string;
-//     idea: string;
-//     com?: Comtent[];
-//     keyword?: { keyword: string, isAi: number }[];
-// }
 export interface List {
     user: string;
     name: string;
@@ -44,16 +31,22 @@ export interface Lists {
     touxian: string;
     text: string;
     textArr?: { type: string, text: string }[],
-    imgShowAll:number;
-    imgAllNum:number;
+    imgShowAll: number;
+    imgAllNum: number;
     videoNum: number;
     date: string;
     idea: string;
-    po:number;
+    po: number;
     com?: Comtent[];
-    longVideo? : {id:number,name:string,src:string}[];
+    longVideo?: { id: number, name: string, src: string }[];
     keyword?: { keyword: string, isAi: number }[];
+    bgStyle:number;
 }
+
+export interface Listsc extends Lists{
+    type:"A"
+}
+
 
 export interface Comtent {
     date: string,
@@ -63,6 +56,20 @@ export interface Comtent {
     name: string,
 }
 
+export interface dataImg {
+    type: 'dataImg',
+    date: string,
+    id: number,
+    name: string,
+    touxian: string,
+    user: string,
+}
+
+export interface TokenObj {
+    user_id: string | "guest",
+    date: number,
+    type: "ltk" | "rat"
+}
 
 
 

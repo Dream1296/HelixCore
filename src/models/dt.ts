@@ -1,3 +1,4 @@
+import { redisDB } from "@/config/db/redis";
 import { Comtent, List, Lists } from "../type";
 const mi = require("../utils/usErcrypto");
 const db = require('../config/db/mysql');
@@ -7,7 +8,6 @@ import { dbSql } from "@/utils/dbSql";
 
 //获取动态列表
 async function dtList(user: string, loa: number | string) {
-    
     //获取列表
     let list: Lists[] = await dtLists(user, loa);
 
@@ -62,6 +62,13 @@ async function dtList(user: string, loa: number | string) {
     return sortedArray;
 }
 
+//从redis中找动态列表数据
+export async function getRedisListData(user: string, loa: Number, aes: Number){
+    let key = user + loa.toString() + aes.toString();
+    
+    let data = await redisDB.get(key) as string;
+    return JSON.parse(data);
+}
 
 
 
@@ -96,6 +103,7 @@ export async function dtLists(user: string, loa: number | string, findId?: numbe
             dt.video_num as videoNum,
             dt.date as date,
             dt.idea as idea,
+            dt.bg_style as bgStyle,
             dt.pin_order as po
         from dt
             join dt_name on dt.user = dt_name.user
@@ -139,9 +147,13 @@ ORDER BY dt_comments.date ASC;`;
 }
 
 //单个动态的数据
-async function getdts(user: string, id: number) {
+async function getdts(user: string, id: number,loa:number) {
+    let data: Lists[] = await dtLists(user, loa, id) as Lists[];
+    if(data.length == 0){
+        return null;
+    }
+    let list: Lists = data[0];
 
-    let list: Lists = (await dtLists('yw', 1, id) as Lists[])[0];
 
     //评论
     let comment: Comtent[] = await dtComment(id);
@@ -208,6 +220,13 @@ async function iskeywords(id: number, keyword: string) {
     return false;
 }
 
+//查询动态id对应信息
+export async function getDtUser(dtid:number){
+    let sql = `SELECT user,loa FROM dt WHERE id = ?`;
+    return dbSql<{user:string,loa:number}[]>(sql,[dtid.toString()]);
+
+}
+
 async function setKeyword(id: number, keyword: string, isAi: number): Promise<boolean> {
     let sqlStr = `INSERT INTO dt_index (id, keyword, dt_id, isAi) VALUES (null, ?, ?, ?);`;
     let falg = await dbSql<number>(sqlStr, [keyword, id, isAi], true)
@@ -229,9 +248,12 @@ async function dtDate(year: number | string) {
 }
 
 //添加图片
-export async function setImg(id: string, imgArr: string[]) {
+export async function setImg(id: string, imgArr: string[] , headNum?:number) {
     let falg = true;
-    for (let i = 0; i < imgArr.length; i++) {
+    if(!headNum){
+        headNum = 0;
+    }
+    for (let i = headNum; i < imgArr.length; i++) {
         let sql = `INSERT into dt_img (dt_id,img_index,img_src) VALUES (?,?,?)`;
 
         let a = await dbSql<number>(sql, [id, i.toString(), imgArr[i]]);
@@ -243,9 +265,12 @@ export async function setImg(id: string, imgArr: string[]) {
 }
 
 //添加视频
-export async function setVideo(id: string, videoArr: string[]) {
+export async function setVideo(id: string, videoArr: string[] , headNum?:number) {
     let falg = true;
-    for (let i = 0; i < videoArr.length; i++) {
+    if(!headNum){
+        headNum = 0;
+    }
+    for (let i = headNum; i < videoArr.length; i++) {
         let sql = `INSERT into dt_video (dt_id,video_index,video_src)
         VALUES (?,?,?)`;
         let a = await dbSql(sql, [id, i.toString(), videoArr[i]])
@@ -285,6 +310,18 @@ async function setDtCom(date: string, content: string, dtId: string, commentsUse
     }
     return {tf : 0};
     
+}
+
+export async function setDtBgStyle(dtId:number,bgStyle:number){
+    let sql = "UPDATE dt  SET bg_style = ?  WHERE id = ?;"
+    let a = await dbSql<number>(sql,[bgStyle,dtId],true);
+    if(a){
+        return true;
+    }else{
+        return false;
+    }
+
+
 }
 
 async function delDt(dtId: string) {

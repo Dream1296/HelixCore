@@ -1,10 +1,11 @@
 import { getPasswd } from '../models/login'
 import express, { Request, Response } from 'express';
 const md5 = require('../utils/md5.min.js');
-import { generateToken }  from '../services/token';
+import { generateTempToken, generateToken }  from '../services/token';
+import { Reqs } from '@/type';
 
 
-async function login(req:Request, res:Response){
+export async function login(req:Request, res:Response){
 
     const username = req.body.username;
     let passwd = req.body.passwd as string;
@@ -37,4 +38,15 @@ async function login(req:Request, res:Response){
     
 }
 
-export default login
+export async function getTempToken(req:Reqs, res:Response){
+    if(!req.user || req.user.username == 'guest' ||  req.user.type == 'rat'){
+        return res.send({code:401});
+    }
+    
+    let tempToken = generateTempToken(req.user.username);
+
+    
+    res.send({code:200,tempToken});
+}
+
+

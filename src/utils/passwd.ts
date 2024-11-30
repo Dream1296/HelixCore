@@ -7,6 +7,7 @@ let key = JSON.parse( fs.readFileSync( path.join(getUrl('root','key.json')),'utf
 // 定义并导出配置
 export const Key = {
   Password: key.tokenPasswd,
+  tokenR: key.tokenR,
   MYSQLPASSWD:key.mysqlPasswd,
   B13:key.b13Passwd,
 };

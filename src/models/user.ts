@@ -23,4 +23,11 @@ async function userImgUrl(user:string){
     return '0';
 }
 
+export async function setMoodM(user:string,date:string,mood:string){
+    let sql = "INSERT INTO dt_mood (user, date, mood) VALUES (?, ?, ?);";
+    
+    let a = await dbSql<number>(sql,[user,date,mood],true);
+    return a;
+}
+
 export {userIn,userImgUrl}

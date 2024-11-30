@@ -3,16 +3,16 @@ const app = express();
 import { getDtList,dtDates,dtimg ,dtimgs,dtvideo,uploadSingleFile,uploadVideos,upvideo,
     updt,postdt,postCom ,delDts ,getemoji,getemojilist,getweizhi,gpsc,getdt,dtindex,
     dtfinds,
-    dtvideoImg,lvi,lviobj} 
+    dtvideoImg,lvi,lviobj,dtDataImg,
+    setDtBgStyles} 
     from '@/controllers/dt';
-
-
+import { PublishAfterExecution } from '@/services/upListData';
 
 //获取动态数据
 app.get('/getDtList',getDtList );
 
-//获取当个动态数据
-app.get('/getdt',getdt)
+//获取单个动态数据
+app.get('/getdt',getdt);
 
 //设置动态的标签
 app.post('/dtindex',dtindex);
@@ -23,8 +23,14 @@ app.get('/dtfind',dtfinds);
 //时间信息
 app.get('/dtDate', dtDates)
 
-//缩略图
+//提供时间信息生成图表
+app.get('/dtDataImg',dtDataImg);
+
+//图
 app.get("/dtimg",dtimg);
+
+//修改背景样式
+app.post('/setBgStyle',setDtBgStyles);
 
 //原图 已废弃
 // app.get("/dtimgs", dtimgs );
@@ -68,6 +74,9 @@ app.get('/lvi',lvi);
 
 //视频信息
 app.get('/lviobj',lviobj);
+
+
+
 
 
 export default app;

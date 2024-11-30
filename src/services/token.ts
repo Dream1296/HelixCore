@@ -1,50 +1,86 @@
 //生成token
 // const mi = require('../utils/usErcrypto');
-import { jiami, jie } from "@/utils/cryptoUtils";
-import { Key as Keys} from "@/utils/passwd";
+import { TokenObj } from "@/type";
+import { createSignature, jiami, jie, verifySignature } from "@/utils/cryptoUtils";
+import { Key as Keys } from "@/utils/passwd";
 
-const passwd = Keys.Password;
+const passwd = Keys.Password + Keys.tokenR;
+const day = 30;
+const mintime = 10;
 
 //传入用户名，生成token
 function generateToken(username: string) {
-    // return mi.jiami(username,'123456');
-
     //当前事件戳
-    let nowDate = +new Date();
-    const term = 7;
-    nowDate = Math.floor(nowDate / 1000 + 60 * 60 ** 24 * term);
-    const key = {
-        username: username,
-        dates: nowDate
-    };
-    const token = jiami(key, passwd);
+    let nowDate = +new Date() ;
+    let key:TokenObj;
+    key = {
+        user_id:username,
+        date:nowDate,
+        type:'ltk'
+    }
+    
+    let token = Buffer.from(JSON.stringify(key)).toString('base64');
+    token = token +'|' + createSignature(token,passwd);
+
     return token;
 }
 
-//传入token获取用户对象
-function getUser(token: string) {
+//传入用户名，生成临时token
+function generateTempToken(username: string){
+    //当前事件戳
+    let nowDate = +new Date();
+    let key:TokenObj;
+    key = {
+        user_id:username,
+        date:nowDate,
+        type:'rat'
+    }
     
-    let decryptedObject:{dates:number,username:any};
-    try{
-        decryptedObject = JSON.parse(jie(token, passwd));
-    }catch{
-        return {
-            username:'guest'
-        }
-    }
-
-    // 检查解密后的对象中的日期是否大于当前日期
-    let date = Math.floor(+new Date() / 1000);
-    if (decryptedObject.dates < date) {
-        return {
-            username: 'guest',
-        };
-    }
-
-    return {
-        username: decryptedObject.username,
-    };
-
+    let token = Buffer.from(JSON.stringify(key)).toString('base64');
+    token = token +'|' + createSignature(token,passwd);
+    return token;
 }
 
-export { generateToken, getUser }
+
+//传入token获取用户对象
+function getUser(token: string):TokenObj {
+    let guest:TokenObj = {
+        user_id:'guest',
+        date:0,
+        type:'ltk',
+    }
+    if(token == ''){
+        return guest;
+    }
+
+
+    let tokenStr = token.split('|')[0];
+    let tokenc = token.split('|')[1];
+
+    let falg = verifySignature(tokenStr,tokenc,passwd);
+
+
+
+    if(!falg){
+        return guest
+    }
+
+    let tokenObj:TokenObj =  JSON.parse( Buffer.from(tokenStr, 'base64').toString('utf8') ); 
+    
+    if(tokenObj.type =='ltk' && ( +new Date()) > tokenObj.date + (day * 24 * 60 * 60 * 1000) ){
+        return guest;
+    }
+    if(tokenObj.type == 'rat' && ( +new Date()) > tokenObj.date + (mintime  * 60 * 1000) ){
+        return guest;
+    }
+
+    return tokenObj
+}
+
+
+
+
+
+
+
+export { generateToken, getUser ,generateTempToken}

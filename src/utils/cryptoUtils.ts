@@ -67,3 +67,31 @@ export function jie(encryptedString: string, password: string): string {
   }
 }
 
+
+/**
+ * 签名函数
+ * @param data - 需要签名的字符串
+ * @param secretKey - 用于解密的密码
+ * @returns 签名的后的字符串
+ */
+export function createSignature(data: string, secretKey: string): string {  
+  return crypto.createHmac('sha256', secretKey)  
+      .update(data)  
+      .digest('hex');  
+}
+
+/**
+ * 验证签名函数
+ * @param data - 待验证的字符串
+ * @param secretKey - 用于解密的密码
+ * @param signature - 预期的签名
+ * @returns 签名是否正确
+ */
+
+export function verifySignature(data: string, signature: string, secretKey: string): boolean {  
+  const generatedSignature = createSignature(data, secretKey);  
+  return generatedSignature === signature;  
+}
+
+
+

@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, getLongVideoList, } from '../models/dt';
+import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, getLongVideoList, setDtBgStyle, getRedisListData } from '../models/dt';
 import { getemojis } from '../models/emoji';
 import { List, Reqs } from '../type';
 import path, { join } from 'path';
@@ -18,53 +18,42 @@ import { jiamiString } from '../utils/cryptoUtils';
 import { dbSql } from '@/utils/dbSql';
 import { getUrl } from '@/pathUtils';
 import { Key } from '@/utils/passwd';
+import { getDtDataImg } from '@/services/dtDataT';
+import { dtDataAdd } from '@/services/dtDataAdd';
+import { spawn } from 'child_process';
+
 
 
 //获取列表信息和评论信息
 export async function getDtList(req: Reqs, res: Response) {
-    let loa = req.query.loa || 0;
-    let aes = req.query.aes || 0;
-    let resData;
-    if (loa == 13 && req.user?.username && req.user?.username == 'yw') {
-        const data = await dtList(req.user.username, 13);
-        resData = {
-            code: 200,
-            loa: 13,
-            message: 'Success',
-            data,
-        };
+    let loa = Number(req.query.loa || "0");
+    let aes = Number(req.query.aes || "0");
+    let user = (req.user?.username) ? req.user.username : "guest";
+   
+    let listData = await getRedisListData(user, loa, aes);
+    
+    let resData = {
+        code: 200,
+        loa: loa,
+        aes:aes,
+        message: 'Success',
+        data:listData,
+    };
+    
+    
+    return res.send(resData);
+
+}
+
+export async function setDtBgStyles(req: Reqs, res: Response) {
+    let dtid = req.body.id;
+    let dtStyle = req.body.dtBgStyle;
+    let a = await setDtBgStyle(dtid, dtStyle);
+    if (a) {
+        return res.send({ tf: 1 });
+    } else {
+        return res.send({ tf: 0 });
     }
-    else if (req.user?.username && req.user?.username != 'guest') {
-        const data = await dtList(req.user.username, Number(loa));
-        // await dtAdd(data);
-        resData = {
-            code: 200,
-            loa: 1,
-            message: 'Success',
-            data,
-        }
-    }
-    else {
-        const data = await dtList('guest', Number(0));
-        // await dtAdd(data);
-        resData = {
-            code: 200,
-            loa: 0,
-            message: 'Success',
-            data,
-        }
-    }
-
-
-
-    if (aes && aes != 0) {
-        let skey = '4563ee3b4e5cf38486ec2630c016785abbc0b21dabd9124e8550760ebd65';
-        let resc = jiami(resData, skey);
-        return res.send(resc);
-    }
-
-    res.send(resData)
-
 }
 
 
@@ -75,17 +64,24 @@ export async function getdt(req: Reqs, res: Response) {
         return res.send({ code: 400 });
     }
 
-    let resc = await getdts(user, Number(dtid));
+    let resc = await getdts(user, Number(dtid),1);
+    if(!resc){
+        return res.send({
+            code: 404,
+            data: resc,
+        })
+    }
     res.send({
         code: 200,
         data: resc,
     })
-
-
 }
 
 export async function dtfinds(req: Reqs, res: Response) {
+    let date = +new Date();
     const bq = req.query.bq;
+    const loa = req.query.loa || 0;
+    const user = req.user?.username || "guest";
     //是否为标签
     const isBq = req.query.isbq;
     let numArr;
@@ -94,22 +90,23 @@ export async function dtfinds(req: Reqs, res: Response) {
     }
     if (!Number(isBq)) {
         //简单搜索
-        numArr = await dtFinds(bq as string);
+        numArr = await dtFinds(bq as string, req.user?.username);
     }
     else {
         numArr = await dtFind(bq as string);
     }
 
-    let List = await dtList('yw', 1);
+    let List = await dtList(user,Number(loa));
     let newList = [];
     for (let id of numArr) {
         newList.push({
+            type:"A",
             ...finds(id.id),
             score: id.num,
         })
     }
-
-    return res.send({ code: 200, data: newList });
+    let time = -(date - (+new Date())) / 1000;
+    return res.send({ code: 200, time,data: newList,  });
 
     function finds(id: string) {
         for (let dt of List) {
@@ -173,18 +170,27 @@ function getnowDate() {
 
 //获取时间信息
 export async function dtDates(req: Request, res: Response) {
-    let year = req.query.year || 2023;
+    let year = req.query.year || 2024;
     const data = await dtDate(Number(year));
     res.send(data);
 }
 
+export async function dtDataImg(req: Reqs, res: Response) {
+    let year = req.query.year || 2024;
+    let title = '动态提交历史';
+    const data = await dtDate(Number(year));
+    let buffer = getDtDataImg(title, data);
+    res.setHeader('Content-Type', 'image/jpg');
+    res.send(buffer);
+}
+
 //获取缩略图
-export async function dtimg(req: Request, res: Response) {
+export async function dtimg(req: Reqs, res: Response) {
     let Reqdtid = req.query.dtid;
     let Reqindex = req.query.index;
     let isImg = req.query.a;
 
-    let token = req.query.token;
+
 
     let dtid;
     let index;
@@ -195,6 +201,8 @@ export async function dtimg(req: Request, res: Response) {
     } else {
         return res.send({ code: 402 });
     }
+
+
 
     let imgSrc = await dbSql<any>(`SELECT img_src FROM dt_img WHERE dt_id = ${dtid} AND img_index = ${index};`);
 
@@ -267,8 +275,8 @@ async function getVideoSrc(dtid: number, index: number) {
     }
 }
 
-
-
+// let videoArr:string[] = [];
+let videoSet = new Set<string>([]);
 
 //视频
 export async function dtvideo(req: Request, res: Response) {
@@ -289,6 +297,9 @@ export async function dtvideo(req: Request, res: Response) {
 
 
     let file = await getVideoSrc(dtid, index);
+
+    file.fileSrc = ensureVideoIsMP4(file.fileSrc);
+
 
 
     const stat = fs.statSync(file.fileSrc);
@@ -321,8 +332,80 @@ export async function dtvideo(req: Request, res: Response) {
     }
 }
 
+
+
+/**
+ * 如果转换后的MP4文件不存在，进行视频转换并返回转换后的视频路径
+ * @param inputPath 原始视频文件路径
+ * @returns 转换后的视频文件路径
+ */
+
+const ensureVideoIsMP4 = (inputPath: string): string => {
+    // 定义输出路径，通过替换 /dtimg/ 为 /dtimgs/ 来构造
+    const outputPath = inputPath.replace('/dtvideo/', '/dtvideos/');
+
+    // 检查转换后的文件是否已经存在
+    if (fs.existsSync(outputPath)) {
+        if (videoSet.has(inputPath)) {
+            return inputPath;
+        }
+        console.log(`转换后的文件已经存在: ${outputPath}`);
+        return outputPath;
+    }
+
+
+    console.log(`正在转换视频: ${inputPath} -> ${outputPath}`);
+
+
+
+    if (videoSet.size >= 1) {
+        return inputPath;
+    }
+
+    if (fs.statSync(inputPath).size >= 10 * 1024 * 1024 * 1024) {
+        return inputPath;
+    }
+
+    videoSet.add(inputPath);
+
+    const ffmpeg = spawn('ffmpeg', [
+        '-i', inputPath,          // 输入文件路径
+        '-c:v', 'libx264',        // 视频编码格式
+        '-c:a', 'aac',            // 音频编码格式
+        '-strict', 'experimental',// 允许使用实验性音频特性
+        '-y',                     // 如果文件已存在，覆盖文件
+        outputPath                // 输出文件路径
+    ]);
+
+    // 捕获 ffmpeg 的标准错误输出
+    ffmpeg.stderr.on('data', (data) => {
+        console.error('FFmpeg输出:', data.toString());
+    });
+
+    // ffmpeg 处理完成后的回调
+    ffmpeg.on('close', (code) => {
+        if (code === 0) {
+            console.log(`视频转换成功: ${outputPath}`);
+        } else {
+            // (new Error(`FFmpeg 进程退出，状态码: ${code}`)); // 转换失败
+            console.log('转换失败');
+
+        }
+        videoSet.delete(inputPath);
+    });
+
+    // 错误处理
+    ffmpeg.on('error', (err) => {
+        console.log("错误");
+        videoSet.delete(inputPath);
+    });
+
+    return inputPath;
+};
+
+
 //视频预览图
-export async function dtvideoImg(req: Request, res: Response) {
+export async function dtvideoImg(req: Reqs, res: Response) {
 
 
     let Reqdtid = req.query.dtid;
@@ -338,6 +421,8 @@ export async function dtvideoImg(req: Request, res: Response) {
     } else {
         return res.send({ code: 402 });
     }
+
+
 
     let file = await getVideoSrc(dtid, index);
 
@@ -402,9 +487,10 @@ export const uploadSingleFile = upload.single('file');
 export const uploadVideos = uploadVideo.single('file');
 //文件上传处理
 export async function updt(req: Request, res: Response) {
-    res.send({
-        tf: 1
-    });
+    if (!req.file) {
+        return res.status(400).send({ error: '文件上传失败' });
+    }
+    res.send({ tf: 1 });
 }
 export async function upvideo(req: Request, res: Response) {
     res.send({
@@ -412,6 +498,11 @@ export async function upvideo(req: Request, res: Response) {
     });
 }
 
+function stopTime(time: number) {
+    return new Promise((resolve, reject) => {
+        setTimeout(resolve, time);
+    })
+}
 
 export async function postdt(req: Request, res: Response) {
     let text = req.body.text as string;
@@ -429,6 +520,12 @@ export async function postdt(req: Request, res: Response) {
         img_show_num = Number(img_all_num) > 6 ? '6' : img_all_num;
     }
 
+    // 适当的延迟，保证正确写入。
+    if (Number(img_all_num) > 0) {
+        await stopTime(3000);
+    }
+
+
 
     //图片处理
     if (img) {
@@ -439,10 +536,11 @@ export async function postdt(req: Request, res: Response) {
             if (!fileIsDir(getUrl('root', 'assets/dtimg_temp'), imgArr[i]) || fileIsDir(getUrl('root', 'assets/dtimg'), imgArr[i])) {
                 return res.send({
                     code: 400,
-                    error:1
+                    error: 1
                 })
             }
         }
+
         //移动图片
         for (let i = 0; i < imgArr.length; i++) {
             const path1 = path.join(getUrl('root', 'assets/dtimg_temp'), imgArr[i]);
@@ -451,8 +549,8 @@ export async function postdt(req: Request, res: Response) {
                 fs.renameSync(path1, path2);
             } catch (error) {
                 console.log(error);
-                
-                // return res.send({ code: 500 });
+
+                return res.send({ code: 500 });
             }
             img[i] = './dtimg/' + imgArr[i];
         }
@@ -487,7 +585,7 @@ export async function postdt(req: Request, res: Response) {
         if (!falg) {
             return res.send({
                 code: 400,
-                error:2
+                error: 2
             })
         }
 
@@ -504,7 +602,7 @@ export async function postdt(req: Request, res: Response) {
                 continue;
             }
             const ext = path.extname(file); // 获取文件扩展名  
-            if (ext == '.jpg' || ext == '.png') {
+            if (ext == '.jpg' || ext == '.png' || ext == 'JPG') {
                 const newFileName = `${uniqueTimestamp}_${fileCounter}.${ext}`; // 生成新文件名  
                 const newFilePath = path.join(urls, newFileName); // 生成新文件路径  
                 const targetFilePath = path.join(urls2, newFileName); // 生成目标文件路径  
@@ -512,7 +610,7 @@ export async function postdt(req: Request, res: Response) {
                 if (fileIsDir(urls2, newFileName)) {
                     return res.send({
                         code: 400,
-                        error:3
+                        error: 3
                     })
                 }
                 // 重命名文件  
@@ -523,7 +621,7 @@ export async function postdt(req: Request, res: Response) {
                 img.push('./dtimg/' + newFileName);
                 fileCounter++;
             }
-            if (ext == '.mp4') {
+            if (ext == '.mp4' || ext == '.avi') {
                 const newFileName = `${uniqueTimestamp}_${fileCounter}.${ext}`; // 生成新文件名  
                 const newFilePath = path.join(urls, newFileName); // 生成新文件路径  
                 const targetFilePath = path.join(urls3, newFileName); // 生成目标文件路径  
@@ -531,7 +629,7 @@ export async function postdt(req: Request, res: Response) {
                 if (fileIsDir(urls3, newFileName)) {
                     return res.send({
                         code: 400,
-                        error:4
+                        error: 4
                     })
                 }
                 // 重命名文件  
@@ -550,7 +648,7 @@ export async function postdt(req: Request, res: Response) {
 
 
     let id = await getIdMax();
-    
+
     //loa是否为13
     if (loa == 13) {
         text = "^AES^" + jiamiString(text, Key.B13);
@@ -567,7 +665,7 @@ export async function postdt(req: Request, res: Response) {
 }
 
 
-export function getFile(dtid:number){
+export function getFile(dtid: number, imgNun: number, videoNum: number) {
     let urls = getUrl('root', 'assets', 'dtimgUpTemp');
     let urls2 = getUrl('root', 'assets/dtimg');
     let urls3 = getUrl('root', 'assets/dtvideo');
@@ -576,11 +674,9 @@ export function getFile(dtid:number){
     let video = [];
     let img = [];
 
-
-
     if (!falg) {
         return console.error(500);
-        
+
     }
 
     // 生成唯一的时间戳（毫秒级）  
@@ -603,7 +699,7 @@ export function getFile(dtid:number){
 
             if (fileIsDir(urls2, newFileName)) {
                 return console.error(300);
-                
+
             }
             // 重命名文件  
             fs.renameSync(filePath, newFilePath);
@@ -632,6 +728,9 @@ export function getFile(dtid:number){
 
 
     }
+
+    const im = setImg(dtid.toString(), img, imgNun);
+    const vi = setVideo(dtid.toString(), video, videoNum);
 }
 
 

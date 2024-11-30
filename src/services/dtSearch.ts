@@ -1,6 +1,7 @@
 import { dtList } from "../models/dt";
 import { setWorld } from "./worlds";
 import { Comtent,  Lists } from "../type";
+import { dbSql } from "@/utils/dbSql";
 const db = require('../config/db/mysql');
 
 
@@ -32,9 +33,21 @@ export async function dtFind(word: string) {
 }
 
 //简单搜索
-export async function dtFinds(word: string) {
-    let List = await dtList('yw', 1);
+export async function dtFinds(word: string,user:string | undefined) {
+    let List;
+
+    if(user){
+        List = await dtList(user, 1);
+    }else{
+        List = await dtList('yw',0);
+    }
+    
     let idArr: { id: string, num: number }[] = [];
+    
+    let sql = `SELECT dt_id,text FROM dt_img`;
+    let imgText = await dbSql<{dt_id:number,text:string}[]>(sql);
+
+
     for (let dt of List) {
         let num = 0;
         if (dt.text.includes(word)) {
@@ -47,8 +60,20 @@ export async function dtFinds(word: string) {
                 }
             }
         }
+        
+
         if (num > 0) {
             idArr.push({ id: dt.id, num });
+        }
+    }
+
+    for(let a of imgText){
+        let num = 0;
+        if(a.text &&  a.text.includes(word)){
+            num += 100;
+        }
+        if (num > 0) {
+            idArr.push({ id: a.dt_id.toString(), num });
         }
     }
 

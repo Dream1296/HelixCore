@@ -1,0 +1,13 @@
+// src/types/express.d.ts
+type user = {
+    username: string,
+    type: "ltk" | "rat",
+}
+
+declare global {
+  namespace Express {
+    interface Request {
+      user: user;  // 扩展 req 对象，添加 user 属性
+    }
+  }
+}
