@@ -21,6 +21,8 @@ import { Key } from '@/utils/passwd';
 import { getDtDataImg } from '@/services/dtDataT';
 import { dtDataAdd } from '@/services/dtDataAdd';
 import { spawn } from 'child_process';
+import { emit } from 'process';
+import { myEvent } from '@/services/evenTs';
 
 
 
@@ -29,18 +31,23 @@ export async function getDtList(req: Reqs, res: Response) {
     let loa = Number(req.query.loa || "0");
     let aes = Number(req.query.aes || "0");
     let user = (req.user?.username) ? req.user.username : "guest";
-   
+
+    //从redis中获取主数据
     let listData = await getRedisListData(user, loa, aes);
-    
+
+    //插入其他组件数据
+    let datas = await dtDataAdd(listData);
+
+
     let resData = {
         code: 200,
         loa: loa,
-        aes:aes,
+        aes: aes,
         message: 'Success',
-        data:listData,
+        data: datas,
     };
-    
-    
+
+
     return res.send(resData);
 
 }
@@ -64,8 +71,8 @@ export async function getdt(req: Reqs, res: Response) {
         return res.send({ code: 400 });
     }
 
-    let resc = await getdts(user, Number(dtid),1);
-    if(!resc){
+    let resc = await getdts(user, Number(dtid), 1);
+    if (!resc) {
         return res.send({
             code: 404,
             data: resc,
@@ -96,17 +103,17 @@ export async function dtfinds(req: Reqs, res: Response) {
         numArr = await dtFind(bq as string);
     }
 
-    let List = await dtList(user,Number(loa));
+    let List = await dtList(user, Number(loa));
     let newList = [];
     for (let id of numArr) {
         newList.push({
-            type:"A",
+            type: "A",
             ...finds(id.id),
             score: id.num,
         })
     }
     let time = -(date - (+new Date())) / 1000;
-    return res.send({ code: 200, time,data: newList,  });
+    return res.send({ code: 200, time, data: newList, });
 
     function finds(id: string) {
         for (let dt of List) {
@@ -253,10 +260,9 @@ export async function dtimgs(req: Request, res: Response) {
 //获取视频的地址
 async function getVideoSrc(dtid: number, index: number) {
     let videoSrc = await dbSql<any>(`SELECT video_src FROM dt_video WHERE dt_id = ${dtid} AND video_index = ${index};`);
-
     //视频路径（包含文件名）
-
     let fileSrc = path.join(getUrl('root', 'assets'), videoSrc[0].video_src);
+
     //文件名
     let fileName = videoSrc[0].video_src.split('/').pop();
 
@@ -890,5 +896,10 @@ export async function lviobj(req: Request, res: Response) {
 
     let obj = await getLongVideoList(Number(id));
     return res.send(obj[0]);
+}
+
+export async function upDtData(req: Request, res: Response){
+    myEvent.emit('upDtList','mysql');
+    res.send({code:200,msg:'ok'});
 }
 

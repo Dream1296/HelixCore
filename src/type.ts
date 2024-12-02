@@ -9,6 +9,7 @@ export interface Reqs extends Request {
     user?: user; // 注意这里的 ? 表示 user 属性是可选的  
 }
 
+//旧的
 export interface List {
     user: string;
     name: string;
@@ -47,6 +48,26 @@ export interface Listsc extends Lists{
     type:"A"
 }
 
+export interface dataImg {
+    type: 'dataImg',
+    id: string,
+    name: string,
+    touxian: string,
+}
+
+export type Mood = {
+    type:"mood",
+    id:string,
+    touxian:string,
+    name:string,
+}
+
+export type Top = {
+    type:"top",
+    id:string,
+    touxian:string,
+    name:string,
+}
 
 export interface Comtent {
     date: string,
@@ -56,14 +77,6 @@ export interface Comtent {
     name: string,
 }
 
-export interface dataImg {
-    type: 'dataImg',
-    date: string,
-    id: number,
-    name: string,
-    touxian: string,
-    user: string,
-}
 
 export interface TokenObj {
     user_id: string | "guest",

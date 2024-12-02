@@ -67,7 +67,7 @@ export async function getRedisListData(user: string, loa: Number, aes: Number){
     let key = user + loa.toString() + aes.toString();
     
     let data = await redisDB.get(key) as string;
-    return JSON.parse(data);
+    return JSON.parse(data) as Lists[];
 }
 
 

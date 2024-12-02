@@ -10,7 +10,7 @@ export const redisDB = new Redis({
 
 // 事件监听，确保 Redis 连接正常
 redisDB.on('connect', () => {
-    console.log('redis连接成功');
+    // console.log('redis连接成功');
 });
 
 redisDB.on('error', (err) => {

@@ -7,3 +7,8 @@ myEvent.addListener('upDtList',(data:any)=>{
     reDtListData();
 })
 
+setTimeout(()=>{
+    myEvent.emit('upDtList','start');
+},100);
+
+

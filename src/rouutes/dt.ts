@@ -4,7 +4,7 @@ import { getDtList,dtDates,dtimg ,dtimgs,dtvideo,uploadSingleFile,uploadVideos,u
     updt,postdt,postCom ,delDts ,getemoji,getemojilist,getweizhi,gpsc,getdt,dtindex,
     dtfinds,
     dtvideoImg,lvi,lviobj,dtDataImg,
-    setDtBgStyles} 
+    setDtBgStyles,upDtData} 
     from '@/controllers/dt';
 import { PublishAfterExecution } from '@/services/upListData';
 
@@ -76,7 +76,8 @@ app.get('/lvi',lvi);
 app.get('/lviobj',lviobj);
 
 
-
+// 刷新redis
+app.get('/upDtData',upDtData);
 
 
 export default app;

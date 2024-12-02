@@ -1,0 +1,9 @@
+{
+    "ignore": [
+        "dist",
+        "dists",
+        "public",
+        "assets"
+    ],
+    "delay": 100
+}
