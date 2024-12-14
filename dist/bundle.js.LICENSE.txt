@@ -65,8 +65,6 @@
 
 /*! ./dt */
 
-/*! ./dtDataAdd */
-
 /*! ./dtList */
 
 /*! ./evenTs */
@@ -106,6 +104,8 @@
 /*! @/pathUtils */
 
 /*! @/rouutes/weather */
+
+/*! @/services/dtDataAdd */
 
 /*! @/services/dtDataT */
 
@@ -150,6 +150,8 @@
 /*! ioredis */
 
 /*! microsoft-cognitiveservices-speech-sdk */
+
+/*! moment */
 
 /*! multer */
 
@@ -225,6 +227,10 @@
 
 /*!*************************!*\
   !*** external "figlet" ***!
+  \*************************/
+
+/*!*************************!*\
+  !*** external "moment" ***!
   \*************************/
 
 /*!*************************!*\

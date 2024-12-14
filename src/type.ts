@@ -2,6 +2,7 @@ import { Request } from 'express';
 
 type user = {
     username: string | 'guest',
+    dtid:string,
     type: "ltk" | "rat",
 }
 
@@ -42,6 +43,7 @@ export interface Lists {
     longVideo?: { id: number, name: string, src: string }[];
     keyword?: { keyword: string, isAi: number }[];
     bgStyle:number;
+    loa:number
 }
 
 export interface Listsc extends Lists{
@@ -77,9 +79,9 @@ export interface Comtent {
     name: string,
 }
 
-
 export interface TokenObj {
     user_id: string | "guest",
+    dtid:string,
     date: number,
     type: "ltk" | "rat"
 }

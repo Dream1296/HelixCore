@@ -19,7 +19,7 @@ async function dtList(user: string, loa: number | string) {
     }
 
     let keywords: { keyword: string, dt_id: string, isAi: number }[] = await sqlGetDtIndexAll() as { keyword: string, dt_id: string, isAi: number }[];
-    
+
     for (let keyword of keywords) {
         let lists = list.find(obj => obj.id == keyword.dt_id);
         if (!lists) {
@@ -35,7 +35,7 @@ async function dtList(user: string, loa: number | string) {
     }
 
     let vlList = await getLongVideoList();
-    for(let a of vlList){
+    for (let a of vlList) {
         let lists = list.find(obj => obj.id == a.dt_id.toString());
         if (!lists) {
             continue;
@@ -43,29 +43,29 @@ async function dtList(user: string, loa: number | string) {
         if (!lists.longVideo) {
             lists.longVideo = [];
         }
-        lists.longVideo.push({id:a.id,name:a.name,src:a.src});
+        lists.longVideo.push({ id: a.id, name: a.name, src: a.src });
     }
 
     //排序
-    const sortedArray = list.sort((a, b) => {  
+    const sortedArray = list.sort((a, b) => {
         // 先比较 po 属性，从大到小排序  
-        if (a.po !== b.po) {  
-            return b.po - a.po;  
-        }  
+        if (a.po !== b.po) {
+            return b.po - a.po;
+        }
         // 如果 po 属性相等，且都为 0，则比较 date 属性，从小到大排序  
-        if (a.po === 0 && b.po === 0) {  
-            return new Date(b.date).getTime() - new Date(a.date).getTime();  
-        }    
-        return 0;  
-    }); 
+        if (a.po === 0 && b.po === 0) {
+            return new Date(b.date).getTime() - new Date(a.date).getTime();
+        }
+        return 0;
+    });
 
     return sortedArray;
 }
 
 //从redis中找动态列表数据
-export async function getRedisListData(user: string, loa: Number, aes: Number){
+export async function getRedisListData(user: string, loa: Number, aes: Number) {
     let key = user + loa.toString() + aes.toString();
-    
+
     let data = await redisDB.get(key) as string;
     return JSON.parse(data) as Lists[];
 }
@@ -104,7 +104,8 @@ export async function dtLists(user: string, loa: number | string, findId?: numbe
             dt.date as date,
             dt.idea as idea,
             dt.bg_style as bgStyle,
-            dt.pin_order as po
+            dt.pin_order as po,
+            dt.loa as loa
         from dt
             join dt_name on dt.user = dt_name.user
         where
@@ -147,9 +148,9 @@ ORDER BY dt_comments.date ASC;`;
 }
 
 //单个动态的数据
-async function getdts(user: string, id: number,loa:number) {
+async function getdts(user: string, id: number, loa: number) {
     let data: Lists[] = await dtLists(user, loa, id) as Lists[];
-    if(data.length == 0){
+    if (data.length == 0) {
         return null;
     }
     let list: Lists = data[0];
@@ -170,7 +171,7 @@ async function getdts(user: string, id: number,loa:number) {
 //添加标签
 async function setdtindex(id: number, keyword: string, isAi: number) {
     //判断keyworld表中是否已存在
-    let falg = await iskeywords(id, keyword);    
+    let falg = await iskeywords(id, keyword);
     if (falg) {
         return true
     }
@@ -199,14 +200,14 @@ export async function sqlGetDtIndexAll() {
 }
 
 // 获取长视频列表
-export async function getLongVideoList(id?:number){
+export async function getLongVideoList(id?: number) {
     let sql
-    if(id){
+    if (id) {
         sql = `SELECT id,dt_id,name,src FROM dt_longVideo where id = ${id}`;
-    }else{
+    } else {
         sql = `SELECT id,dt_id,name,src FROM dt_longVideo`;
     }
-    let lvList = await dbSql<{id:number,dt_id:number,name:string,src:string}[]>(sql);
+    let lvList = await dbSql<{ id: number, dt_id: number, name: string, src: string }[]>(sql);
     return lvList
 }
 //判断标签是否存在
@@ -221,9 +222,9 @@ async function iskeywords(id: number, keyword: string) {
 }
 
 //查询动态id对应信息
-export async function getDtUser(dtid:number){
+export async function getDtUser(dtid: number) {
     let sql = `SELECT user,loa FROM dt WHERE id = ?`;
-    return dbSql<{user:string,loa:number}[]>(sql,[dtid.toString()]);
+    return dbSql<{ user: string, loa: number }[]>(sql, [dtid.toString()]);
 
 }
 
@@ -248,16 +249,16 @@ async function dtDate(year: number | string) {
 }
 
 //添加图片
-export async function setImg(id: string, imgArr: string[] , headNum?:number) {
+export async function setImg(id: string, imgArr: string[], headNum?: number) {
     let falg = true;
-    if(!headNum){
+    if (!headNum) {
         headNum = 0;
     }
     for (let i = headNum; i < imgArr.length; i++) {
         let sql = `INSERT into dt_img (dt_id,img_index,img_src) VALUES (?,?,?)`;
 
         let a = await dbSql<number>(sql, [id, i.toString(), imgArr[i]]);
-        if(a != 1){
+        if (a != 1) {
             falg = false;
         }
     }
@@ -265,16 +266,16 @@ export async function setImg(id: string, imgArr: string[] , headNum?:number) {
 }
 
 //添加视频
-export async function setVideo(id: string, videoArr: string[] , headNum?:number) {
+export async function setVideo(id: string, videoArr: string[], headNum?: number) {
     let falg = true;
-    if(!headNum){
+    if (!headNum) {
         headNum = 0;
     }
     for (let i = headNum; i < videoArr.length; i++) {
         let sql = `INSERT into dt_video (dt_id,video_index,video_src)
         VALUES (?,?,?)`;
         let a = await dbSql(sql, [id, i.toString(), videoArr[i]])
-        if(a != 1){
+        if (a != 1) {
             falg = false;
         }
     }
@@ -290,34 +291,65 @@ export async function getIdMax() {
 async function setDt(id: string, user: string, text: string, img_show_num: string, img_all_num: string, video_num: string,
     date: string, loa: string, idea?: string): Promise<boolean> {
 
-        let sql = `INSERT INTO dt (id,user, text, img,img_show_num, img_all_num ,video,video_num, date, loa) VALUES 
+    let sql = `INSERT INTO dt (id,user, text, img,img_show_num, img_all_num ,video,video_num, date, loa) VALUES 
                 (?,?, ?, '0', ?, ?, '0', ?,?,?  );`;
-                let canshuArr = [id, user, text, img_show_num, img_all_num, video_num, date, loa];
-        let a = await dbSql<number>(sql,canshuArr,true);
-        if(a == 1){
-            return true
-        }
-        return false
+    let canshuArr = [id, user, text, img_show_num, img_all_num, video_num, date, loa];
+    let a = await dbSql<number>(sql, canshuArr, true);
+    if (a == 1) {
+        return true
+    }
+    return false
 
 }
 
 async function setDtCom(date: string, content: string, dtId: string, commentsUser: string) {
     let sql = "INSERT INTO dt_comments (date, content, dtId, commentsUser) VALUES (?,?,?,?)";
-    let canshuArr =  [date, content, dtId, commentsUser];
-    let a = await dbSql(sql,canshuArr,true);
-    if(a == 1 ){
+    let canshuArr = [date, content, dtId, commentsUser];
+    let a = await dbSql(sql, canshuArr, true);
+    if (a == 1) {
         return { tf: 1 };
     }
-    return {tf : 0};
-    
+    return { tf: 0 };
+
 }
 
-export async function setDtBgStyle(dtId:number,bgStyle:number){
+export async function setDtM(id: string, updates: any) {
+    // 构造动态的 SQL 语句
+    const fieldsToUpdate = [];
+    const values = [];
+
+    // 遍历请求体中的字段，构造更新语句
+    for (const [field, value] of Object.entries(updates)) {
+        if (value == null || value == undefined) {
+            continue;
+        }
+        fieldsToUpdate.push(`${field} = ?`);
+        values.push(value);
+    }
+
+    // 如果没有要更新的字段，返回错误
+    if (fieldsToUpdate.length === 0) {
+        return 404;
+    }
+
+    // 添加 ID 条件
+    const sql = `UPDATE dt SET ${fieldsToUpdate.join(', ')} WHERE id = ?`;
+    values.push(id);
+
+    let tf = await dbSql(sql, values, true);
+    if (tf == 1) {
+        return 200;
+    }
+
+}
+
+
+export async function setDtBgStyle(dtId: number, bgStyle: number) {
     let sql = "UPDATE dt  SET bg_style = ?  WHERE id = ?;"
-    let a = await dbSql<number>(sql,[bgStyle,dtId],true);
-    if(a){
+    let a = await dbSql<number>(sql, [bgStyle, dtId], true);
+    if (a) {
         return true;
-    }else{
+    } else {
         return false;
     }
 
@@ -327,8 +359,8 @@ export async function setDtBgStyle(dtId:number,bgStyle:number){
 async function delDt(dtId: string) {
     let falg;
     let sql = "UPDATE dt  SET shows = 0  WHERE id = ?;";
-    let a = await dbSql<number>(sql,[dtId],true);
-    if(a == 1){
+    let a = await dbSql<number>(sql, [dtId], true);
+    if (a == 1) {
         return { tf: 1 }
     }
     return { tf: 0 }
@@ -379,15 +411,15 @@ function splitContent(content: string) {
 
 
 export async function videoNum() {
-    let dtData = await dbSql<{ id: number, video: string }[]>('SELECT id,video FROM dt') ;
+    let dtData = await dbSql<{ id: number, video: string }[]>('SELECT id,video FROM dt');
     let falg = true;
     for (let a of dtData) {
         if (a.video == '0' || a.video == '') {
             continue;
         }
         let num = a.video.split('-').length;
-        let b = await dbSql<number>(`UPDATE dt SET video_num = '${num}' WHERE dt.id = ${a.id};`,undefined,true);
-        if(b != 1){
+        let b = await dbSql<number>(`UPDATE dt SET video_num = '${num}' WHERE dt.id = ${a.id};`, undefined, true);
+        if (b != 1) {
             falg = falg;
         }
 
@@ -399,7 +431,7 @@ export async function videoNum() {
 export async function videos() {
     let i = 0;
     let falg = true;
-    let dtData = await dbSql<{ id: number, video: string }[]>('SELECT id,video FROM dt') ;
+    let dtData = await dbSql<{ id: number, video: string }[]>('SELECT id,video FROM dt');
     // return
 
 
@@ -414,8 +446,8 @@ export async function videos() {
 
             let sql = `INSERT INTO dt_video (id, dt_id, video_index, video_src) VALUES (NULL, ${a.id}, ${index}, '${b}');`
 
-            let c = await dbSql<number>(sql,undefined,true);
-            if( c != 1){
+            let c = await dbSql<number>(sql, undefined, true);
+            if (c != 1) {
                 falg = false;
             }
             index++;
@@ -424,6 +456,38 @@ export async function videos() {
     return falg;
 }
 
+
+export async function setShareDb(key: string, user: string, dtid: string) {
+    let sql = `INSERT INTO  dt_share (id, K,user, date, dtid) VALUES (NULL,?, ?, NOW(), ?);`;
+    let tf = await dbSql<number>(sql, [key, user, dtid], true);
+    if (tf == 1) {
+        return true;
+    }
+    return false;
+}
+
+export async function getShareDbToken(key: string) {
+    let sql = `SELECT user,dtid FROM dt_share where k = ?`;
+    let a = await dbSql<{ user: string, dtid: string }[]>(sql, [key]);
+    return a;
+}
+
+
+export async function setUserss(user: string, dtid: string) {
+    let sql = `SELECT * FROM dt WHERE user = ? and id = ?`;
+    let is = await dbSql<any[]>(sql, [user, dtid]);
+    if (is.length > 0) {
+        return true;
+    }
+    return false;
+
+}
+
+export async function dtidS(dtid: string) {
+    let sql = `SELECT user,loa,shows FROM dt where id = ?`;
+    let res = await dbSql<{ user: string, loa: number, shoes: number }[]>(sql, [dtid]);
+    return res;
+}
 
 
 export { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex }

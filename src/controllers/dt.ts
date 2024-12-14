@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, getLongVideoList, setDtBgStyle, getRedisListData } from '../models/dt';
+import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, getLongVideoList, setDtBgStyle, getRedisListData, setDtM, setShareDb, setUserss, getShareDbToken, dtidS } from '../models/dt';
 import { getemojis } from '../models/emoji';
 import { List, Reqs } from '../type';
 import path, { join } from 'path';
@@ -23,6 +23,7 @@ import { dtDataAdd } from '@/services/dtDataAdd';
 import { spawn } from 'child_process';
 import { emit } from 'process';
 import { myEvent } from '@/services/evenTs';
+import { getShareToken } from '@/services/token';
 
 
 
@@ -31,6 +32,10 @@ export async function getDtList(req: Reqs, res: Response) {
     let loa = Number(req.query.loa || "0");
     let aes = Number(req.query.aes || "0");
     let user = (req.user?.username) ? req.user.username : "guest";
+
+    if (req.user?.dtid && req.user.dtid != "-1") {
+        user = "guest";
+    }
 
     //从redis中获取主数据
     let listData = await getRedisListData(user, loa, aes);
@@ -66,16 +71,37 @@ export async function setDtBgStyles(req: Reqs, res: Response) {
 
 export async function getdt(req: Reqs, res: Response) {
     const dtid = req.query.id;
-    const user = req.user?.username || 'guest';
-    if (!dtid) {
-        return res.send({ code: 400 });
+    const loa = req.query.loa || 0;
+    let user = req.user?.username || 'guest';
+
+    if (!dtid || dtid == '-1') {
+        return res.status(400).send({ code: 400 ,msg:"参数不全"});
     }
 
-    let resc = await getdts(user, Number(dtid), 1);
+    if (req.user?.dtid != dtid.toString() && req.user?.dtid != "-1") {
+        user = "guest";
+    }
+
+    let dtT = await dtidS(dtid.toString());
+    if (dtT.length != 1) {
+        return res.status(400).send({
+            code: 400,
+            msg:"查询动态不存在"
+        })
+    }
+
+    let resc = await getdts(user, Number(dtid), dtT[0].loa);
+
     if (!resc) {
-        return res.send({
-            code: 404,
-            data: resc,
+        return res.status(400).send({
+            code: 400,
+            msg:"查询为空"
+        })
+    }
+    if(dtT[0].loa != 0 && dtT[0].loa != loa){
+        return res.status(400).send({
+            code:400,
+            msg:"未正确指定分级"
         })
     }
     res.send({
@@ -197,8 +223,6 @@ export async function dtimg(req: Reqs, res: Response) {
     let Reqindex = req.query.index;
     let isImg = req.query.a;
 
-
-
     let dtid;
     let index;
 
@@ -206,9 +230,20 @@ export async function dtimg(req: Reqs, res: Response) {
         dtid = Number(Reqdtid);
         index = Number(Reqindex);
     } else {
-        return res.send({ code: 402 });
+        return res.send({ code: 402, msg: "参数不全" });
     }
 
+    let userT = await dtidS(dtid.toString());
+    if (userT.length != 1) {
+        return res.send({ code: 402, smg: "id不存在" });
+    }
+
+    let tf = hasAccess(req.user?.username, req.user?.dtid, dtid.toString(), userT[0]);
+    // console.log(userT[0].loa);
+
+    if (!tf) {
+        return res.send({ code: 402 });
+    }
 
 
     let imgSrc = await dbSql<any>(`SELECT img_src FROM dt_img WHERE dt_id = ${dtid} AND img_index = ${index};`);
@@ -245,7 +280,30 @@ export async function dtimg(req: Reqs, res: Response) {
         res.sendFile(filePath);
     }
 
+}
 
+
+function hasAccess(username?: string, userDtID?: string, dtid?: string, userT?: {
+    user: string;
+    loa: number;
+    shoes: number;
+},) {
+    //如果访问的是已经删除的动态
+    if (userT?.shoes == 1) {
+        return false;
+    }
+    //如果访问的公开动态
+    if (userT && userT.loa != undefined && userT.loa == 0) {
+        return true;
+    }
+    //如果是登录后访问
+    if (username == userT?.user && userDtID == "-1") {
+        return true;
+    }
+    //如果是通过分享链接访问
+    if (username == userT?.user && userDtID == dtid) {
+        return true;
+    }
 }
 
 //获取原图
@@ -260,6 +318,10 @@ export async function dtimgs(req: Request, res: Response) {
 //获取视频的地址
 async function getVideoSrc(dtid: number, index: number) {
     let videoSrc = await dbSql<any>(`SELECT video_src FROM dt_video WHERE dt_id = ${dtid} AND video_index = ${index};`);
+    
+        if (videoSrc.length == 0) {
+            return
+        }
     //视频路径（包含文件名）
     let fileSrc = path.join(getUrl('root', 'assets'), videoSrc[0].video_src);
 
@@ -303,6 +365,9 @@ export async function dtvideo(req: Request, res: Response) {
 
 
     let file = await getVideoSrc(dtid, index);
+    if(file == undefined){
+        return res.send({ code: 402 });
+    }
 
     file.fileSrc = ensureVideoIsMP4(file.fileSrc);
 
@@ -431,6 +496,9 @@ export async function dtvideoImg(req: Reqs, res: Response) {
 
 
     let file = await getVideoSrc(dtid, index);
+    if(file == undefined){
+        return res.send({ code: 402 });
+    }
 
     if (fileIsDir(file.fileUrl, file.fileImgName)) {
         return res.sendFile(path.join(file.fileUrl, file.fileImgName));
@@ -608,7 +676,7 @@ export async function postdt(req: Request, res: Response) {
                 continue;
             }
             const ext = path.extname(file); // 获取文件扩展名  
-            if (ext == '.jpg' || ext == '.png' || ext == 'JPG') {
+            if (ext == '.jpg' || ext == '.png' || ext == '.JPG' || ext == '.jpeg') {
                 const newFileName = `${uniqueTimestamp}_${fileCounter}.${ext}`; // 生成新文件名  
                 const newFilePath = path.join(urls, newFileName); // 生成新文件路径  
                 const targetFilePath = path.join(urls2, newFileName); // 生成目标文件路径  
@@ -898,8 +966,93 @@ export async function lviobj(req: Request, res: Response) {
     return res.send(obj[0]);
 }
 
-export async function upDtData(req: Request, res: Response){
-    myEvent.emit('upDtList','mysql');
-    res.send({code:200,msg:'ok'});
+export async function upDtData(req: Request, res: Response) {
+    myEvent.emit('upDtList', 'mysql');
+    res.send({ code: 200, msg: 'ok' });
 }
 
+export async function setDts(req: Reqs, res: Response) {
+    const { id, ...updates } = req.body;
+
+    if (!id) {
+        return res.send({
+            code: 400,
+            tf: 0
+        })
+    }
+
+    if (req.user && req.user.username && req.user.username != 'yw') {
+        return res.send({
+            code: 400,
+            tf: 0
+        })
+    }
+
+    let code = await setDtM(id, updates);
+    if (code == 200) {
+        myEvent.emit('upDtList', 'setCon');
+        return res.send({
+            code: 200,
+            tf: 1
+        })
+    }
+
+    res.send({
+        code: 400,
+        tf: 0
+    })
+}
+
+
+export async function getShare(req: Request, res: Response) {
+    let key = req.query.key;
+    if (!key) {
+        return res.send({ coed: 400 });
+    }
+    let a = await getShareDbToken(key.toString());
+    if (a.length != 1) {
+        return res.send({ coed: 400 });
+    }
+    let token = getShareToken(a[0].user, a[0].dtid);
+    res.send({
+        code: 200,
+        tf: 1,
+        token,
+    })
+}
+
+export async function setShare(req: Reqs, res: Response) {
+    if (!req.user || req.user.username == 'green') {
+        return res.send({ coed: 400 });
+    }
+    let dtid = req.body.dtid;
+    if (!dtid) {
+        return res.send({ coed: 400 });
+    }
+
+    let key = generateRandomString(5);
+    let user = req.user.username;
+
+    if (!(await setUserss(user, dtid))) {
+        return res.send({ coed: 400 });
+    }
+
+    setShareDb(key, user, dtid)
+        .then((tf) => {
+            if (tf) {
+                return res.send({ coed: 200, tf: 1, token: key });
+            }
+            return res.send({ code: 400, tf: 0 });
+        })
+}
+
+function generateRandomString(length: number) {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    const charactersLength = characters.length;
+    for (let i = 0; i < length; i++) {
+        const randomIndex = Math.floor(Math.random() * charactersLength);
+        result += characters[randomIndex];
+    }
+    return result;
+}

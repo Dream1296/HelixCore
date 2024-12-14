@@ -15,6 +15,7 @@ function generateToken(username: string) {
     let key:TokenObj;
     key = {
         user_id:username,
+        dtid:"-1",
         date:nowDate,
         type:'ltk'
     }
@@ -32,6 +33,7 @@ function generateTempToken(username: string){
     let key:TokenObj;
     key = {
         user_id:username,
+        dtid:"-1",
         date:nowDate,
         type:'rat'
     }
@@ -46,6 +48,7 @@ function generateTempToken(username: string){
 function getUser(token: string):TokenObj {
     let guest:TokenObj = {
         user_id:'guest',
+        dtid:"-1",
         date:0,
         type:'ltk',
     }
@@ -59,7 +62,7 @@ function getUser(token: string):TokenObj {
 
     let falg = verifySignature(tokenStr,tokenc,passwd);
 
-
+    
 
     if(!falg){
         return guest
@@ -75,6 +78,23 @@ function getUser(token: string):TokenObj {
     }
 
     return tokenObj
+}
+
+//生成动态分享token
+export function getShareToken(username: string,dtid:string){
+    //当前事件戳
+    let nowDate = +new Date();
+    let key:TokenObj;
+    key = {
+        user_id:username,
+        dtid:dtid,
+        date:nowDate,
+        type:'rat'
+    }
+    
+    let token = Buffer.from(JSON.stringify(key)).toString('base64');
+    token = token +'|' + createSignature(token,passwd);
+    return token;
 }
 
 

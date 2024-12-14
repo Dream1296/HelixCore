@@ -4,7 +4,9 @@ import { getDtList,dtDates,dtimg ,dtimgs,dtvideo,uploadSingleFile,uploadVideos,u
     updt,postdt,postCom ,delDts ,getemoji,getemojilist,getweizhi,gpsc,getdt,dtindex,
     dtfinds,
     dtvideoImg,lvi,lviobj,dtDataImg,
-    setDtBgStyles,upDtData} 
+    setDtBgStyles,upDtData ,setDts,
+    getShare,
+    setShare} 
     from '@/controllers/dt';
 import { PublishAfterExecution } from '@/services/upListData';
 
@@ -48,6 +50,8 @@ app.post('/updt', uploadSingleFile, updt);
 
 app.post('/upvideo',uploadVideos,upvideo);
 
+
+
 //提交动态
 app.post("/postdt", postdt);
 
@@ -75,9 +79,19 @@ app.get('/lvi',lvi);
 //视频信息
 app.get('/lviobj',lviobj);
 
+//修改动态数据
+app.post('/setDt',setDts);
+
+//分享动态
+app.get('/getShare',getShare);
+
+//设置分享
+app.post('/setShare',setShare);
 
 // 刷新redis
 app.get('/upDtData',upDtData);
+
+
 
 
 export default app;

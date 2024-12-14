@@ -1,5 +1,8 @@
 //  ts-node -r tsconfig-paths/register
 
-import { setFan } from "./controllers/top";
+import { getShareDbToken } from "./models/dt";
 
-setFan(1);
+
+
+
+getShareDbToken("1JsFF");

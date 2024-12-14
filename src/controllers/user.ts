@@ -12,11 +12,10 @@ async function userClass(req: Reqs, res: Response) {
     res.send(req.user?.username);
 }
 
-async function userIn(req: Reqs, res: Response) {
+async function userIn(req: Reqs, res: Response) {    
     let userId = req.user?.username;
     if (!userId) userId = 'a';
     let user = await userIns(userId)
-
 
     res.send(user)
 }
@@ -24,7 +23,11 @@ async function userIn(req: Reqs, res: Response) {
 async function userImg(req: Reqs, res: Response) {
     let name = req.query.name || 'guest';
     let url = (await userImgUrl(name as string) as { touxian: string }).touxian;;
-
+    if(url == undefined){
+        return res.send({
+            code:400,
+        })
+    }
     // url = path.join(__dirname,'../../public/userImg',url);
     url = getUrl('root', 'public/userImg', url);
 

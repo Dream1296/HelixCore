@@ -6,7 +6,7 @@ let comArr:(dataImg|Mood|Top)[] = [];
 
 async function getCom(type:'dataImg' | 'mood' | 'top'){
     if(!comArr.length){
-        let a = await dbSql<{type: 'dataImg' | 'mood' | 'top',id:string,touxian:string,name:string}[]>('SELECT * FROM dt_com');        
+        let a = await dbSql<{type: 'dataImg' | 'mood' | 'top',id:string,touxian:string,name:string,show_index:number}[]>('SELECT * FROM dt_com');        
         for(let data of a){
             comArr.push({
                 ...data
@@ -32,13 +32,14 @@ export async function dtDataAdd(datas:Lists[]){
 
 
     let dataImg = await getCom('dataImg');
-    data.unshift(dataImg!);
+    // data.unshift(dataImg!);
+    data.splice(0,0,dataImg!);
 
     let moodFrome = await getCom('mood');
-    data.splice(4,0,moodFrome!);
+    data.splice(1,0,moodFrome!);
 
     let top = await getCom('top');
-    data.splice(9,0,top!);
+    data.splice(2,0,top!);
     
     return data;
 }
