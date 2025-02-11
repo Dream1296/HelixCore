@@ -3,23 +3,28 @@ const db = require('./src/config/db/mysql');
 
 let key = "A8412640";
 
-sqlC<{id:number,text:string}[]>('SELECT id,text FROM dt WHERE loa = 13;')
-.then( 
-   async (data ) => {
-        for(let i = 0; i < data.length; i++){
-            if(data[i].id != 377){
-                continue;
-            }
-            let text1 = data[i].text;
-            let text2 = mi.jiamis(text1,key);
-            text2 = "AES" + text2;
-            let sql = `UPDATE dt SET text = '${text2}' WHERE id = ${data[i].id};`;
-            console.log(sql);
+let text1 = ``
+
+let res = mi.jiamis(text1,key);
+console.log(res);
+
+// sqlC<{id:number,text:string}[]>('SELECT id,text FROM dt WHERE loa = 13;')
+// .then( 
+//    async (data ) => {
+//         for(let i = 0; i < data.length; i++){
+//             if(data[i].id != 377){
+//                 continue;
+//             }
+//             let text1 = data[i].text;
+//             let text2 = mi.jiamis(text1,key);
+//             text2 = "AES" + text2;
+//             let sql = `UPDATE dt SET text = '${text2}' WHERE id = ${data[i].id};`;
+//             console.log(sql);
             
-            await sqlC(sql);
-        }
-    }
-)
+//             await sqlC(sql);
+//         }
+//     }
+// )
 // let txt = ``;
 
 // let a = mi.jie(txt,key);

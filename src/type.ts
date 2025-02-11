@@ -26,6 +26,7 @@ export interface List {
     keyword?: { keyword: string, isAi: number }[];
 }
 
+//新的
 export interface Lists {
     id: string;
     user: string;
@@ -43,6 +44,7 @@ export interface Lists {
     longVideo?: { id: number, name: string, src: string }[];
     keyword?: { keyword: string, isAi: number }[];
     bgStyle:number;
+    textTile:string;
     loa:number
 }
 

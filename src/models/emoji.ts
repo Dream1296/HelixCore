@@ -4,16 +4,15 @@ import { getUrl } from "@/pathUtils";
 const emojiPath = getUrl('root','public/emoji');
 
 
-export function getemojis(lei:string,name:string){    
-    let names = name + '.png';
+export function getemojis(lei:string){    
+    lei = lei + '.png';
     
-    let paths = path.join(emojiPath,lei,names);
-    if(fileIsDir(emojiPath,lei) && fileIsDir(path.join(emojiPath,lei),names)  ) {
+    let paths = path.join(emojiPath,lei);
+    if(fileIsDir(emojiPath,lei)){
         return fs.readFileSync(paths);
     }else{
         return fs.readFileSync(path.join(emojiPath,'weixin/微笑.png'));
     }
-
 }
 
 

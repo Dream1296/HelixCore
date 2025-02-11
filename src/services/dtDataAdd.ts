@@ -35,8 +35,8 @@ export async function dtDataAdd(datas:Lists[]){
     // data.unshift(dataImg!);
     data.splice(0,0,dataImg!);
 
-    let moodFrome = await getCom('mood');
-    data.splice(1,0,moodFrome!);
+    // let moodFrome = await getCom('mood');
+    // data.splice(1,0,moodFrome!);
 
     let top = await getCom('top');
     data.splice(2,0,top!);

@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, getLongVideoList, setDtBgStyle, getRedisListData, setDtM, setShareDb, setUserss, getShareDbToken, dtidS } from '../models/dt';
+import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, getLongVideoList, setDtBgStyle, getRedisListData, setDtM, setShareDb, setUserss, getShareDbToken, dtidS, getDtLongData } from '../models/dt';
 import { getemojis } from '../models/emoji';
 import { List, Reqs } from '../type';
 import path, { join } from 'path';
@@ -24,11 +24,18 @@ import { spawn } from 'child_process';
 import { emit } from 'process';
 import { myEvent } from '@/services/evenTs';
 import { getShareToken } from '@/services/token';
+import { Query } from '../middlewares/routesType';
+import * as t from 'io-ts';
+import sharp from 'sharp';
 
 
 
 //获取列表信息和评论信息
 export async function getDtList(req: Reqs, res: Response) {
+    const clientIp = req.headers['x-real-ip'] || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    console.log(clientIp);
+
+    let a = req.query as t.TypeOf<typeof Query>;
     let loa = Number(req.query.loa || "0");
     let aes = Number(req.query.aes || "0");
     let user = (req.user?.username) ? req.user.username : "guest";
@@ -48,7 +55,7 @@ export async function getDtList(req: Reqs, res: Response) {
         code: 200,
         loa: loa,
         aes: aes,
-        message: 'Success',
+        message: 'success',
         data: datas,
     };
 
@@ -75,7 +82,7 @@ export async function getdt(req: Reqs, res: Response) {
     let user = req.user?.username || 'guest';
 
     if (!dtid || dtid == '-1') {
-        return res.status(400).send({ code: 400 ,msg:"参数不全"});
+        return res.status(400).send({ code: 400, msg: "参数不全" });
     }
 
     if (req.user?.dtid != dtid.toString() && req.user?.dtid != "-1") {
@@ -86,7 +93,7 @@ export async function getdt(req: Reqs, res: Response) {
     if (dtT.length != 1) {
         return res.status(400).send({
             code: 400,
-            msg:"查询动态不存在"
+            msg: "查询动态不存在"
         })
     }
 
@@ -95,13 +102,13 @@ export async function getdt(req: Reqs, res: Response) {
     if (!resc) {
         return res.status(400).send({
             code: 400,
-            msg:"查询为空"
+            msg: "查询为空"
         })
     }
-    if(dtT[0].loa != 0 && dtT[0].loa != loa){
+    if (dtT[0].loa != 0 && dtT[0].loa != loa) {
         return res.status(400).send({
-            code:400,
-            msg:"未正确指定分级"
+            code: 400,
+            msg: "未正确指定分级"
         })
     }
     res.send({
@@ -115,30 +122,25 @@ export async function dtfinds(req: Reqs, res: Response) {
     const bq = req.query.bq;
     const loa = req.query.loa || 0;
     const user = req.user?.username || "guest";
-    //是否为标签
-    const isBq = req.query.isbq;
-    let numArr;
+
     if (!bq) {
         return res.send({ code: 400 });
     }
-    if (!Number(isBq)) {
-        //简单搜索
-        numArr = await dtFinds(bq as string, req.user?.username);
-    }
-    else {
-        numArr = await dtFind(bq as string);
-    }
+    //简单搜索
+    let numArr = await dtFinds(bq as string, req.user?.username, Number(loa));
 
     let List = await dtList(user, Number(loa));
+
     let newList = [];
     for (let id of numArr) {
         newList.push({
-            type: "A",
+            type: 'A',
             ...finds(id.id),
             score: id.num,
         })
     }
     let time = -(date - (+new Date())) / 1000;
+
     return res.send({ code: 200, time, data: newList, });
 
     function finds(id: string) {
@@ -148,9 +150,6 @@ export async function dtfinds(req: Reqs, res: Response) {
             }
         }
     }
-
-
-
 }
 
 export async function dtindex(req: Reqs, res: Response) {
@@ -162,6 +161,11 @@ export async function dtindex(req: Reqs, res: Response) {
         })
 
     }
+    if (req.user?.username != 'yw') {
+        return res.send({
+            code: 400,
+        })
+    }
     let falg = await setdtindex(Number(dtid), dtindex.toString(), 0);
     if (falg) {
         return res.send({ tf: 1 })
@@ -171,7 +175,7 @@ export async function dtindex(req: Reqs, res: Response) {
 }
 
 export async function postCom(req: Reqs, res: Response) {
-    if (!req.user?.username) {
+    if (!req.user?.username || req.user.username == 'guest') {
         return res.send({
             code: 400,
         })
@@ -210,8 +214,11 @@ export async function dtDates(req: Request, res: Response) {
 
 export async function dtDataImg(req: Reqs, res: Response) {
     let year = req.query.year || 2024;
+
     let title = '动态提交历史';
     const data = await dtDate(Number(year));
+    const dateNow = new Date();
+    data.push(`${dateNow.getFullYear()},${dateNow.getMonth() + 1},${dateNow.getDate()}`);
     let buffer = getDtDataImg(title, data);
     res.setHeader('Content-Type', 'image/jpg');
     res.send(buffer);
@@ -246,21 +253,43 @@ export async function dtimg(req: Reqs, res: Response) {
     }
 
 
-    let imgSrc = await dbSql<any>(`SELECT img_src FROM dt_img WHERE dt_id = ${dtid} AND img_index = ${index};`);
+    let imgSrc = (await dbSql<{ img_src: string, img_name: string }[]>(`SELECT img_src,img_name FROM dt_img WHERE dt_id = ${dtid} AND img_index = ${index};`))[0];
 
-    let filename = imgSrc[0].img_src;
+    if (!imgSrc) {
+        let filePath = path.join(getUrl('root', 'assets'), './dtimg/imgError.png');
+        res.sendFile(filePath);
+    }
 
+    //资源路径
     let urls = path.join(getUrl('root', 'assets'));
-    let filePath = path.join(urls, filename);
+    //文件名
+    let filename = imgSrc.img_name;
+    //文件路径
+    let fileurl = path.join(urls, imgSrc.img_src);
 
-    if (!fileIsDir(urls + '/dtimg', filename.slice(8))) {
+    //文件全名
+    let filePath = path.join(fileurl, filename);
+
+    //缩略图缓存目录
+    let img_log = path.join(urls, "dtimg_log");
+
+    // 缩略图路径
+    let thumbPath = path.join(img_log, filename);
+
+
+    if (!fileIsDir(fileurl, filename)) {
         filePath = path.join(urls, './dtimg/imgError.png')
     }
 
     if (isImg == '0' || !isImg) {
+        if (fileIsDir(img_log, filename)) {
+            return res.sendFile(thumbPath);
+        }
         try {
             // 使用 sharp 来压缩图片
-            const data = await imgCompression(filePath, 460, 460);
+            const data = await imgCompression(filePath, 460, 460, thumbPath);
+            console.log('压缩');
+
 
             res.writeHead(200, {
                 'Content-Type': 'image/png',
@@ -268,13 +297,8 @@ export async function dtimg(req: Reqs, res: Response) {
             });
             res.end(data);
         } catch {
-            // 使用 sharp 来压缩图片
-            const data = await imgCompression(path.join(urls, './dtimg/imgError.png'), 460, 460);
-            res.writeHead(200, {
-                'Content-Type': 'image/png',
-                'Content-Length': data.length
-            });
-            return res.end(data);
+            filePath = path.join(urls, './dtimg/imgError.png');
+            res.sendFile(filePath);
         }
     } else {
         res.sendFile(filePath);
@@ -318,10 +342,10 @@ export async function dtimgs(req: Request, res: Response) {
 //获取视频的地址
 async function getVideoSrc(dtid: number, index: number) {
     let videoSrc = await dbSql<any>(`SELECT video_src FROM dt_video WHERE dt_id = ${dtid} AND video_index = ${index};`);
-    
-        if (videoSrc.length == 0) {
-            return
-        }
+
+    if (videoSrc.length == 0) {
+        return
+    }
     //视频路径（包含文件名）
     let fileSrc = path.join(getUrl('root', 'assets'), videoSrc[0].video_src);
 
@@ -365,7 +389,7 @@ export async function dtvideo(req: Request, res: Response) {
 
 
     let file = await getVideoSrc(dtid, index);
-    if(file == undefined){
+    if (file == undefined) {
         return res.send({ code: 402 });
     }
 
@@ -496,7 +520,7 @@ export async function dtvideoImg(req: Reqs, res: Response) {
 
 
     let file = await getVideoSrc(dtid, index);
-    if(file == undefined){
+    if (file == undefined) {
         return res.send({ code: 402 });
     }
 
@@ -617,16 +641,19 @@ export async function postdt(req: Request, res: Response) {
 
         //移动图片
         for (let i = 0; i < imgArr.length; i++) {
+            let url = 'dtimg';
+            if (loa == 13) {
+                url = 'dtimg_13';
+            }
             const path1 = path.join(getUrl('root', 'assets/dtimg_temp'), imgArr[i]);
-            const path2 = path.join(getUrl('root', 'assets/dtimg'), imgArr[i]);
+            const path2 = path.join(getUrl('root', 'assets', url), imgArr[i]);
             try {
                 fs.renameSync(path1, path2);
             } catch (error) {
                 console.log(error);
-
                 return res.send({ code: 500 });
             }
-            img[i] = './dtimg/' + imgArr[i];
+            img[i] = imgArr[i];
         }
     }
 
@@ -652,8 +679,14 @@ export async function postdt(req: Request, res: Response) {
 
     //处理图片文件夹
     if (imgDir) {
+
         let urls = getUrl('root', 'assets', 'dtimgUpTemp');
-        let urls2 = getUrl('root', 'assets/dtimg');
+        let urls2 = getUrl('root', 'assets');
+        if (loa == 13) {
+            urls2 = path.join(urls2, 'dtimg_13');
+        } else {
+            urls2 = path.join(urls2, 'dtimg');
+        }
         let urls3 = getUrl('root', 'assets/dtvideo');
         let falg = fs.existsSync(urls);
         if (!falg) {
@@ -723,21 +756,55 @@ export async function postdt(req: Request, res: Response) {
 
     let id = await getIdMax();
 
-    //loa是否为13
-    if (loa == 13) {
-        text = "^AES^" + jiamiString(text, Key.B13);
-    }
+
 
     img_all_num = img.length.toString();
     videoNum = video.length.toString();
-    const im = setImg(id, img);
+    let im;
     const vi = setVideo(id, video);
+
+    //loa是否为13
+    if (loa == 13) {
+        text = "^AES^" + jiamiString(text, Key.B13);
+        im = setImg(id, img, 'dtimg_13');
+    } else {
+        im = setImg(id, img, 'dtimg');
+    }
+
+
     const dt = setDt(id, 'yw', text, img_show_num, img_all_num, videoNum, date, loa);
     Promise.all([im, vi, dt]).then((a) => {
         res.send({ tf: 1 });
     })
 }
 
+export async function getLongText(req: Reqs, res: Response) {
+    //鉴权
+    if (!req.user || req.user.username != 'yw') {
+        return res.status(400).send({
+            code: 400
+        })
+    }
+
+
+
+
+
+    let dtid = req.query.dtid as string;
+    if (!dtid) {
+        return res.status(400).send({
+            code: 400
+        })
+    }
+    let data = await getDtLongData(dtid);
+
+    res.send({
+        code: 200,
+        data: data
+    });
+
+
+}
 
 export function getFile(dtid: number, imgNun: number, videoNum: number) {
     let urls = getUrl('root', 'assets', 'dtimgUpTemp');
@@ -803,16 +870,19 @@ export function getFile(dtid: number, imgNun: number, videoNum: number) {
 
     }
 
-    const im = setImg(dtid.toString(), img, imgNun);
+    const im = setImg(dtid.toString(), img, 'dtimg', imgNun);
     const vi = setVideo(dtid.toString(), video, videoNum);
 }
 
 
 
-export async function delDts(req: Request, res: Response) {
+export async function delDts(req: Reqs, res: Response) {
     const dtId = req.body.id;
     if (!dtId) {
         return res.send({ tf: 0 });
+    }
+    if (req.user?.username != 'yw') {
+        return res.send({ code: 400, tf: 0 });
     }
     const a: any = await delDt(dtId);
     if (a.tf == 1) {
@@ -824,13 +894,14 @@ export async function delDts(req: Request, res: Response) {
 
 export function getemoji(req: Request, res: Response) {
     const lei = req.query.lei as string;
-    const name = req.query.name as string;
-    if (!lei || !name) {
+    // const name = req.query.name as string;
+    if (!lei) {
         res.setHeader('Content-Type', 'png/image');
-        res.send(getemojis('weixin', '微信.png'))
+        // res.send(getemojis('weixin', '微信.png'))
+        res.status(400).send({ code: 400 });
     }
     res.setHeader('Content-Type', 'png/image');
-    res.send(getemojis(lei, name));
+    res.send(getemojis(lei));
 }
 
 export function getemojilist(req: Request, res: Response) {
@@ -967,6 +1038,9 @@ export async function lviobj(req: Request, res: Response) {
 }
 
 export async function upDtData(req: Request, res: Response) {
+    if (req.query.passwd != '2004') {
+        return res.status(400).send({ code: 400, msg: 'error' });
+    }
     myEvent.emit('upDtList', 'mysql');
     res.send({ code: 200, msg: 'ok' });
 }

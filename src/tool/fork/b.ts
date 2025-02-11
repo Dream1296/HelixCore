@@ -1,30 +1,34 @@
-import { getUrl } from "@/pathUtils";
-import { dbSql } from "@/utils/dbSql";
 import Tesseract from "tesseract.js";
 import fs from 'fs';
-import { fork } from 'child_process';
+
 
 // 监听来自父进程的消息
-process.on('message', async (msg:{ src: string, id: string }) => {
+process.on('message', async (msg: { src: string, id: string }) => {
 
     let text = await recognizeTextFromImage(msg.src);
 
     let datas = {
         text,
-        id:msg.id
+        id: msg.id
     }
-    // process.send({reply:"123"})
-    if(process && process.send){
+    if (process && process.send) {
         process.send(datas);
     }
-
 });
 
 
 
 
 
-export async function recognizeTextFromImage(imagePath: string): Promise<string> {
+//图片文本识别
+async function recognizeTextFromImage(imagePath: string): Promise<string> {
+
+    // 检查路径是否存在并且是一个文件
+    if (!(fs.existsSync(imagePath) && fs.statSync(imagePath).isFile())) {
+        console.error(`文件不存在`);
+        return 'Error';
+    }
+
     try {
         const result = await Tesseract.recognize(
             imagePath,
@@ -33,16 +37,12 @@ export async function recognizeTextFromImage(imagePath: string): Promise<string>
                 logger: (m) => console.log(m) // 可以选择性地记录进度
             }
         );
-        return removeSpaces(result.data.text); // 返回识别的文本
+        let text = result.data.text;
+        return text.replace(/\s+/g, '');  //去除空格
     } catch (error) {
         // console.error('OCR识别失败:', error);
         // throw error;
         console.log('error');
         return 'eooer'
     }
-}
-
-
-function removeSpaces(text: string): string {
-    return text.replace(/\s+/g, ''); // 使用正则表达式去掉所有空格
 }

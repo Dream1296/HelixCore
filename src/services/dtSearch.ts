@@ -33,11 +33,11 @@ export async function dtFind(word: string) {
 }
 
 //简单搜索
-export async function dtFinds(word: string,user:string | undefined) {
+export async function dtFinds(word: string,user:string | undefined,loa:number) {
     let List;
 
     if(user){
-        List = await dtList(user, 1);
+        List = await dtList(user, loa);
     }else{
         List = await dtList('yw',0);
     }

@@ -14,8 +14,13 @@ async function dtList(user: string, loa: number | string) {
     let comment: Comtent[] = await dtComment();
 
     for (let i = 0; i < list.length; i++) {
+        list[i].textTile = "";
+    }
+
+    for (let i = 0; i < list.length; i++) {
         let com = findCom(list[i], comment);
         list[i].com = com;
+
     }
 
     let keywords: { keyword: string, dt_id: string, isAi: number }[] = await sqlGetDtIndexAll() as { keyword: string, dt_id: string, isAi: number }[];
@@ -46,6 +51,16 @@ async function dtList(user: string, loa: number | string) {
         lists.longVideo.push({ id: a.id, name: a.name, src: a.src });
     }
 
+    let textList = await getText();
+    for (let a of textList) {
+        let b = list.find(obj => obj.id == a.dtid);
+        if (!b) {
+            continue;
+        }
+        b.textTile = a.title;
+    }
+
+
     //排序
     const sortedArray = list.sort((a, b) => {
         // 先比较 po 属性，从大到小排序  
@@ -68,6 +83,13 @@ export async function getRedisListData(user: string, loa: Number, aes: Number) {
 
     let data = await redisDB.get(key) as string;
     return JSON.parse(data) as Lists[];
+}
+
+
+//查询动态长文
+export async function getText() {
+    let data = await dbSql<{ id: number, dtid: string, title: string, data: string, user: string, loa: number, notes: string }[]>('SELECT * FROM dt_text')
+    return data;
 }
 
 
@@ -249,15 +271,14 @@ async function dtDate(year: number | string) {
 }
 
 //添加图片
-export async function setImg(id: string, imgArr: string[], headNum?: number) {
+export async function setImg(id: string, imgArr: string[], imgSrc: string, headNum?: number) {
     let falg = true;
     if (!headNum) {
         headNum = 0;
     }
     for (let i = headNum; i < imgArr.length; i++) {
-        let sql = `INSERT into dt_img (dt_id,img_index,img_src) VALUES (?,?,?)`;
-
-        let a = await dbSql<number>(sql, [id, i.toString(), imgArr[i]]);
+        let sql = `INSERT into dt_img (dt_id,img_index,img_src,img_name) VALUES (?,?,?,?)`;
+        let a = await dbSql<number>(sql, [id, i.toString(), imgSrc, imgArr[i]]);
         if (a != 1) {
             falg = false;
         }
@@ -311,6 +332,14 @@ async function setDtCom(date: string, content: string, dtId: string, commentsUse
     }
     return { tf: 0 };
 
+}
+
+export async function getDtLongData(dtid: string) {
+    let data = await dbSql<{ dtid: string, data: string, type: string, notes: string }[]>("SELECT * FROM dt_text  WHERE dtid = ?", [dtid]);
+    if (data.length != 1) {
+        return null;
+    }
+    return data[0];
 }
 
 export async function setDtM(id: string, updates: any) {
