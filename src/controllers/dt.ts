@@ -282,6 +282,13 @@ export async function dtimg(req: Reqs, res: Response) {
     }
 
     if (isImg == '0' || !isImg) {
+        if (filename.endsWith('.gif')) {
+            return res.sendFile(filePath, {
+                headers: {
+                    'Content-Type': 'image/gif' // 设置响应头为 GIF 格式
+                }
+            });
+        }
         if (fileIsDir(img_log, filename)) {
             return res.sendFile(thumbPath);
         }
@@ -776,6 +783,12 @@ export async function postdt(req: Request, res: Response) {
     Promise.all([im, vi, dt]).then((a) => {
         res.send({ tf: 1 });
     })
+
+    // Promise.all([im, vi ]).then((a) => {
+    //     res.send({ tf: 1 });
+    // })
+
+
 }
 
 export async function getLongText(req: Reqs, res: Response) {

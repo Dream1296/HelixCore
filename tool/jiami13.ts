@@ -1,12 +1,12 @@
-const mi = require("./src/utils/usErcrypto");
-const db = require('./src/config/db/mysql');
+import * as crypto from 'crypto';
+// const db = require('./src/config/db/mysql');
 
 let key = "A8412640";
 
 let text1 = ``
 
-let res = mi.jiamis(text1,key);
-console.log(res);
+let res = jiamiString(text1,key);
+console.log("^AES^" + res);
 
 // sqlC<{id:number,text:string}[]>('SELECT id,text FROM dt WHERE loa = 13;')
 // .then( 
@@ -35,28 +35,43 @@ console.log(res);
 
 
 // sql语句执行
-function sqlC<T>(sqlStr: string,canshu?:string[]):Promise<T> {
+// function sqlC<T>(sqlStr: string,canshu?:string[]):Promise<T> {
 
-    return new Promise((resolve, rejects) => {
-        if(canshu){
-            db.query(sqlStr,canshu, (error: any, results: any) => {
-                if (error) {
+//     return new Promise((resolve, rejects) => {
+//         if(canshu){
+//             db.query(sqlStr,canshu, (error: any, results: any) => {
+//                 if (error) {
     
-                }
-                resolve(results)
-            })
-        }else{
-            db.query(sqlStr, (error: any, results: any) => {
-                if (error) {
+//                 }
+//                 resolve(results)
+//             })
+//         }else{
+//             db.query(sqlStr, (error: any, results: any) => {
+//                 if (error) {
     
-                }
-                resolve(results)
-            })
-        }
+//                 }
+//                 resolve(results)
+//             })
+//         }
        
-    })
-}
+//     })
+// }
 
+
+function jiamiString(text: string, password: string): string {
+    // 使用密码生成密钥
+    const key: Buffer = crypto.createHash('sha256').update(password).digest();
+  
+    // 创建加密器，不使用IV
+    const cipher: crypto.Cipher = crypto.createCipheriv('aes-256-cbc', key, Buffer.alloc(16));
+  
+    // 加密文本
+    let encryptedString: string = cipher.update(text, 'utf8', 'hex');
+    encryptedString += cipher.final('hex');
+  
+    return encryptedString;
+  }
+  
 
 
 
