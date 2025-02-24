@@ -79,7 +79,10 @@ export function setLog(req: Request, res: Response, next: NextFunction) {
 
     serverRes.on('finish', (e: any) => {
         const duration = Date.now() - start;
-        let sql = "INSERT INTO `dream_req_log` (`id`,`req_url`,`ip`, `req_query`, `req_headers`, `req_body`, `req.file`, `time_start`, `time_duration`, `res_body`) VALUES (NULL,?, ?,?,?,?,?,?,?,?);"
+        if(path == '/api/getLongText'){
+            resBody = "null";
+        }
+        let sql = "INSERT INTO `dream_req_log` (`id`,`req_url`,`ip`, `req_query`, `req_headers`, `req_body`, `req_file`, `time_start`, `time_duration`, `res_body`) VALUES (NULL,?, ?,?,?,?,?,?,?,?);"
         dbSql(sql, [path, ip, requestQuery, requestHeaders, requestBody, file, startTime, duration, resBody], true)
             .then((len)=>{
 

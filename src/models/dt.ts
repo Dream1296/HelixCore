@@ -3,6 +3,8 @@ import { Comtent, List, Lists } from "../type";
 const mi = require("../utils/usErcrypto");
 const db = require('../config/db/mysql');
 import { dbSql } from "@/utils/dbSql";
+import moment from "moment";
+import { chinese_English } from "@/tool/chineseTrEnglish";
 
 
 
@@ -12,6 +14,8 @@ async function dtList(user: string, loa: number | string) {
     let list: Lists[] = await dtLists(user, loa);
 
     let comment: Comtent[] = await dtComment();
+
+    jiamiConmit(comment,loa);
 
     for (let i = 0; i < list.length; i++) {
         list[i].textTile = "";
@@ -94,6 +98,7 @@ export async function getText() {
 
 
 
+
 //找动态中的评论
 function findCom(list: Lists, comment: Comtent[]) {
     let id = list.id;
@@ -152,7 +157,8 @@ export async function dtComment(findId?: number | string): Promise<Comtent[]> {
     dt_comments.content,  
     dt_comments.dtId,  
     dt_comments.commentsUser,  
-    dt_name.name  
+    dt_name.name ,
+    dt_comments.loa
 FROM  
     dt_comments  
 JOIN     
@@ -167,6 +173,17 @@ ORDER BY dt_comments.date ASC;`;
     let data = await dbSql<Comtent[]>(sqlStr);
     return data;
 
+}
+
+// 加密评论
+function jiamiConmit(Comtent:Comtent[],loa:number | string){
+    if(Number(loa) == 0){
+        for(let i = 0; i < Comtent.length; i++){
+            if(Comtent[i].loa != 0){
+                Comtent[i].content = chinese_English( Comtent[i].content);
+            } 
+        }
+    }
 }
 
 //单个动态的数据
@@ -311,10 +328,10 @@ export async function getIdMax() {
 //添加主数据
 async function setDt(id: string, user: string, text: string, img_show_num: string, img_all_num: string, video_num: string,
     date: string, loa: string, idea?: string): Promise<boolean> {
-
-    let sql = `INSERT INTO dt (id,user, text, img,img_show_num, img_all_num ,video,video_num, date, loa) VALUES 
-                (?,?, ?, '0', ?, ?, '0', ?,?,?  );`;
-    let canshuArr = [id, user, text, img_show_num, img_all_num, video_num, date, loa];
+    let dateReal = moment().format('YYYY-MM-DD HH:mm');
+    let sql = `INSERT INTO dt (id,user, text, img,img_show_num, img_all_num ,video,video_num, date, loa,date_real) VALUES 
+                (?,?, ?, '0', ?, ?, '0', ?,?,?,?  );`;
+    let canshuArr = [id, user, text, img_show_num, img_all_num, video_num, date, loa, dateReal];
     let a = await dbSql<number>(sql, canshuArr, true);
     if (a == 1) {
         return true
@@ -324,7 +341,7 @@ async function setDt(id: string, user: string, text: string, img_show_num: strin
 }
 
 async function setDtCom(date: string, content: string, dtId: string, commentsUser: string) {
-    let sql = "INSERT INTO dt_comments (date, content, dtId, commentsUser) VALUES (?,?,?,?)";
+    let sql = "INSERT INTO dt_comments (date, content, dtId, commentsUser,loa) VALUES (?,?,?,?,0)";
     let canshuArr = [date, content, dtId, commentsUser];
     let a = await dbSql(sql, canshuArr, true);
     if (a == 1) {

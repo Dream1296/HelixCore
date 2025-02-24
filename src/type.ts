@@ -79,6 +79,7 @@ export interface Comtent {
     dtId: string,
     commentsUser: string,
     name: string,
+    loa:number,
 }
 
 export interface TokenObj {
