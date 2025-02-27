@@ -1,5 +1,5 @@
 import { redisDB } from "@/config/db/redis";
-import { Comtent, List, Lists } from "../type";
+import { Comtent, List, Lists, dtFile } from "../type";
 const mi = require("../utils/usErcrypto");
 const db = require('../config/db/mysql');
 import { dbSql } from "@/utils/dbSql";
@@ -15,7 +15,7 @@ async function dtList(user: string, loa: number | string) {
 
     let comment: Comtent[] = await dtComment();
 
-    jiamiConmit(comment,loa);
+    jiamiConmit(comment, loa);
 
     for (let i = 0; i < list.length; i++) {
         list[i].textTile = "";
@@ -24,7 +24,16 @@ async function dtList(user: string, loa: number | string) {
     for (let i = 0; i < list.length; i++) {
         let com = findCom(list[i], comment);
         list[i].com = com;
+    }
 
+    let dtFile = await getDtFile();
+    for (let a of dtFile) {
+        let lists = list.find(obj => Number(obj.id) == a.dt_id);
+        if (lists) {
+            lists.File = {
+                name: a.name
+            }
+        }
     }
 
     let keywords: { keyword: string, dt_id: string, isAi: number }[] = await sqlGetDtIndexAll() as { keyword: string, dt_id: string, isAi: number }[];
@@ -94,6 +103,12 @@ export async function getRedisListData(user: string, loa: Number, aes: Number) {
 export async function getText() {
     let data = await dbSql<{ id: number, dtid: string, title: string, data: string, user: string, loa: number, notes: string }[]>('SELECT * FROM dt_text')
     return data;
+}
+
+
+//列表追加
+function fusionObj(list: Lists[],) {
+
 }
 
 
@@ -176,12 +191,12 @@ ORDER BY dt_comments.date ASC;`;
 }
 
 // 加密评论
-function jiamiConmit(Comtent:Comtent[],loa:number | string){
-    if(Number(loa) == 0){
-        for(let i = 0; i < Comtent.length; i++){
-            if(Comtent[i].loa != 0){
-                Comtent[i].content = chinese_English( Comtent[i].content);
-            } 
+function jiamiConmit(Comtent: Comtent[], loa: number | string) {
+    if (Number(loa) == 0) {
+        for (let i = 0; i < Comtent.length; i++) {
+            if (Comtent[i].loa != 0) {
+                Comtent[i].content = chinese_English(Comtent[i].content);
+            }
         }
     }
 }
@@ -258,6 +273,23 @@ async function iskeywords(id: number, keyword: string) {
         }
     }
     return false;
+}
+
+//获取动态文件目录
+export async function getDtFile() {
+    let sql = "SELECT * FROM `dt_file`";
+    let data = await dbSql<dtFile[]>(sql);
+    return data;
+}
+
+//根据dtid查询文件
+export async function findFile(id: string) {
+    if(!id){
+        return undefined
+    }
+    let sql = "SELECT * FROM dt_file where dt_id = ?";
+    let data = await dbSql<dtFile[]>(sql,[id]);
+    return data;
 }
 
 //查询动态id对应信息

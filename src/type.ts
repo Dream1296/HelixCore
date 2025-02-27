@@ -43,6 +43,7 @@ export interface Lists {
     com?: Comtent[];
     longVideo?: { id: number, name: string, src: string }[];
     keyword?: { keyword: string, isAi: number }[];
+    File?:{name:string};
     bgStyle:number;
     textTile:string;
     loa:number
@@ -80,6 +81,14 @@ export interface Comtent {
     commentsUser: string,
     name: string,
     loa:number,
+}
+
+//动态的文件
+export interface dtFile {
+    dt_id:number,
+    name:string,
+    file_src:string,
+    loa:number
 }
 
 export interface TokenObj {

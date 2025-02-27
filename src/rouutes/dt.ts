@@ -8,7 +8,9 @@ import {
     setDtBgStyles, upDtData, setDts,
     getShare,
     setShare,
-    getLongText
+    getLongText,
+    linkScreenShow,
+    dtFile
 }
     from '@/controllers/dt';
 import { PublishAfterExecution } from '@/services/upListData';
@@ -95,6 +97,14 @@ app.get('/getShare', getShare);
 
 //设置分享
 app.post('/setShare', setShare);
+
+//墨水屏显示
+app.get('/linkScreenShow',linkScreenShow);
+
+//文件链接
+app.get('/dtFile', dtFile);
+
+
 
 // 刷新redis
 app.get('/upDtData', upDtData);

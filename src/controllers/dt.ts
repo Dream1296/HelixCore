@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, getLongVideoList, setDtBgStyle, getRedisListData, setDtM, setShareDb, setUserss, getShareDbToken, dtidS, getDtLongData } from '../models/dt';
+import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, getLongVideoList, setDtBgStyle, getRedisListData, setDtM, setShareDb, setUserss, getShareDbToken, dtidS, getDtLongData, findFile } from '../models/dt';
 import { getemojis } from '../models/emoji';
 import { List, Reqs } from '../type';
 import path, { join } from 'path';
@@ -27,6 +27,7 @@ import { getShareToken } from '@/services/token';
 import { Query } from '../middlewares/routesType';
 import * as t from 'io-ts';
 import sharp from 'sharp';
+import { getlinkScreen, processImageForEInk } from '@/services/linkScreen';
 
 
 
@@ -1133,6 +1134,62 @@ export async function setShare(req: Reqs, res: Response) {
         })
 }
 
+export async function linkScreenShow(req: Reqs, res: Response) {
+
+
+    let buffer = getlinkScreen();
+    let data = await processImageForEInk(buffer);
+    console.log(data?.length);
+
+    // res.setHeader('Content-Type', 'image/jpg');
+    res.send({
+        code: 200,
+        data: data,
+        md5: "123"
+    })
+
+}
+
+export async function dtFile(req: Reqs, res: Response) {
+    let dtId = req.query.dtid;
+    if (!dtId) {
+        return res.send({
+            code: 401,
+        })
+    }
+
+    let fileObj = await findFile(dtId.toString());
+    if (!fileObj || fileObj.length == 0) {
+        return res.send({
+            code: 401,
+        })
+    }
+    let fileSrc = getUrl('root', 'assets/file', fileObj[0].file_src);
+
+    // 检查文件是否存在
+    fs.access(fileSrc, fs.constants.F_OK, (err) => {
+        if (err) {
+            // 文件不存在，返回 404 错误
+            return res.status(404).send('File not found');
+        }
+
+        // 设置下载的文件名（可选，你可以从 file_src 中提取或设置其他名称）
+        // let expandName = fileObj[0].file_src.split('.')[fileObj[0].file_src.split('.').length -1 ];
+        const fileName = path.basename( fileObj[0].name + "&&"+ fileObj[0].file_src);
+        res.download(fileSrc, fileName, (err) => {
+            if (err) {
+                // 处理下载错误
+                console.error('Error downloading file:', err);
+                res.status(500).send('Error downloading file');
+            } else {
+                // 下载成功
+                console.log('File downloaded successfully');
+            }
+        });
+    })
+
+}
+
 function generateRandomString(length: number) {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let result = '';
@@ -1143,3 +1200,5 @@ function generateRandomString(length: number) {
     }
     return result;
 }
+
+
