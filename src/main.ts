@@ -7,6 +7,7 @@ import path from 'path';
 import http2 from 'http2';
 // @ts-ignore
 import { createServer } from 'express-http2';
+import fs from 'fs';
 
 
 const app = express();
@@ -23,6 +24,7 @@ app.use(configs);
 
 //事件监听
 import "@/services/emits";
+import { getUrl } from './pathUtils';
 
 //中间件
 app.use(mid);
@@ -66,7 +68,7 @@ app.get('/', (req: Request, res: Response) => {
 // const server = expressHttp2.createServer(sslConfig, app);
 
 
-  
+
 // 创建 HTTPS 服务器
 // const servers = https.createServer(sslConfig, app);
 
@@ -77,8 +79,18 @@ app.get('/', (req: Request, res: Response) => {
 // webSocketInit(servers);
 app.listen(3010, () => {
     // console.log('启动成功，端口3010');
+    let fontSrc = getUrl('root', 'assets/font/standard.flf');
+    console.log(fontSrc);
+
+    let fontData = fs.readFileSync(fontSrc, "utf8");
+    // 注册字体到 figlet
+    figlet.parseFont('standard', fontData);
+
+    
     figlet.text(
-        "Dream1296",
+        "Dream1296", {
+        font: "standard"
+    },
         function (err: any, data: any) {
             if (err) {
                 console.log("启动成功,端口3010");
@@ -87,4 +99,5 @@ app.listen(3010, () => {
             console.log(data);
         }
     );
+    console.log("启动成功,端口3010");
 });

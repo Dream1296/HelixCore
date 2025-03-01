@@ -29,21 +29,6 @@ img/bgImg   背景图片
 
 
 
-web API列表
-登录
-POST /api/login
-传入值
-{
-    "username":"XXX",
-    "passwd":"XXXX"
-}
-返回值
-{
-    "code": "200",
-    "message": "OK",
-    "token": "xxx"
-}
-
 
 修改添加到暂存区
 git add .

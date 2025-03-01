@@ -61,7 +61,6 @@ app.post('/upvideo', uploadVideos, upvideo);
 //获取动态长文本数据
 app.get('/getLongText',getLongText);
 
-
 //提交动态
 app.post("/postdt", postdt);
 
@@ -103,6 +102,8 @@ app.get('/linkScreenShow',linkScreenShow);
 
 //文件链接
 app.get('/dtFile', dtFile);
+
+
 
 
 
