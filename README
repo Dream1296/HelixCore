@@ -14,17 +14,13 @@ public/userImg  头像存放目录
 key.json    连接信息
 ssl/        ssl证书
 public/     静态资源目录
-
 public/web   前端静态资源目录
-
 public/emoji   表情包
 public/userImg  头像
-
-
-
 img/        资源目录
-
 img/bgImg   背景图片
+
+
 
 
 

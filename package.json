@@ -1,7 +1,7 @@
 {
   "name": "dreams",
   "version": "1.0.0",
-  "description": "文件存放规范 src/config  配置文件夹 src/config/db  数据库连接配置文件 src/routes   路由处理 src/controllers 控制器 src/services  服务 src/models  数据模型 src/middlewares  中间件 src/utils  工具函数",
+  "description": "",
   "main": "main.js",
   "type": "commonjs",
   "scripts": {
@@ -10,13 +10,10 @@
     "copy-js": "copyfiles -u 1 \"src/**/*.js\" dist",
     "start": "node dist/main.js",
     "test": "node esbuild.config.js",
-    "dev": "nodemon --config nodemon.json --exec ts-node-dev -r tsconfig-paths/register src/main.ts",
-    "dev_olds": "nodemon --config nodemon.json --exec \"ts-node -r tsconfig-paths/register esbuild.config.js && node distDev/main.js\"",
-    "desv_old": "nodemon --watch src --exec \"ts-node -r tsconfig-paths/register esbuild.config.ts\" && node distDev/main.js",
-    "dev-new": "nodemon --exec \"swc-node src/main.ts\" --watch src",
+    "dev": "nodemon --watch src --ext ts --exec 'node esbuild.config.js && node distDev/index.js'",
+    "devs": "nodemon --config nodemon.json --exec ts-node-dev -r tsconfig-paths/register src/main.ts",
     "img": " ts-node -r tsconfig-paths/register src/tool/fork/a.ts",
-    "ts-run": "ts-node -r tsconfig-paths/register /tool/*",
-    "devs": "nodemon --watch src --ext ts --exec 'node esbuild.config.js && node distDev/index.js'"
+    "ts-run": "ts-node -r tsconfig-paths/register /tool/*"
   },
   "_moduleAliases": {
     "@": "dist"

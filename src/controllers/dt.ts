@@ -18,7 +18,7 @@ import { jiamiString } from '../utils/cryptoUtils';
 import { dbSql } from '@/utils/dbSql';
 import { getUrl } from '@/pathUtils';
 import { Key } from '@/utils/passwd';
-// import { getDtDataImg } from '@/services/dtDataT';
+import { getDtDataImg } from '@/services/dtDataT';
 import { dtDataAdd } from '@/services/dtDataAdd';
 import { spawn } from 'child_process';
 import { emit } from 'process';
@@ -216,16 +216,15 @@ export async function dtDates(req: Request, res: Response) {
 }
 
 export async function dtDataImg(req: Reqs, res: Response) {
-    // let year = req.query.year || 2024;
+    let year = req.query.year || 2024;
 
-    // let title = '动态提交历史';
-    // const data = await dtDate(Number(year));
-    // const dateNow = new Date();
-    // data.push(`${dateNow.getFullYear()},${dateNow.getMonth() + 1},${dateNow.getDate()}`);
-    // let buffer = getDtDataImg(title, data);
-    // res.setHeader('Content-Type', 'image/jpg');
-    // res.send(buffer);
-    res.send({code:200})
+    let title = '动态提交历史';
+    const data = await dtDate(Number(year));
+    const dateNow = new Date();
+    data.push(`${dateNow.getFullYear()},${dateNow.getMonth() + 1},${dateNow.getDate()}`);
+    let buffer = getDtDataImg(title, data);
+    res.setHeader('Content-Type', 'image/jpg');
+    res.send(buffer);
 }
 
 //获取缩略图
