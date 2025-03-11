@@ -1,5 +1,5 @@
 import { redisDB } from "@/config/db/redis";
-import { Comtent, List, Lists, dtFile } from "../type";
+import { Comtent, KeepRunRecord, List, Lists, dtFile } from "../type";
 const mi = require("../utils/usErcrypto");
 const db = require('../config/db/mysql');
 import { dbSql } from "@/utils/dbSql";
@@ -31,7 +31,8 @@ async function dtList(user: string, loa: number | string) {
         let lists = list.find(obj => Number(obj.id) == a.dt_id);
         if (lists) {
             lists.File = {
-                name: a.name
+                name: a.name,
+                fileId: a.dt_id.toString()
             }
         }
     }
@@ -73,6 +74,17 @@ async function dtList(user: string, loa: number | string) {
         b.textTile = a.title;
     }
 
+    //运动
+    let runList = await getKeepRunList();    
+    for (let a of runList) {
+        let b = list.find(obj => obj.id == a.dt_id);
+        if (!b) {
+            continue;
+        }
+        a.ocr_text = "0";
+        b.KeepRun = a;
+    }
+
 
     //排序
     const sortedArray = list.sort((a, b) => {
@@ -109,6 +121,12 @@ export async function getText() {
 //列表追加
 function fusionObj(list: Lists[],) {
 
+}
+
+//获取跑步信息
+async function getKeepRunList() {
+    let list = await dbSql<KeepRunRecord[]>('SELECT * FROM `keep_run`');
+    return list
 }
 
 
@@ -284,11 +302,11 @@ export async function getDtFile() {
 
 //根据dtid查询文件
 export async function findFile(id: string) {
-    if(!id){
+    if (!id) {
         return undefined
     }
     let sql = "SELECT * FROM dt_file where dt_id = ?";
-    let data = await dbSql<dtFile[]>(sql,[id]);
+    let data = await dbSql<dtFile[]>(sql, [id]);
     return data;
 }
 

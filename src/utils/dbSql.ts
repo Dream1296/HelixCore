@@ -15,6 +15,8 @@ export function dbSql<T>(sqlStr: string, canshu?: any[], isPut?: boolean): Promi
         // 执行 SQL 查询
         db.query(sqlStr, canshu, (error: any, results: any) => {
             if (error) {
+                console.log(error.message);
+                
                 return reject(error);  
             }
 

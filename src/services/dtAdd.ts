@@ -1,26 +1,59 @@
 import axios from "axios";
-import { Comtent, List } from "../type";
+import { Comtent, List, Lists } from "../type";
+import { weatherData } from "@/controllers/weather";
+import { WeatherResponse, getWeatherData } from "@/models/weather";
 
-
-export async function dtAdd(dtData: List[]) {
-    
-    let a = await wyy();
-    let data1: List = {
+let wywData:{name:string,touxian:string,content:string};
+let Weather:WeatherResponse;
+export async function dtAdd(dtData: Lists[]) {
+    let data: Lists = {
+        id: "999",
         user: "yw",
-        name: a.name,
-        touxian: a.touxian,
-        text: a.content,
-        img: '0',
-        video: '0',
+        name: "",
+        touxian: "",
+        touxianUrl:"",
+        text: "",
         date: (new Date()).toISOString(),
-        id: "",
-        idea: "0"
+        imgShowAll: 0,
+        imgAllNum: 0,
+        videoNum: 0,
+        imgUrl:"",
+        po: 0,
+        bgStyle: 0,
+        textTile: "",
+        loa: 0
     }
-    addDt(0, data1, dtData);
+    // getWeatherDatas()
+    let data1 = await wywAdd(data);
+    // let data2 = 
+    return [data1 , ...dtData ];
+
+
+    // addDt(0, data1, dtData);
 }
 
-//网易云热评
-async function wyy() {
+//
+async function wywAdd(data: Lists){
+    let __data = {...data};
+    if(!wywData){
+        wywData = await getWyyData();
+    }
+    __data.name = wywData.name;
+    // data.imgUrl = wywData.
+    __data.text = wywData.content;
+    __data.touxianUrl = wywData.touxian;
+
+    getWyyData()
+        .then(data =>{
+            wywData = data;
+        })
+
+    return __data;
+
+}
+
+
+async function getWyyData() {
     let data = await axios.get('https://api.uomg.com/api/comments.163');
     
     return {
@@ -29,27 +62,9 @@ async function wyy() {
         content: data.data.data.content,
     }
 }
+ 
 
-function addDt(index: number, data: List, dtData: List[]) {
+function addWeather(data: Lists){
 
-
-
-    let newData: List[];
-    if (index >= dtData.length) {
-        newData = [...dtData, data];
-        let i = 0;
-        newData.forEach(e => {
-            dtData[i++] = e;
-        })
-        return
-    }
-
-    const arr = dtData.slice(0, index);
-    const end = dtData.slice(index);
-    newData = [...arr, data, ...end];
-    let i = 0;
-    newData.forEach(e => {
-        dtData[i++] = e;
-    })
 }
 

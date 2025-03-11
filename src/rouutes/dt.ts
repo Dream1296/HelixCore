@@ -10,7 +10,8 @@ import {
     setShare,
     getLongText,
     linkScreenShow,
-    dtFile
+    dtFile,
+    keepRun
 }
     from '@/controllers/dt';
 import { PublishAfterExecution } from '@/services/upListData';
@@ -31,7 +32,7 @@ app.post('/dtindex', dtindex);
 app.get('/dtfind', dtfinds);
 
 //时间信息
-app.get('/dtDate', dtDates)
+app.get('/dtDate', dtDates);
 
 //提供时间信息生成图表
 app.get('/dtDataImg', dtDataImg);
@@ -103,8 +104,8 @@ app.get('/linkScreenShow',linkScreenShow);
 //文件链接
 app.get('/dtFile', dtFile);
 
-
-
+//测试
+app.get("/keepOcr",keepRun);
 
 
 // 刷新redis
