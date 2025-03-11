@@ -14,7 +14,13 @@ export  async function deep(com:string) {
     messages: [
         { role: 'user', content:com },],
     model: "deepseek-reasoner",
-    // stream:true
   });
   return completion.choices[0].message.content;
 }
+
+
+
+
+
+
+

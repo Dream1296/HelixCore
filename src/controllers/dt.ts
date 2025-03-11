@@ -51,7 +51,7 @@ export async function getDtList(req: Reqs, res: Response) {
     //从redis中获取主数据
     let listData = await getRedisListData(user, loa, aes);
 
-    listData = await dtAdd(listData);
+    // listData = await dtAdd(listData);
 
     //插入其他组件数据
     let datas = await dtDataAdd(listData);

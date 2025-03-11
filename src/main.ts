@@ -5,7 +5,6 @@ import mid from './middlewares/index';
 import { webSocketInit } from './controllers/webSokcet';
 import path from 'path';
 import http2 from 'http2';
-// @ts-ignore
 import { createServer } from 'express-http2';
 import fs from 'fs';
 
@@ -80,13 +79,10 @@ app.get('/', (req: Request, res: Response) => {
 app.listen(3010, () => {
     // console.log('启动成功，端口3010');
     let fontSrc = getUrl('root', 'assets/font/standard.flf');
-    console.log(fontSrc);
-
     let fontData = fs.readFileSync(fontSrc, "utf8");
     // 注册字体到 figlet
     figlet.parseFont('standard', fontData);
 
-    
     figlet.text(
         "Dream1296", {
         font: "standard"

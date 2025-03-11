@@ -7,7 +7,11 @@ import axios from 'axios';
 const AK = "MvqIzWfYpiqFXYe4aNCpNcvP"
 const SK = "Em4Q0L3m7VAPQlFOCCRFyDWocTqrSO37"
 
-
+/**
+ * 
+ * @param  imageBase64  - 图片base64编码
+ * @returns 
+ */
 
 
 

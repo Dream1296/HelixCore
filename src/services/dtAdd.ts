@@ -24,7 +24,8 @@ export async function dtAdd(dtData: Lists[]) {
         loa: 0
     }
     // getWeatherDatas()
-    let data1 = await wywAdd(data);
+    // let data1 = await wywAdd(data);
+    let data1;
     // let data2 = 
     return [data1 , ...dtData ];
 

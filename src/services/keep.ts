@@ -8,8 +8,7 @@ import { deep } from "./deepseek";
 import fs from 'fs';
 import { KeepRunRecord, BadmintonData } from "@/type";
 
-// let dtid = 801;
-// let index = 1;
+let logDir = getUrl('root','temp', "abc.log");
 
 
 export async function pollingKeepRun() {
@@ -61,7 +60,7 @@ export async function keepBadminton(dtid: string) {
 
     let resData = await deep(con);
     resData = resData!.match(/\{.*\}/s)![0]; // 使用正则匹配 {} 内的内容，s 让 . 匹配换行
-    fs.writeFileSync(getUrl('root', "abc.json"), JSON.stringify(resData));
+    fs.writeFileSync(logDir, JSON.stringify(resData));
 
     let keepBadmintonObj: BadmintonData = JSON.parse(resData!);
 
@@ -135,7 +134,7 @@ export async function keepRunOcr(dtid: string) {
   ，ocr识别结果为：${ocrText}`;
 
     let resData = await deep(con);
-    fs.writeFileSync(getUrl('root', "abc.json"), JSON.stringify(resData));
+    fs.writeFileSync(logDir, JSON.stringify(resData));
 
 
     let keepRunObj: KeepRunRecord = { dtid: dtid, ...JSON.parse(resData!) }

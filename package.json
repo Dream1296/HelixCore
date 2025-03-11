@@ -8,9 +8,10 @@
     "clean": "rimraf dist",
     "build": "webpack",
     "copy-js": "copyfiles -u 1 \"src/**/*.js\" dist",
-    "start": "node dist/main.js",
-    "test": "node esbuild.config.js",
-    "dev": "nodemon --watch src --ext ts --exec 'node esbuild.config.js && node distDev/index.js'",
+    "start": "node dist/bundle.js",
+    "test": "ts-node -r tsconfig-paths/register src/test.ts",
+    "dev": "nodemon --config nodemon_dev.json",
+
     "devs": "nodemon --config nodemon.json --exec ts-node-dev -r tsconfig-paths/register src/main.ts",
     "img": " ts-node -r tsconfig-paths/register src/tool/fork/a.ts",
     "ts-run": "ts-node -r tsconfig-paths/register /tool/*"
@@ -49,6 +50,7 @@
     "openai": "^4.86.1",
     "pinyin": "^4.0.0-alpha.2",
     "pinyin-pro": "^3.26.0",
+    "psl": "^1.15.0",
     "puppeteer": "^23.6.0",
     "request": "^2.88.2",
     "sharp": "^0.33.4",
