@@ -12,7 +12,7 @@ let logDir = getUrl('root','temp', "abc.log");
 
 
 export async function pollingKeepRun() {
-    let idListDb = await dbSql<{ dt_id: string }[]>("SELECT dt_id FROM `dt_index` WHERE keyword = '#keep跑步'");
+    let idListDb = await dbSql<{ dt_id: string }[]>("SELECT dt_id FROM `dt_index` WHERE keyword = 'keep跑步'");
     let idList = idListDb.map((obj) => obj.dt_id);
     for (let a of idList) {
         //这里可能会抛出错误

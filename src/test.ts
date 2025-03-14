@@ -1,4 +1,7 @@
+import { getKeepBadmintonList } from "./models/dt";
 
-import { dbSql } from "./utils/dbSql";
-
+getKeepBadmintonList()
+    .then((data)=>{
+        console.log(data);
+    })
 

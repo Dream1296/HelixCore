@@ -1,5 +1,5 @@
 import { redisDB } from "@/config/db/redis";
-import { Comtent, KeepRunRecord, List, Lists, dtFile } from "../type";
+import { BadmintonData, Comtent, KeepRunRecord, List, Lists, dtFile } from "../type";
 const mi = require("../utils/usErcrypto");
 const db = require('../config/db/mysql');
 import { dbSql } from "@/utils/dbSql";
@@ -10,81 +10,72 @@ import { chinese_English } from "@/tool/chineseTrEnglish";
 
 //获取动态列表
 async function dtList(user: string, loa: number | string) {
-    //获取列表
+    //获取主列表
     let list: Lists[] = await dtLists(user, loa);
 
+    //获取评论信息
     let comment: Comtent[] = await dtComment();
-
+    //混淆非公开评论
     jiamiConmit(comment, loa);
 
+    // 我也不知道为什么要清空这个！！！！
     for (let i = 0; i < list.length; i++) {
         list[i].textTile = "";
     }
-
-    for (let i = 0; i < list.length; i++) {
-        let com = findCom(list[i], comment);
-        list[i].com = com;
+    
+    //评论添加
+    let addCommentCb = (b: Lists, a: any) => {
+        if (!b.com) {
+            b.com = [];
+        }
+        b.com?.push(a);
     }
+    fusionObj(list, comment, 'com', undefined, addCommentCb);
 
+    //文件外链
     let dtFile = await getDtFile();
-    for (let a of dtFile) {
-        let lists = list.find(obj => Number(obj.id) == a.dt_id);
-        if (lists) {
-            lists.File = {
-                name: a.name,
-                fileId: a.dt_id.toString()
-            }
-        }
-    }
-
-    let keywords: { keyword: string, dt_id: string, isAi: number }[] = await sqlGetDtIndexAll() as { keyword: string, dt_id: string, isAi: number }[];
-
-    for (let keyword of keywords) {
-        let lists = list.find(obj => obj.id == keyword.dt_id);
-        if (!lists) {
-            continue;
-        }
-        if (!lists.keyword) {
-            lists.keyword = [];
-        }
-        lists.keyword.push({
-            keyword: keyword.keyword,
-            isAi: keyword.isAi,
+    let addDtFileCb = (b: Lists, a: any) => {
+        b.File = ({
+            name: a.name,
+            fileId: a.dt_id.toString()
         })
     }
+    fusionObj(list, dtFile, 'File', undefined, addDtFileCb);
 
+    //标签，标记
+    let keywords: { keyword: string, dt_id: string, isAi: number }[] = await sqlGetDtIndexAll() as { keyword: string, dt_id: string, isAi: number }[];
+    let addKeywordsCb = (b: Lists, a: any) => {
+        if (!b.keyword) {
+            b.keyword = [];
+        }
+        b.keyword?.push({
+            keyword: a.keyword,
+            isAi: a.isAi,
+        })
+    }
+    fusionObj(list, keywords, 'keyword', undefined, addKeywordsCb);
+
+    //长视频挂载
     let vlList = await getLongVideoList();
-    for (let a of vlList) {
-        let lists = list.find(obj => obj.id == a.dt_id.toString());
-        if (!lists) {
-            continue;
+    let addVlistCb = (b: Lists, a: any) => {
+        if (!b.longVideo) {
+            b.longVideo = [];
         }
-        if (!lists.longVideo) {
-            lists.longVideo = [];
-        }
-        lists.longVideo.push({ id: a.id, name: a.name, src: a.src });
+        b.longVideo?.push({ id: a.id, name: a.name, src: a.src })
     }
+    fusionObj(list, vlList, 'longVideo', undefined, addVlistCb);
 
+    //长文章挂载
     let textList = await getText();
-    for (let a of textList) {
-        let b = list.find(obj => obj.id == a.dtid);
-        if (!b) {
-            continue;
-        }
-        b.textTile = a.title;
-    }
+    fusionObj(list, textList, 'textTile');
 
-    //运动
-    let runList = await getKeepRunList();    
-    for (let a of runList) {
-        let b = list.find(obj => obj.id == a.dt_id);
-        if (!b) {
-            continue;
-        }
-        a.ocr_text = "0";
-        b.KeepRun = a;
-    }
+    //运动跑步
+    let runList = await getKeepRunList();
+    fusionObj(list, runList, 'KeepRun', 'ocr_text');
 
+    //运动羽毛球
+    let keepBadmintonList = await getKeepBadmintonList();
+    fusionObj(list, keepBadmintonList, 'KeepBadminton', 'ocr_text');
 
     //排序
     const sortedArray = list.sort((a, b) => {
@@ -105,7 +96,6 @@ async function dtList(user: string, loa: number | string) {
 //从redis中找动态列表数据
 export async function getRedisListData(user: string, loa: Number, aes: Number) {
     let key = user + loa.toString() + aes.toString();
-
     let data = await redisDB.get(key) as string;
     return JSON.parse(data) as Lists[];
 }
@@ -117,16 +107,46 @@ export async function getText() {
     return data;
 }
 
+/***
+ * @param list - 主列表
+ * @param obj - 需要挂载的小列表
+ * @param name - 主列表中挂载的属性名
+ * @param delName - 需要覆盖的字段
+ * @param cb - 自定义添加规则，
+ */
 
 //列表追加
-function fusionObj(list: Lists[],) {
-
+function fusionObj(list: Lists[], obj: any[], name: string, delName?: string, cb?: (list: Lists, obj: any) => void) {
+    for (let a of obj) {
+        let b = list.find(obj => obj.id == a.dt_id);
+        if (!b) {
+            b = list.find(obj => obj.id == a.dtId);
+        }
+        if (!b) {
+            continue;
+        }
+        if (delName) {
+            a[delName] = "";
+        }
+        if (cb) {
+            cb(b, a);
+        } else {
+            // @ts-expect-error
+            b[name as keyof Lists] = a;
+        }
+    }
 }
 
 //获取跑步信息
 async function getKeepRunList() {
     let list = await dbSql<KeepRunRecord[]>('SELECT * FROM `keep_run`');
     return list
+}
+
+//获取羽毛球信息
+export async function getKeepBadmintonList() {
+    let list = await dbSql<BadmintonData[]>('SELECT * FROM `keep_badminton`');
+    return list;
 }
 
 

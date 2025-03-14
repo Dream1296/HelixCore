@@ -48,6 +48,7 @@ export interface Lists {
     File?:{name:string,fileId:string};
     bgStyle:number;
     KeepRun?:KeepRunRecord;
+    KeepBadminton?:BadmintonData;
     textTile:string;
     loa:number
 }
@@ -126,6 +127,7 @@ export interface KeepRunRecord {
   }
 
   export type BadmintonData = {
+    dt_id:string;
     type: string; // 运动类型
     date: string; // 运动日期时间段
     xiaohao: number; // 运动消耗（单位：千卡）

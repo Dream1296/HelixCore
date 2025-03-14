@@ -20,7 +20,6 @@ app.use(configs);
 
 
 
-
 //事件监听
 import "@/services/emits";
 import { getUrl } from './pathUtils';
