@@ -11,7 +11,8 @@ import {
     getLongText,
     linkScreenShow,
     dtFile,
-    keepRun
+    keepRun,
+    linksc
 }
     from '@/controllers/dt';
 import { PublishAfterExecution } from '@/services/upListData';
@@ -98,6 +99,9 @@ app.get('/getShare', getShare);
 //设置分享
 app.post('/setShare', setShare);
 
+//墨水屏图片生成
+app.get('/linksc',linksc)
+
 //墨水屏显示
 app.get('/linkScreenShow',linkScreenShow);
 
@@ -106,7 +110,6 @@ app.get('/dtFile', dtFile);
 
 //测试
 app.get("/keepOcr",keepRun);
-
 
 // 刷新redis
 app.get('/upDtData', upDtData);

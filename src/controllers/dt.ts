@@ -28,6 +28,7 @@ import { Query } from '../middlewares/routesType';
 import * as t from 'io-ts';
 import sharp from 'sharp';
 import { keepBadminton, keepRunOcr } from '@/services/keep';
+import { getlinkScreen } from '@/services/linkScreen';
 // import { getDtDataImg } from '@/services/dtDataT';
 // import { getlinkScreen, processImageForEInk } from '@/services/linkScreen';
 
@@ -741,7 +742,7 @@ export async function postdt(req: Request, res: Response) {
 
                 // 移动文件到目标目录  
                 fs.renameSync(newFilePath, targetFilePath);
-                img.push('./dtimg/' + newFileName);
+                img.push('' + newFileName);
                 fileCounter++;
             }
             if (ext == '.mp4' || ext == '.avi') {
@@ -760,7 +761,7 @@ export async function postdt(req: Request, res: Response) {
 
                 // 移动文件到目标目录  
                 fs.renameSync(newFilePath, targetFilePath);
-                video.push('./dtvideo/' + newFileName);
+                video.push('' + newFileName);
                 fileCounter++;
             }
 
@@ -1141,52 +1142,44 @@ export async function setShare(req: Reqs, res: Response) {
         })
 }
 
+export async function linksc(req: Reqs, res: Response) {
+    let dtNum = req.query.dtid;
+    if(!dtNum){
+        res.send({code:400});
+    }
+
+    let resc = await getdts('guest', Number(dtNum) ,0);
+    if(!resc){
+        res.send({code:400});
+    }
+
+   let buffer = await getlinkScreen(resc!.id,resc!.name,resc!.text,resc!.date);
+   res.setHeader('content-type','image/png');
+   res.send(buffer);
+}
+
 
 
 export async function linkScreenShow(req: Reqs, res: Response) {
 
-    let imageArray = [
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff
-    ];
-    let num = req.query.num;
-    if (!num) {
-        return res.send('1');
+    let sql = 'SELECT * FROM dt_Ink_screen WHERE id = (SELECT MAX(id) FROM dt_Ink_screen); ';
+    let data = await dbSql<{ black: Buffer, red: Buffer }[]>(sql);
+    let blackArr = new Array(15200).fill(0);
+    let redArr = new Array(15200).fill(0);
+
+    const bufferBlack = data[0].black;
+    const bufferRed = data[0].red;
+
+    for (let i = 0; i < 15200; i++) {
+        blackArr[i] = bufferBlack[i];
+        redArr[i] = bufferRed[i];
     }
 
-    let len = 3040 * 2;
-    // function convertNumbersToString(arr: number[]): string {
-    //     return arr.map(num => {
-    //         // if (num === 0) return 'A';
-    //         const letter = String.fromCharCode(97 + Math.floor(num / 10));
-    //         const digit = num % 10;
-    //         return `${letter}${digit}`;
-    //     }).join('');
-    // }
-    function convertToString(numbers: number[]) {
-        return numbers.map(num => String.fromCharCode(num)).join('');
+    if (req.query.color == 'red') {
+        return res.json(redArr);
+    } else {
+        res.json(blackArr);
     }
-
-
-    // console.log(imageArray.length);
-
-    let str = convertToString(imageArray.slice(Number(num) * 3040, (Number(num) + 1) * 3040));
-    // console.log(str.length);
-
-    // res.json(str);  // 以JSON格式返回图像数组
-    res.send(str);
-    // res.send(imageArray);
-
-
-    // let buffer = getlinkScreen();
-    // let data = await processImageForEInk(buffer);
-    // console.log(data?.length);
-
-    // res.setHeader('Content-Type', 'image/jpg');
-    // res.send({
-    //     code: 200,
-    //     // data: data,
-    //     md5: "123"
-    // })
 
 }
 

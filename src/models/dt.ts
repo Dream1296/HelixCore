@@ -22,7 +22,7 @@ async function dtList(user: string, loa: number | string) {
     for (let i = 0; i < list.length; i++) {
         list[i].textTile = "";
     }
-    
+
     //评论添加
     let addCommentCb = (b: Lists, a: any) => {
         if (!b.com) {
@@ -30,7 +30,7 @@ async function dtList(user: string, loa: number | string) {
         }
         b.com?.push(a);
     }
-    fusionObj(list, comment, 'com', undefined, addCommentCb);
+    fusionObj(list, comment, 'com', undefined, undefined, addCommentCb);
 
     //文件外链
     let dtFile = await getDtFile();
@@ -40,7 +40,7 @@ async function dtList(user: string, loa: number | string) {
             fileId: a.dt_id.toString()
         })
     }
-    fusionObj(list, dtFile, 'File', undefined, addDtFileCb);
+    fusionObj(list, dtFile, 'File', undefined, undefined, addDtFileCb);
 
     //标签，标记
     let keywords: { keyword: string, dt_id: string, isAi: number }[] = await sqlGetDtIndexAll() as { keyword: string, dt_id: string, isAi: number }[];
@@ -53,7 +53,7 @@ async function dtList(user: string, loa: number | string) {
             isAi: a.isAi,
         })
     }
-    fusionObj(list, keywords, 'keyword', undefined, addKeywordsCb);
+    fusionObj(list, keywords, 'keyword', undefined, undefined, addKeywordsCb);
 
     //长视频挂载
     let vlList = await getLongVideoList();
@@ -63,19 +63,19 @@ async function dtList(user: string, loa: number | string) {
         }
         b.longVideo?.push({ id: a.id, name: a.name, src: a.src })
     }
-    fusionObj(list, vlList, 'longVideo', undefined, addVlistCb);
+    fusionObj(list, vlList, 'longVideo', undefined, undefined, addVlistCb);
 
     //长文章挂载
     let textList = await getText();
-    fusionObj(list, textList, 'textTile');
+    fusionObj(list, textList, 'textTile', 'tile');
 
     //运动跑步
     let runList = await getKeepRunList();
-    fusionObj(list, runList, 'KeepRun', 'ocr_text');
+    fusionObj(list, runList, 'KeepRun', undefined, 'ocr_text');
 
     //运动羽毛球
     let keepBadmintonList = await getKeepBadmintonList();
-    fusionObj(list, keepBadmintonList, 'KeepBadminton', 'ocr_text');
+    fusionObj(list, keepBadmintonList, 'KeepBadminton', undefined, 'ocr_text');
 
     //排序
     const sortedArray = list.sort((a, b) => {
@@ -111,16 +111,20 @@ export async function getText() {
  * @param list - 主列表
  * @param obj - 需要挂载的小列表
  * @param name - 主列表中挂载的属性名
+ * @param dataName - 列表属性
  * @param delName - 需要覆盖的字段
  * @param cb - 自定义添加规则，
  */
 
 //列表追加
-function fusionObj(list: Lists[], obj: any[], name: string, delName?: string, cb?: (list: Lists, obj: any) => void) {
+function fusionObj(list: Lists[], obj: any[], name: string, dataName?: string, delName?: string, cb?: (list: Lists, obj: any) => void) {
     for (let a of obj) {
         let b = list.find(obj => obj.id == a.dt_id);
         if (!b) {
             b = list.find(obj => obj.id == a.dtId);
+        }
+        if (!b) {
+            b = list.find(obj => obj.id == a.dtid);
         }
         if (!b) {
             continue;
@@ -131,8 +135,14 @@ function fusionObj(list: Lists[], obj: any[], name: string, delName?: string, cb
         if (cb) {
             cb(b, a);
         } else {
-            // @ts-expect-error
-            b[name as keyof Lists] = a;
+            if (dataName) {
+                // @ts-expect-error
+                b[name] = a[dataName];
+            } else {
+                // @ts-expect-error
+                b[name] = a;
+            }
+
         }
     }
 }

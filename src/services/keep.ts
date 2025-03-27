@@ -15,12 +15,24 @@ export async function pollingKeepRun() {
     let idListDb = await dbSql<{ dt_id: string }[]>("SELECT dt_id FROM `dt_index` WHERE keyword = 'keep跑步'");
     let idList = idListDb.map((obj) => obj.dt_id);
     for (let a of idList) {
+        console.log('转换' + a);
         //这里可能会抛出错误
         await keepRunOcr(a);
-        console.log('转换' + a);
+        
     }
-    console.log('更新完成');
+    console.log('更新完成1');
 
+}
+
+export async function pollingKeepBadminton() {
+    let idListDb = await dbSql<{ dt_id: string }[]>("SELECT dt_id FROM `dt_index` WHERE keyword = 'keep羽毛球'");
+    let idList = idListDb.map((obj) => obj.dt_id);
+    for (let a of idList) {
+        console.log('转换' + a);
+        //这里可能会抛出错误
+        await keepBadminton(a);
+    }
+    console.log('更新完成2');
 }
 
 export async function keepBadminton(dtid: string) {

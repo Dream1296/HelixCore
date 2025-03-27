@@ -1,6 +1,6 @@
 import { reDtListData } from "./dtList";
 import { myEvent } from "./evenTs";
-import { pollingKeepRun } from "./keep";
+import { pollingKeepBadminton, pollingKeepRun } from "./keep";
 
 
 // 更新数据事件监测
@@ -9,6 +9,7 @@ myEvent.addListener('upDtList',(data:any)=>{
     reDtListData();
     
     pollingKeepRun();
+    pollingKeepBadminton();
 })
 
 
