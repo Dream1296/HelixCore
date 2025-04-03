@@ -12,7 +12,8 @@ import {
     linkScreenShow,
     dtFile,
     keepRun,
-    linksc
+    linksc,
+    linkScreenControl
 }
     from '@/controllers/dt';
 import { PublishAfterExecution } from '@/services/upListData';
@@ -104,6 +105,9 @@ app.get('/linksc',linksc)
 
 //墨水屏显示
 app.get('/linkScreenShow',linkScreenShow);
+
+//墨水屏控制
+app.get('/linkScreenControl',linkScreenControl);
 
 //文件链接
 app.get('/dtFile', dtFile);

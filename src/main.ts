@@ -23,6 +23,7 @@ app.use(configs);
 //事件监听
 import "@/services/emits";
 import { getUrl } from './pathUtils';
+import { getMqttDate } from './services/Aether';
 
 //中间件
 app.use(mid);
@@ -60,6 +61,10 @@ app.use(
 app.get('/', (req: Request, res: Response) => {
     res.send('Hello, world!');
 });
+
+
+
+getMqttDate();
 
 
 // 创建 HTTP/2 服务器

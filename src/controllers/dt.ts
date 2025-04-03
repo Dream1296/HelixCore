@@ -29,6 +29,7 @@ import * as t from 'io-ts';
 import sharp from 'sharp';
 import { keepBadminton, keepRunOcr } from '@/services/keep';
 import { getlinkScreen } from '@/services/linkScreen';
+import { linkScreenRefresh } from '@/services/Aether';
 // import { getDtDataImg } from '@/services/dtDataT';
 // import { getlinkScreen, processImageForEInk } from '@/services/linkScreen';
 
@@ -1156,6 +1157,13 @@ export async function linksc(req: Reqs, res: Response) {
    let buffer = await getlinkScreen(resc!.id,resc!.name,resc!.text,resc!.date);
    res.setHeader('content-type','image/png');
    res.send(buffer);
+}
+
+
+
+export async function linkScreenControl(req: Reqs, res: Response){
+    await linkScreenRefresh();
+    res.send('ok');
 }
 
 
