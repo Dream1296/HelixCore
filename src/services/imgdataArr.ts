@@ -44,11 +44,21 @@ function add(a: number, b: number) {
 
 }
 
+/**
+ * 
+ * @param imagePath 图片地址或图片数据
+ * @returns {blackArr,redArr}黑色和红色点阵数组
+ */
 // 定义一个函数，传入图片路径
-export async function processImage(imagePath: string) {
+export async function processImage(imagePath: string | Buffer) {
     try {
+        let images = await processImage_a(imagePath);
+        if(!images){
+            return false;
+        }
+
         // 加载图片并获取其元数据
-        const image = sharp(imagePath);
+        const image = sharp(images);
         const metadata = await image.metadata();
         // 获取图片的宽度和高度
         const width = metadata.width!;
@@ -56,7 +66,7 @@ export async function processImage(imagePath: string) {
         // 遍历图片的每一行
         for (let y = 0; y < height; y++) {
             // 创建新的 sharp 实例，避免在循环中重复使用原始实例
-            const currentImage = sharp(imagePath);
+            const currentImage = sharp(images);
             // 提取当前行的像素数据
             const row = await currentImage.extract({ left: 0, top: y, width: width, height: 1 }).raw().toBuffer();
 
@@ -87,11 +97,54 @@ export async function processImage(imagePath: string) {
     }
 }
 
+async function processImage_a(imageInput:string | Buffer) {
+    try {
+      // 如果传入的是文件路径，使用 sharp 读取文件，否则直接使用 buffer
+      const image = typeof imageInput === 'string' 
+        ? sharp(imageInput)  // 如果是路径
+        : sharp(imageInput); // 如果是 Buffer
+  
+      // 获取图片的元数据
+      const metadata = await image.metadata();
+      const { width, height } = metadata;
+  
+      // 如果图片已经是 300x400，直接返回原始图片的 Buffer
+      if (width === 300 && height === 400) {
+        const buffer = await image.toBuffer();
+        return buffer;
+      }
+  
+      // 如果图片是 400x300，进行逆时针旋转 90 度，并检查旋转后的尺寸
+      if (width === 400 && height === 300) {
+        const rotatedImage = await image
+          .rotate(-90)  // 逆时针旋转 90 度
+          .resize(300, 400)  // 调整为 300x400
+          .toBuffer();  // 获取图片的 Buffer
+  
+        // 返回旋转后的图片的 Buffer
+        return rotatedImage;
+      }
+  
+      // 如果都不是期望的尺寸，返回 false
+      return false;
+    } catch (err) {
+      console.error('Error processing image:', err);
+      return false;
+    }
+  }
+
+
+/**
+ * 
+ * @param blackArr 黑色点阵数组
+ * @param redArr 红色点阵数组
+ * @returns 是否成功
+ */
 export async function addDB(blackArr: number[], redArr: number[]) {
     const blackArrBuffer = Buffer.from(blackArr.flat());  // flatten 数组并转换为 Buffer
     const redArrBuffer = Buffer.from(redArr.flat());  // flatten 数组并转换为 Buffer
     let sql = "INSERT INTO dt_Ink_screen (black,red) VALUES (?,?)";
-    await dbSql(sql, [blackArrBuffer, redArrBuffer]);
+    return await dbSql(sql, [blackArrBuffer, redArrBuffer]);
 }
 
 function getColorCategory(r: number, g: number, b: number) {

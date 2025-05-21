@@ -3,10 +3,14 @@ import rouutes from './rouutes/index';
 import { configs, sslConfig } from './config/config';
 import mid from './middlewares/index';
 import { webSocketInit } from './controllers/webSokcet';
-import path from 'path';
+
 import http2 from 'http2';
 import { createServer } from 'express-http2';
 import fs from 'fs';
+import dotenv from 'dotenv';
+dotenv.config();
+
+import path from 'path';
 
 
 const app = express();
@@ -79,8 +83,9 @@ getMqttDate();
 // WebSocket(servers);
 
 //已 TODO:暂时不用websocket
+console.log(`启动成功,端口${process.env.PORT}`);
 // webSocketInit(servers);
-app.listen(3010, () => {
+app.listen(process.env.PORT, () => {
     // console.log('启动成功，端口3010');
     let fontSrc = getUrl('root', 'assets/font/standard.flf');
     let fontData = fs.readFileSync(fontSrc, "utf8");
@@ -93,11 +98,11 @@ app.listen(3010, () => {
     },
         function (err: any, data: any) {
             if (err) {
-                console.log("启动成功,端口3010");
+                console.log(`启动成功,端口${process.env.PORT}`);
                 return;
             }
             console.log(data);
         }
     );
-    console.log("启动成功,端口3010");
+    console.log(`启动成功,端口${process.env.PORT}`);
 });

@@ -1,6 +1,6 @@
 import { dtList } from "../models/dt";
 import { setWorld } from "./worlds";
-import { Comtent,  Lists } from "../type";
+import { Comtent, Lists } from "../type";
 import { dbSql } from "@/utils/dbSql";
 const db = require('../config/db/mysql');
 
@@ -32,27 +32,74 @@ export async function dtFind(word: string) {
     return idArr;
 }
 
-//简单搜索
-export async function dtFinds(word: string,user:string | undefined,loa:number) {
+/**
+ * 
+ * @param word 查询关键词
+ * @param user 用户名
+ * @param loa 权限等级
+ * @returns "{id:动态id，num:匹配指数}"
+ */
+export async function dtFinds(word: string, user: string | undefined, loa: number) {
     let List;
 
-    if(user){
+    if (user) {
         List = await dtList(user, loa);
-    }else{
-        List = await dtList('yw',0);
+    } else {
+        List = await dtList('yw', 0);
     }
-    
-    let idArr: { id: string, num: number }[] = [];
-    
-    let sql = `SELECT dt_id,text FROM dt_img`;
-    let imgText = await dbSql<{dt_id:number,text:string}[]>(sql);
 
+
+
+    //查询图片匹配文本
+    let sql = `SELECT dt_id,text FROM dt_img`;
+    let imgText = await dbSql<{ dt_id: number, text: string }[]>(sql);
+
+
+    let idArr: { id: string, num: number }[] = [];
+
+    if (word.includes('&&')) {
+
+    }
+
+    idArr = listFind(List, imgText, word);
+
+
+
+
+    //排序
+    idArr.sort((a, b) => b.num - a.num);
+    return idArr;
+}
+
+
+//简单的逻辑匹配
+/**
+ * 
+ * @param List 动态主列表
+ * @param imgText 图片列表
+ * @param world 关键词
+ * @returns 返回匹配结果
+ */
+function listFind(List: Lists[], imgText: { dt_id: number; text: string; }[], word: string) {
+    let idArr: { id: string, num: number }[] = [];
 
     for (let dt of List) {
         let num = 0;
+        //正文匹配
         if (dt.text.includes(word)) {
             num += 100;
         }
+        //评论匹配
+        if (dt.com) {
+            let falg = false;
+            for (let i = 0; i < dt.com.length; i++) {
+                if (dt.com[i].content.includes(word)) {
+                    num += 100;
+                    break;
+                }
+            }
+        }
+        //标签匹配
         if (dt.keyword) {
             for (let bq of dt.keyword) {
                 if (bq.keyword == word || bq.keyword.includes(word) || word.includes(bq.keyword)) {
@@ -60,16 +107,17 @@ export async function dtFinds(word: string,user:string | undefined,loa:number) {
                 }
             }
         }
-        
 
+        //任意一项命中存储
         if (num > 0) {
             idArr.push({ id: dt.id, num });
         }
     }
 
-    for(let a of imgText){
+    //图片信息匹配
+    for (let a of imgText) {
         let num = 0;
-        if(a.text &&  a.text.includes(word)){
+        if (a.text && a.text.includes(word)) {
             num += 100;
         }
         if (num > 0) {
@@ -77,8 +125,6 @@ export async function dtFinds(word: string,user:string | undefined,loa:number) {
         }
     }
 
-    //排序
-    idArr.sort((a, b) => b.num - a.num);
     return idArr;
 }
 

@@ -30,6 +30,7 @@ import sharp from 'sharp';
 import { keepBadminton, keepRunOcr } from '@/services/keep';
 import { getlinkScreen } from '@/services/linkScreen';
 import { linkScreenRefresh } from '@/services/Aether';
+import { addDB, processImage } from '@/services/imgdataArr';
 // import { getDtDataImg } from '@/services/dtDataT';
 // import { getlinkScreen, processImageForEInk } from '@/services/linkScreen';
 
@@ -57,9 +58,6 @@ export async function getDtList(req: Reqs, res: Response) {
 
     //插入其他组件数据
     let datas = await dtDataAdd(listData);
-
-
-
 
     let resData = {
         code: 200,
@@ -137,9 +135,10 @@ export async function dtfinds(req: Reqs, res: Response) {
     if (!bq) {
         return res.send({ code: 400 });
     }
-    //简单搜索
+    //搜索
     let numArr = await dtFinds(bq as string, req.user?.username, Number(loa));
 
+    //
     let List = await dtList(user, Number(loa));
 
     let newList = [];
@@ -899,7 +898,6 @@ export function getFile(dtid: number, imgNun: number, videoNum: number) {
 }
 
 
-
 export async function delDts(req: Reqs, res: Response) {
     const dtId = req.body.id;
     if (!dtId) {
@@ -1145,25 +1143,33 @@ export async function setShare(req: Reqs, res: Response) {
 
 export async function linksc(req: Reqs, res: Response) {
     let dtNum = req.query.dtid;
-    if(!dtNum){
-        res.send({code:400});
+    if (!dtNum) {
+        return res.send({ code: 400 });
     }
 
-    let resc = await getdts('guest', Number(dtNum) ,0);
-    if(!resc){
-        res.send({code:400});
+    let resc = await getdts('guest', Number(dtNum), 0);
+    if (!resc) {
+        res.send({ code: 400 });
     }
 
-   let buffer = await getlinkScreen(resc!.id,resc!.name,resc!.text,resc!.date);
-   res.setHeader('content-type','image/png');
-   res.send(buffer);
+    let buffer = await getlinkScreen(resc!.id, resc!.name, resc!.text, resc!.date);
+    let data = await processImage(buffer);
+    if (data) {
+        let a = await addDB(data.blackArr, data.redArr);
+        console.log(a);
+    }
+
+    res.setHeader('content-type', 'image/png');
+    res.send(buffer);
 }
 
 
 
-export async function linkScreenControl(req: Reqs, res: Response){
-    await linkScreenRefresh();
-    res.send('ok');
+export async function linkScreenControl(req: Reqs, res: Response) {
+    let a = await linkScreenRefresh();
+    console.log(a);
+    
+    res.send(a.toString());
 }
 
 

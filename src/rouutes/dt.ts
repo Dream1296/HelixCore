@@ -13,16 +13,16 @@ import {
     dtFile,
     keepRun,
     linksc,
-    linkScreenControl
+    linkScreenControl,
 }
     from '@/controllers/dt';
 import { PublishAfterExecution } from '@/services/upListData';
 
 import * as t from '../middlewares/routesType';
-import {isRequest} from '../middlewares/types';
+import { isRequest } from '../middlewares/types';
 
 //获取动态数据
-app.get('/getDtList',isRequest(t.Query), getDtList);
+app.get('/getDtList', isRequest(t.Query), getDtList);
 
 //获取单个动态数据
 app.get('/getdt', getdt);
@@ -62,7 +62,7 @@ app.post('/updt', uploadSingleFile, updt);
 app.post('/upvideo', uploadVideos, upvideo);
 
 //获取动态长文本数据
-app.get('/getLongText',getLongText);
+app.get('/getLongText', getLongText);
 
 //提交动态
 app.post("/postdt", postdt);
@@ -101,22 +101,23 @@ app.get('/getShare', getShare);
 app.post('/setShare', setShare);
 
 //墨水屏图片生成
-app.get('/linksc',linksc)
+app.get('/linksc', linksc)
 
-//墨水屏显示
-app.get('/linkScreenShow',linkScreenShow);
+//墨水屏图片数据请求
+app.get('/linkScreenShow', linkScreenShow);
 
-//墨水屏控制
-app.get('/linkScreenControl',linkScreenControl);
+//墨水屏刷新控制
+app.get('/linkScreenControl', linkScreenControl);
 
 //文件链接
 app.get('/dtFile', dtFile);
 
 //测试
-app.get("/keepOcr",keepRun);
+app.get("/keepOcr", keepRun);
 
 // 刷新redis
 app.get('/upDtData', upDtData);
+
 
 
 export default app;

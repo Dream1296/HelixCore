@@ -421,7 +421,7 @@ async function setDt(id: string, user: string, text: string, img_show_num: strin
 }
 
 async function setDtCom(date: string, content: string, dtId: string, commentsUser: string) {
-    let sql = "INSERT INTO dt_comments (date, content, dtId, commentsUser,loa) VALUES (?,?,?,?,0)";
+    let sql = "INSERT INTO dt_comments (date, content, dtId, commentsUser,loa) VALUES (?,?,?,?,1)";
     let canshuArr = [date, content, dtId, commentsUser];
     let a = await dbSql(sql, canshuArr, true);
     if (a == 1) {

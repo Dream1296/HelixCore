@@ -11,7 +11,7 @@ class MyEvents<T extends string> extends EventEmitter {
     }
 }
 
-type Allevent = 'sendMail' | 'upDtList';
+type Allevent = 'sendMail' | 'upDtList' | 'mqtt_ack';
 
 
 export let myEvent = new MyEvents<Allevent>();

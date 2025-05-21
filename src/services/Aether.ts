@@ -1,4 +1,6 @@
 import { getRabbitMQChannel } from "@/config/MQcom";
+import { myEvent } from "./evenTs";
+
 
 
 //墨水屏刷新
@@ -11,18 +13,54 @@ export async function linkScreenRefresh() {
 
     // 发送消息（指定 Routing Key）
     const msg = `{
-    "topic":"/esp32/smp/update",
+    "topic":"link_screen/esp32_01/eink/set",
     "payload":"updata_dream"
     }`;
     const routingKey = 'mqtt_send';
 
     con.publish(exchange, routingKey, Buffer.from(msg));
+
+    let res = 408;
+
+    await (new Promise((resolve, reject) => {
+
+        setTimeout(() => {
+            res = 408;
+            myEvent.removeListener('mqtt_ack', fn);
+            resolve(null);
+        }, 5000);
+
+        const fn = (data: mqtt_message) => {
+            if (data.topic == "link_screen/esp32_01/eink/ask" && data.payload == '200'  ) {
+                console.log('刷新成功！');
+                res = 200;
+                myEvent.removeListener('mqtt_ack', fn);
+                resolve(null);
+            }
+        }
+
+
+        myEvent.addListener('mqtt_ack', fn);
+    }))
+
+    return res;
+
 }
+
+
+export type mqtt_message = {
+    topic: string,
+    payload: string,
+    time: string
+}
+
+getMqttDate();
+
 
 //数据获取
 export async function getMqttDate() {
     let con = await getRabbitMQChannel();
-    
+
     // 声明一个 Direct 交换机（交换机负责将消息路由到队列）
     const exchange = 'mqtt';
     await con.assertExchange(exchange, 'direct', { durable: true });
@@ -41,6 +79,18 @@ export async function getMqttDate() {
         if (!msg) {
             return
         }
+        let data: mqtt_message;
+        try {
+            data = JSON.parse(msg.content.toString());
+        } catch (error) {
+            console.log(msg.content.toString());
+
+            return
+        }
+
+
+
+        myEvent.emit('mqtt_ack', data);
 
         // 处理消息
         console.log(msg.content.toString());

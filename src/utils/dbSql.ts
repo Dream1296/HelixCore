@@ -1,4 +1,6 @@
-const db = require('@/config/db/mysql');
+const dbDream = require('@/config/db/mysql');
+const dbLog = require('@/config/db/mysql_log');
+const dbAi = require('@/config/db/mysql_ai');
 
 
 /**
@@ -6,11 +8,19 @@ const db = require('@/config/db/mysql');
  * @param sqlStr - 需要执行的sql语句
  * @param canshu - sql内待补全参数
  * @param isPut - 是否为查询，如果是返回影响行数
+ * @param dbC - 数据库句柄
  * @returns 
  */
-export function dbSql<T>(sqlStr: string, canshu?: any[], isPut?: boolean): Promise<T> {
+export function dbSql<T>(sqlStr: string, canshu?: any[], isPut?: boolean, dbName?:"log"| "ai" | "dream"): Promise<T> {
     return new Promise((resolve, reject) => {
         let isPuts = !!isPut;  // 确保 isPuts 是布尔值
+        let db = dbDream;
+        if(dbName=='log'){
+            db = dbLog;
+        }
+        if(dbName=='ai'){
+            db = dbAi;
+        }
 
         // 执行 SQL 查询
         db.query(sqlStr, canshu, (error: any, results: any) => {

@@ -46,6 +46,11 @@ export async function getlinkScreen(id: string, name: string, content: string, d
     date = moment(date).format("YYYY-MM-DD HH:mm");
 
     dateFn(date);
+
+    // 进行旋转，注意旋转的角度需要转为弧度（Math.PI / 180）
+    ctx.translate(200, 150); // 移动原点到画布中心
+    ctx.rotate(-90 * Math.PI / 180); // 逆时针旋转90度
+
     // 将绘制的图表保存为 PNG 图片
     const buffer = canvas.toBuffer('image/png');  // 将画布内容转换为 PNG 图片格式的缓冲区
     return buffer;
