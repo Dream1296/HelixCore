@@ -1,7 +1,7 @@
 import path from "path"
 import fs from 'fs';
 import { getUrl } from "@/pathUtils";
-const emojiPath = getUrl('root','public/emoji');
+const emojiPath = getUrl('public','emoji');
 
 
 export function getemojis(lei:string){    

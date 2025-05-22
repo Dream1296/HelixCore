@@ -29,7 +29,7 @@ async function userImg(req: Reqs, res: Response) {
         })
     }
     // url = path.join(__dirname,'../../public/userImg',url);
-    url = getUrl('root', 'public/userImg', url);
+    url = getUrl('public', 'userImg', url);
 
 
     let data = fs.readFileSync(url);

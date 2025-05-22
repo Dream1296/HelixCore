@@ -8,7 +8,7 @@ import { myEvent } from "./evenTs";
 
 
 
-async function upData(user: string, loa: number, aes: number) {
+export async function upData(user: string, loa: number, aes: number) {
 
     let data = await dtList(user, Number(loa));
     // let datas = dtDataAdd(data);

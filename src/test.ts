@@ -1,9 +1,11 @@
-import { getKeepBadmintonList } from "./models/dt";
-import { getUrl } from "./pathUtils";
-import { addDB, processImage } from "./services/imgdataArr";
-import { vectorAdd } from "./services/vector";
-import { dbSql } from "./utils/dbSql";
-
+// import { getKeepBadmintonList } from "./models/dt";
+// import { getUrl } from "./pathUtils";
+import {envStart} from './utils/env';
+import { upData } from "./services/dtList";
+// import { addDB, processImage } from "./services/imgdataArr";
+// import { vectorAdd } from "./services/vector";
+// import { dbSql } from "./utils/dbSql";
+envStart;
 // getKeepBadmintonList()
 //     .then((data)=>{
 //         console.log(data);
@@ -12,7 +14,7 @@ import { dbSql } from "./utils/dbSql";
 // 调用函数并传入图片路径
 
 // async function main(){
-//     let data = await processImage(getUrl('root','assets/test.png'));
+//     let data = await processImage(getUrl('assets','test.png'));
 //     await addDB(data.blackArr,data.redArr);
 //     console.log("ok");
     
@@ -20,7 +22,15 @@ import { dbSql } from "./utils/dbSql";
 
 // main();
 
-vectorAdd();
+// vectorAdd();
+async function fn(){
+
+    let a = await  upData('yw',0,0);
+    console.log(a);
+}
+
+fn();
+
 
 // async function a(){
 //     let data = await dbSql<{id:number,img_name:string}[]>('SELECT * FROM `dt_img` WHERE id BETWEEN 2330 AND 2421;')

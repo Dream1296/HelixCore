@@ -1,12 +1,11 @@
-const mysql = require('mysql');
-import { Key } from "@/utils/passwd";
+const mysql2 = require('mysql');
 //初始化mysql连接
 //连接mysql
 
-module.exports =  mysql.createPool({
-    host:"127.0.0.1",
-    user:"yw",
-    password:Key.MYSQLPASSWD,
-    database:"FlowYear",
-    port:3306,
+module.exports = mysql2.createPool({
+    host:process.env.mysqlHost,
+    user: process.env.mysqlUser,
+    password: process.env.mysqlPassword,
+    database:process.env.mysqlFY,
+    port: 3306,
 });

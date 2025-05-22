@@ -17,7 +17,6 @@ import { dtFind, dtFinds } from '../services/dtSearch';
 import { jiamiString } from '../utils/cryptoUtils';
 import { dbSql } from '@/utils/dbSql';
 import { getUrl } from '@/pathUtils';
-import { Key } from '@/utils/passwd';
 import { getDtDataImg } from '@/services/dtDataT';
 import { dtDataAdd } from '@/services/dtDataAdd';
 import { spawn } from 'child_process';
@@ -266,12 +265,12 @@ export async function dtimg(req: Reqs, res: Response) {
     let imgSrc = (await dbSql<{ img_src: string, img_name: string }[]>(`SELECT img_src,img_name FROM dt_img WHERE dt_id = ${dtid} AND img_index = ${index};`))[0];
 
     if (!imgSrc) {
-        let filePath = path.join(getUrl('root', 'assets'), './dtimg/imgError.png');
+        let filePath = path.join(getUrl('assets'), './dtimg/imgError.png');
         res.sendFile(filePath);
     }
 
     //资源路径
-    let urls = path.join(getUrl('root', 'assets'));
+    let urls = path.join(getUrl('assets'));
     //文件名
     let filename = imgSrc.img_name;
     //文件路径
@@ -364,7 +363,7 @@ async function getVideoSrc(dtid: number, index: number) {
         return
     }
     //视频路径（包含文件名）
-    let fileSrc = path.join(getUrl('root', 'assets'), videoSrc[0].video_src);
+    let fileSrc = path.join(getUrl('assets'), videoSrc[0].video_src);
 
     //文件名
     let fileName = videoSrc[0].video_src.split('/').pop();
@@ -573,7 +572,7 @@ export async function dtvideoImg(req: Reqs, res: Response) {
 // 设置图片存储引擎和文件名
 const storage = multer.diskStorage({
     destination: function (req: Request, file: Response, cb: any) {
-        cb(null, getUrl('root', 'assets/dtimg_temp')); // 存储的目录，如果不存在会自动创建
+        cb(null, getUrl('assets', 'dtimg_temp')); // 存储的目录，如果不存在会自动创建
     },
     filename: function (req: Request, file: Response, cb: any) {
         cb(null, req.body.filename);
@@ -583,7 +582,7 @@ const storage = multer.diskStorage({
 //视频存储
 const storageVideo = multer.diskStorage({
     destination: function (req: Request, file: Response, cb: any) {
-        cb(null, getUrl('root', 'assets/dtvideo_temp')); // 存储的目录，如果不存在会自动创建
+        cb(null, getUrl('assets', 'dtvideo_temp')); // 存储的目录，如果不存在会自动创建
     },
     filename: function (req: Request, file: Response, cb: any) {
         cb(null, req.body.filename);
@@ -648,7 +647,7 @@ export async function postdt(req: Request, res: Response) {
 
         //判断图片是否包含在上传临时文件夹中
         for (let i = 0; i < imgArr.length; i++) {
-            if (!fileIsDir(getUrl('root', 'assets/dtimg_temp'), imgArr[i]) || fileIsDir(getUrl('root', 'assets/dtimg'), imgArr[i])) {
+            if (!fileIsDir(getUrl('assets', 'dtimg_temp'), imgArr[i]) || fileIsDir(getUrl('assets', 'dtimg'), imgArr[i])) {
                 return res.send({
                     code: 400,
                     error: 1
@@ -662,8 +661,8 @@ export async function postdt(req: Request, res: Response) {
             if (loa == 13) {
                 url = 'dtimg_13';
             }
-            const path1 = path.join(getUrl('root', 'assets/dtimg_temp'), imgArr[i]);
-            const path2 = path.join(getUrl('root', 'assets', url), imgArr[i]);
+            const path1 = path.join(getUrl('assets', 'dtimg_temp'), imgArr[i]);
+            const path2 = path.join(getUrl('assets', url), imgArr[i]);
             try {
                 fs.renameSync(path1, path2);
             } catch (error) {
@@ -676,14 +675,14 @@ export async function postdt(req: Request, res: Response) {
 
     if (video.length != 0) {
         for (let i = 0; i < video.length; i++) {
-            if (!fileIsDir(getUrl('root', 'assets/dtvideo_temp'), video[i]) || fileIsDir(getUrl('root', 'assets/dtvideo'), video[i])) {
+            if (!fileIsDir(getUrl('assets', 'dtvideo_temp'), video[i]) || fileIsDir(getUrl('assets', 'dtvideo'), video[i])) {
                 return res.send({
                     code: 400,
                 })
             }
 
-            const path1 = path.join(getUrl('root', 'assets/dtvideo_temp'), video[i]);
-            const path2 = path.join(getUrl('root', 'assets/dtvideo'), video[i]);
+            const path1 = path.join(getUrl('assets', 'dtvideo_temp'), video[i]);
+            const path2 = path.join(getUrl('assets', 'dtvideo'), video[i]);
             try {
                 fs.renameSync(path1, path2);
             } catch (error) {
@@ -697,14 +696,14 @@ export async function postdt(req: Request, res: Response) {
     //处理图片文件夹
     if (imgDir) {
 
-        let urls = getUrl('root', 'assets', 'dtimgUpTemp');
-        let urls2 = getUrl('root', 'assets');
+        let urls = getUrl( 'assets', 'dtimgUpTemp');
+        let urls2 = getUrl( 'assets');
         if (loa == 13) {
             urls2 = path.join(urls2, 'dtimg_13');
         } else {
             urls2 = path.join(urls2, 'dtimg');
         }
-        let urls3 = getUrl('root', 'assets/dtvideo');
+        let urls3 = getUrl('assets', 'dtvideo');
         let falg = fs.existsSync(urls);
         if (!falg) {
             return res.send({
@@ -782,7 +781,7 @@ export async function postdt(req: Request, res: Response) {
 
     //loa是否为13
     if (loa == 13) {
-        text = "^AES^" + jiamiString(text, Key.B13);
+        text = "^AES^" + jiamiString(text, process.env.loa13!);
         im = setImg(id, img, 'dtimg_13');
     } else {
         im = setImg(id, img, 'dtimg');
@@ -830,9 +829,9 @@ export async function getLongText(req: Reqs, res: Response) {
 }
 
 export function getFile(dtid: number, imgNun: number, videoNum: number) {
-    let urls = getUrl('root', 'assets', 'dtimgUpTemp');
-    let urls2 = getUrl('root', 'assets/dtimg');
-    let urls3 = getUrl('root', 'assets/dtvideo');
+    let urls = getUrl( 'assets', 'dtimgUpTemp');
+    let urls2 = getUrl('assets', 'dtimg');
+    let urls3 = getUrl('assets', 'dtvideo');
     let falg = fs.existsSync(urls);
 
     let video = [];
@@ -927,7 +926,7 @@ export function getemoji(req: Request, res: Response) {
 }
 
 export function getemojilist(req: Request, res: Response) {
-    res.sendFile(getUrl('root', 'public/emoji/list.json'));
+    res.sendFile(getUrl('public', 'emoji/list.json'));
 }
 
 export async function getweizhi(req: Request, res: Response) {
@@ -1014,7 +1013,7 @@ export function lvi(req: Request, res: Response) {
     if (!src) {
         return res.send({ code: 400 });
     }
-    const videoPath = getUrl('root', 'assets', 'longVideo', src.toString()); // 获取视频文件的路径
+    const videoPath = getUrl( 'assets', 'longVideo', src.toString()); // 获取视频文件的路径
     const stat = fs.statSync(videoPath); // 获取文件状态
     const fileSize = stat.size; // 文件大小
     const range = req.headers.range; // 获取请求头中的 Range 信息
@@ -1212,7 +1211,7 @@ export async function dtFile(req: Reqs, res: Response) {
             code: 401,
         })
     }
-    let fileSrc = getUrl('root', 'assets/file', fileObj[0].file_src);
+    let fileSrc = getUrl('assets', 'file', fileObj[0].file_src);
 
     // 检查文件是否存在
     fs.access(fileSrc, fs.constants.F_OK, (err) => {

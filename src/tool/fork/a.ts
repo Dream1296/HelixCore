@@ -32,7 +32,7 @@ async function setText() {
         if (obj.text) {
             continue;
         }
-        let src = getUrl('root', 'assets', obj.img_src);
+        let src = getUrl('assets', obj.img_src);
         if (!fs.existsSync(src)) {
             continue;
         }

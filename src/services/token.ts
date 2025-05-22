@@ -2,9 +2,8 @@
 // const mi = require('../utils/usErcrypto');
 import { TokenObj } from "@/type";
 import { createSignature, jiami, jie, verifySignature } from "@/utils/cryptoUtils";
-import { Key as Keys } from "@/utils/passwd";
 
-const passwd = Keys.Password + Keys.tokenR;
+const passwd = process.env.tokenPasswd! + process.env.tokenR!;
 const day = 30;
 const mintime = 10;
 

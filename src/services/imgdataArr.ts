@@ -206,14 +206,5 @@ function getColorCategory(r: number, g: number, b: number) {
     // return 2; // 红色
 }
 
-// 示例：传入 RGB 值，返回对应的颜色类别
-const r = 250, g = 0, b = 0; // 红色（稍微偏差）
-const colorCategory = getColorCategory(r, g, b);
-console.log(`Color Category: ${colorCategory}`); // 输出 2 (红色)
-
-const r2 = 200, g2 = 200, b2 = 200; // 接近白色
-const colorCategory2 = getColorCategory(r2, g2, b2);
-console.log(`Color Category: ${colorCategory2}`); // 输出 0 (白色)
-
 
 

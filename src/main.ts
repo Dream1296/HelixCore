@@ -1,24 +1,22 @@
 import express, { Application, Request, Response } from 'express';
+
+//读取环境变量
+import { envStart } from './utils/env';
 import rouutes from './rouutes/index';
 import { configs, sslConfig } from './config/config';
+
 import mid from './middlewares/index';
 import { webSocketInit } from './controllers/webSokcet';
 
-import http2 from 'http2';
-import { createServer } from 'express-http2';
 import fs from 'fs';
-import dotenv from 'dotenv';
-dotenv.config();
 
 import path from 'path';
-
+envStart;
 
 const app = express();
 import https from 'https';
 
 let figlet = require("figlet");
-
-const port = process.env.PORT || 3010;
 //杂乱配置项
 app.use(configs);
 
@@ -83,11 +81,10 @@ getMqttDate();
 // WebSocket(servers);
 
 //已 TODO:暂时不用websocket
-console.log(`启动成功,端口${process.env.PORT}`);
 // webSocketInit(servers);
 app.listen(process.env.PORT, () => {
     // console.log('启动成功，端口3010');
-    let fontSrc = getUrl('root', 'assets/font/standard.flf');
+    let fontSrc = getUrl('assets', 'font/standard.flf');
     let fontData = fs.readFileSync(fontSrc, "utf8");
     // 注册字体到 figlet
     figlet.parseFont('standard', fontData);
