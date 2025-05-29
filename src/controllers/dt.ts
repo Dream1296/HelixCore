@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, getLongVideoList, setDtBgStyle, getRedisListData, setDtM, setShareDb, setUserss, getShareDbToken, dtidS, getDtLongData, findFile } from '../models/dt';
+import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, getLongVideoList, setDtBgStyle, getRedisListData, setDtM, setShareDb, setUserss, getShareDbToken, dtidS, getDtLongData, findFile, setDtComB } from '../models/dt';
 import { getemojis } from '../models/emoji';
 import { List, Reqs } from '../type';
 import path, { join } from 'path';
@@ -30,6 +30,7 @@ import { keepBadminton, keepRunOcr } from '@/services/keep';
 import { getlinkScreen } from '@/services/linkScreen';
 import { linkScreenRefresh } from '@/services/Aether';
 import { addDB, processImage } from '@/services/imgdataArr';
+import { fileIsDir, isImgTemp, isMvImg } from './dtTool';
 // import { getDtDataImg } from '@/services/dtDataT';
 // import { getlinkScreen, processImageForEInk } from '@/services/linkScreen';
 
@@ -184,6 +185,7 @@ export async function dtindex(req: Reqs, res: Response) {
 }
 
 export async function postCom(req: Reqs, res: Response) {
+
     if (!req.user?.username || req.user.username == 'guest') {
         return res.send({
             code: 400,
@@ -192,8 +194,31 @@ export async function postCom(req: Reqs, res: Response) {
     const user = req.user.username;
     const content = req.body.content;
     const dtId = req.body.dtId;
+    const imgNameArr = req.body.imgNameArr as string[];
+    const imgNum = imgNameArr.length;
     const date = getnowDate();
-    const a: any = await setDtCom(date, content, dtId, user);
+
+    if (imgNameArr && imgNum > 0) {
+        console.log(imgNameArr);
+        
+        if (!isImgTemp(imgNameArr)) {
+            return res.send({
+                code: 400,
+                msg: "图片不存在"
+            })
+        }
+
+        let newNameArr = isMvImg(imgNameArr);
+        if(newNameArr && newNameArr.length>0){
+            console.log(newNameArr);
+            let comId =  Number((await dbSql<{id:string}[]>('SELECT max(id) as id FROM `dt_comments` '))[0].id) + 1;
+            let a = await setDtComB(comId,newNameArr);
+        }
+        
+        
+    }
+
+    const a: any = await setDtCom(date, content, dtId, user, imgNum);
     if (a.tf == 1) {
         res.send({ tf: 1 });
     }
@@ -255,18 +280,57 @@ export async function dtimg(req: Reqs, res: Response) {
     }
 
     let tf = hasAccess(req.user?.username, req.user?.dtid, dtid.toString(), userT[0]);
-    // console.log(userT[0].loa);
 
     if (!tf) {
         return res.send({ code: 402 });
     }
 
+    let sqlStr = `SELECT img_src,img_name FROM dt_img WHERE dt_id = ${dtid} AND img_index = ${index};`
 
-    let imgSrc = (await dbSql<{ img_src: string, img_name: string }[]>(`SELECT img_src,img_name FROM dt_img WHERE dt_id = ${dtid} AND img_index = ${index};`))[0];
 
+    let imgSrc = (await dbSql<{ img_src: string, img_name: string }[]>(sqlStr))[0];
+
+    resImg(imgSrc, isImg, res);
+}
+
+export async function dtimgCom(req: Reqs, res: Response) {
+    let Reqdtid = req.query.comid;
+    let Reqindex = req.query.index;
+    let size = req.query.size;
+    //0或空为压缩图，其他为原图
+
+    let dtid;
+    let index;
+
+    if (Reqdtid && Reqindex) {
+        dtid = Number(Reqdtid);
+        index = Number(Reqindex);
+    } else {
+        return res.send({ code: 402, msg: "参数不全" });
+    }
+
+    let sqlStr = `SELECT img_src,img_name FROM dt_comments_img WHERE comment_id = ${dtid} AND img_index = ${index};`
+
+
+    let imgSrc = (await dbSql<{ img_src: string, img_name: string }[]>(sqlStr))[0];
+
+
+    resImg(imgSrc, size, res);
+
+
+}
+
+/**
+ * 
+ * @param imgSrc 图片路径对象
+ * @param isImg 是否为原图(0为压缩图)
+ * @param res 响应对象
+ * @returns 
+ */
+async function resImg(imgSrc: { img_src: string; img_name: string; }, isImg: any, res: Response) {
     if (!imgSrc) {
         let filePath = path.join(getUrl('assets'), './dtimg/imgError.png');
-        res.sendFile(filePath);
+        return res.sendFile(filePath);
     }
 
     //资源路径
@@ -287,6 +351,8 @@ export async function dtimg(req: Reqs, res: Response) {
 
 
     if (!fileIsDir(fileurl, filename)) {
+        console.log(fileurl);
+
         filePath = path.join(urls, './dtimg/imgError.png')
     }
 
@@ -306,7 +372,6 @@ export async function dtimg(req: Reqs, res: Response) {
             const data = await imgCompression(filePath, 460, 460, thumbPath);
             console.log('压缩');
 
-
             res.writeHead(200, {
                 'Content-Type': 'image/png',
                 'Content-Length': data.length
@@ -319,8 +384,13 @@ export async function dtimg(req: Reqs, res: Response) {
     } else {
         res.sendFile(filePath);
     }
-
 }
+
+
+
+
+
+
 
 
 function hasAccess(username?: string, userDtID?: string, dtid?: string, userT?: {
@@ -636,7 +706,7 @@ export async function postdt(req: Request, res: Response) {
 
     // 适当的延迟，保证正确写入。
     if (Number(img_all_num) > 0) {
-        await stopTime(3000);
+        await stopTime(1000);
     }
 
 
@@ -645,31 +715,19 @@ export async function postdt(req: Request, res: Response) {
     if (img) {
         let imgArr: string[] = img;
 
-        //判断图片是否包含在上传临时文件夹中
-        for (let i = 0; i < imgArr.length; i++) {
-            if (!fileIsDir(getUrl('assets', 'dtimg_temp'), imgArr[i]) || fileIsDir(getUrl('assets', 'dtimg'), imgArr[i])) {
-                return res.send({
-                    code: 400,
-                    error: 1
-                })
-            }
+        //判断图片是已上传到临时目录
+        if (!isImgTemp(imgArr)) {
+            return res.send({
+                code: 400,
+                error: 1
+            })
         }
 
-        //移动图片
-        for (let i = 0; i < imgArr.length; i++) {
-            let url = 'dtimg';
-            if (loa == 13) {
-                url = 'dtimg_13';
-            }
-            const path1 = path.join(getUrl('assets', 'dtimg_temp'), imgArr[i]);
-            const path2 = path.join(getUrl('assets', url), imgArr[i]);
-            try {
-                fs.renameSync(path1, path2);
-            } catch (error) {
-                console.log(error);
-                return res.send({ code: 500 });
-            }
-            img[i] = imgArr[i];
+        if (!isMvImg(imgArr)) {
+            return res.send({
+                code: 400,
+                error: 2
+            })
         }
     }
 
@@ -696,8 +754,8 @@ export async function postdt(req: Request, res: Response) {
     //处理图片文件夹
     if (imgDir) {
 
-        let urls = getUrl( 'assets', 'dtimgUpTemp');
-        let urls2 = getUrl( 'assets');
+        let urls = getUrl('assets', 'dtimgUpTemp');
+        let urls2 = getUrl('assets');
         if (loa == 13) {
             urls2 = path.join(urls2, 'dtimg_13');
         } else {
@@ -829,7 +887,7 @@ export async function getLongText(req: Reqs, res: Response) {
 }
 
 export function getFile(dtid: number, imgNun: number, videoNum: number) {
-    let urls = getUrl( 'assets', 'dtimgUpTemp');
+    let urls = getUrl('assets', 'dtimgUpTemp');
     let urls2 = getUrl('assets', 'dtimg');
     let urls3 = getUrl('assets', 'dtvideo');
     let falg = fs.existsSync(urls);
@@ -897,6 +955,7 @@ export function getFile(dtid: number, imgNun: number, videoNum: number) {
 }
 
 
+
 export async function delDts(req: Reqs, res: Response) {
     const dtId = req.body.id;
     if (!dtId) {
@@ -961,18 +1020,7 @@ export async function gpsc(req: Request, res: Response) {
 }
 
 
-//判断某个目录中是否包含某个文件
-function fileIsDir(dir: string, file: string) {
-    try {
-        // 读取目录中的所有文件和文件夹  
-        const files = fs.readdirSync(dir);
-        // 检查目标文件是否在目录中  
-        return files.includes(file);
-    } catch (err) {
-        console.error("无法读取目录", err);
-        return false;
-    }
-}
+
 
 
 function calculateDirectionAndDistance(lon1: number, lat1: number, lon2: number, lat2: number) {
@@ -1013,7 +1061,7 @@ export function lvi(req: Request, res: Response) {
     if (!src) {
         return res.send({ code: 400 });
     }
-    const videoPath = getUrl( 'assets', 'longVideo', src.toString()); // 获取视频文件的路径
+    const videoPath = getUrl('assets', 'longVideo', src.toString()); // 获取视频文件的路径
     const stat = fs.statSync(videoPath); // 获取文件状态
     const fileSize = stat.size; // 文件大小
     const range = req.headers.range; // 获取请求头中的 Range 信息
@@ -1167,7 +1215,7 @@ export async function linksc(req: Reqs, res: Response) {
 export async function linkScreenControl(req: Reqs, res: Response) {
     let a = await linkScreenRefresh();
     console.log(a);
-    
+
     res.send(a.toString());
 }
 

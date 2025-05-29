@@ -7,6 +7,8 @@ const apps1 = express();
 //图片视频
 
 async function loas(req:Reqs, res:Response,next:NextFunction ){
+
+    return next();
     let paths = ['/api/dtimg','/api/dtvideo','/api/dtvideoImg'];
     if(!paths.includes(req.path)){
         return next();
@@ -14,13 +16,15 @@ async function loas(req:Reqs, res:Response,next:NextFunction ){
 
     let Reqdtid = req.query.dtid;
     let dtid;
-    if (Reqdtid) {
+    if (Reqdtid && Reqdtid != 'undefined') {
         dtid = Number(Reqdtid);
     } else {
         return res.send({ code: 402 });
     }
     let userObj = await getDtUser(dtid);    
-    if( !(userObj[0].loa == 0 || userObj[0].user == req.user?.username)){
+    console.log(userObj);
+    
+    if( !( userObj.length != 0 &&  userObj[0].loa != 0 && userObj[0].user != req.user?.username )  ){
         return res.send({code:401});
     }
 

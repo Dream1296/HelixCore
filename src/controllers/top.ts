@@ -30,6 +30,30 @@ async function getIpv6(req: Request, res: Response) {
     }
 }
 
+export async function getIp(req: Request, res: Response) {
+    let ip = "127.0.0.1";
+    const { method, path, url, query, body, headers } = req;
+    // 判断 headers 中是否有 x-real-ip 参数，并确保它是一个字符串
+    if ('x-real-ip' in headers) {
+        const realIp = headers['x-real-ip'];
+        if (Array.isArray(realIp)) {
+            // 如果是数组，取第一个值
+            ip = realIp[0];
+        } else if (typeof realIp === 'string') {
+            // 如果是字符串，直接赋值
+            ip = realIp;
+        }
+    }
+    res.send({
+        code: 200,
+        ip: ip
+    });
+    
+
+
+
+}
+
 // 获取性能信息
 async function xnlist(req: Request, res: Response) {
     res.writeHead(200, {

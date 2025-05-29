@@ -81,8 +81,10 @@ export type Top = {
 export interface Comtent {
     date: string,
     content: string,
+    id:number,
     dtId: string,
     commentsUser: string,
+    imgAllNum:string,
     name: string,
     loa:number,
 }

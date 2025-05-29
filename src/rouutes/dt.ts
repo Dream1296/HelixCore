@@ -14,6 +14,7 @@ import {
     keepRun,
     linksc,
     linkScreenControl,
+    dtimgCom
 }
     from '@/controllers/dt';
 import { PublishAfterExecution } from '@/services/upListData';
@@ -42,6 +43,9 @@ app.get('/dtDataImg', dtDataImg);
 //图
 app.get("/dtimg", dtimg);
 
+//评论图
+app.get('/dtimgCom', dtimgCom);
+
 //修改背景样式
 app.post('/setBgStyle', setDtBgStyles);
 
@@ -60,6 +64,8 @@ app.get('/dtvideoImg', dtvideoImg);
 app.post('/updt', uploadSingleFile, updt);
 
 app.post('/upvideo', uploadVideos, upvideo);
+
+
 
 //获取动态长文本数据
 app.get('/getLongText', getLongText);

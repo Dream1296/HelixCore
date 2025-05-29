@@ -215,11 +215,13 @@ export async function dtLists(user: string, loa: number | string, findId?: numbe
 //查询评论
 export async function dtComment(findId?: number | string): Promise<Comtent[]> {
     let findIdStr = findId ? `AND dt_comments.dtId = ${findId}` : '';
-    let sqlStr = `SELECT     
+    let sqlStr = `SELECT  
+    dt_comments.id,   
     dt_comments.date,  
     dt_comments.content,  
     dt_comments.dtId,  
     dt_comments.commentsUser,  
+    dt_comments.img_all_num as imgAllNum,
     dt_name.name ,
     dt_comments.loa
 FROM  
@@ -229,7 +231,7 @@ JOIN
 ON 
 	dt_comments.commentsUser =dt_name.user 
 where 
-    true ${findIdStr}
+    dt_comments.shoes = 1 ${findIdStr}
 ORDER BY dt_comments.date ASC;`;
 
 
@@ -420,9 +422,26 @@ async function setDt(id: string, user: string, text: string, img_show_num: strin
 
 }
 
-async function setDtCom(date: string, content: string, dtId: string, commentsUser: string) {
-    let sql = "INSERT INTO dt_comments (date, content, dtId, commentsUser,loa) VALUES (?,?,?,?,1)";
-    let canshuArr = [date, content, dtId, commentsUser];
+export async function setDtComB(comId: number, imgNameArr: string[]) {
+    let img_index = 0;
+    let sql = "INSERT INTO dt_comments_img (comment_id, img_index, img_src, img_name) VALUES (?,?,?,?)";
+    for (let i = 0; i < imgNameArr.length; i++) {
+        let a = await dbSql(sql, [comId, img_index, 'dtimg', imgNameArr[i]], true);
+        if (a == 1) {
+            img_index++;
+        } else {
+            return false
+        }
+    }
+    return true;
+
+}
+
+async function setDtCom(date: string, content: string, dtId: string, commentsUser: string, imgNum?: number) {
+
+    imgNum = imgNum || 0;
+    let sql = "INSERT INTO dt_comments (date, content, dtId, commentsUser,img_all_num,loa) VALUES (?,?,?,?,?,1)";
+    let canshuArr = [date, content, dtId, commentsUser, imgNum];
     let a = await dbSql(sql, canshuArr, true);
     if (a == 1) {
         return { tf: 1 };
@@ -609,11 +628,18 @@ export async function setUserss(user: string, dtid: string) {
 
 }
 
+//从动态主表中查询图片权限信息
 export async function dtidS(dtid: string) {
     let sql = `SELECT user,loa,shows FROM dt where id = ?`;
     let res = await dbSql<{ user: string, loa: number, shoes: number }[]>(sql, [dtid]);
     return res;
 }
 
+//从评论表中查询图片权限信息
+export async function dtComS(comId: string) {
+    let sql = `SELECT commentsUser as user,loa FROM dt where id = ?`;
+    let res = await dbSql<{ user: string, loa: number, shoes: number }[]>(sql, [comId]);
+    return res;
+}
 
 export { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex }
