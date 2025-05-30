@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, getLongVideoList, setDtBgStyle, getRedisListData, setDtM, setShareDb, setUserss, getShareDbToken, dtidS, getDtLongData, findFile, setDtComB } from '../models/dt';
+import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, getLongVideoList, setDtBgStyle, getRedisListData, setDtM, setShareDb, setUserss, getShareDbToken, dtidS, getDtLongData, findFile, setDtComB } from '../models/dt/dt';
 import { getemojis } from '../models/emoji';
 import { List, Reqs } from '../type';
 import path, { join } from 'path';
@@ -153,7 +153,7 @@ export async function dtfinds(req: Reqs, res: Response) {
 
     return res.send({ code: 200, time, data: newList, });
 
-    function finds(id: string) {
+    function finds(id: number) {
         for (let dt of List) {
             if (dt.id == id) {
                 return dt

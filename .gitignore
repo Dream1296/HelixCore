@@ -15,3 +15,5 @@ back
 .env
 
 
+
+/generated/prisma

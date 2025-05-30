@@ -28,7 +28,7 @@ export interface List {
 
 //新的
 export interface Lists {
-    id: string;
+    id: number;
     user: string;
     name: string;
     touxian: string;
@@ -79,12 +79,12 @@ export type Top = {
 }
 
 export interface Comtent {
+    id:number,
     date: string,
     content: string,
-    id:number,
-    dtId: string,
-    commentsUser: string,
-    imgAllNum:string,
+    dtId: number,
+    user: string,
+    imgAllNum:number,
     name: string,
     loa:number,
 }
@@ -129,7 +129,8 @@ export interface KeepRunRecord {
   }
 
   export type BadmintonData = {
-    dt_id:string;
+    dt_id:number;
+    id:number
     type: string; // 运动类型
     date: string; // 运动日期时间段
     xiaohao: number; // 运动消耗（单位：千卡）

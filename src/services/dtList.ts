@@ -1,5 +1,5 @@
 import { redisDB } from "@/config/db/redis";
-import { dtList } from "@/models/dt";
+import { dtList } from "@/models/dt/dt";
 import { dtDataAdd } from "./dtDataAdd";
 import { jiami } from "@/utils/cryptoUtils";
 import { myEvent } from "./evenTs";

@@ -1,11 +1,12 @@
 // import { getKeepBadmintonList } from "./models/dt";
 // import { getUrl } from "./pathUtils";
-import {envStart} from './utils/env';
+import { envStart } from './utils/env';
 import { upData } from "./services/dtList";
+import { prisma } from './config/prisma';
 // import { addDB, processImage } from "./services/imgdataArr";
 // import { vectorAdd } from "./services/vector";
 // import { dbSql } from "./utils/dbSql";
-envStart;
+// envStart;
 // getKeepBadmintonList()
 //     .then((data)=>{
 //         console.log(data);
@@ -17,19 +18,19 @@ envStart;
 //     let data = await processImage(getUrl('assets','test.png'));
 //     await addDB(data.blackArr,data.redArr);
 //     console.log("ok");
-    
+
 // }
 
 // main();
 
 // vectorAdd();
-async function fn(){
+// async function fn(){
 
-    let a = await  upData('yw',0,0);
-    console.log(a);
-}
+//     let a = await  upData('yw',0,0);
+//     console.log(a);
+// }
 
-fn();
+// fn();
 
 
 // async function a(){
@@ -37,7 +38,7 @@ fn();
 //     for(let a of data){
 //         let str = a.img_name.split('/')[2];
 //         console.log(a.img_name,str);
-        
+
 //         let c = await dbSql("UPDATE dt_img SET img_name = ? WHERE dt_img.id = ?;",[str,a.id]);
 //     }
 // }
@@ -45,3 +46,14 @@ fn();
 // a();
 
 
+
+
+async function main() {
+    let a = await prisma.dt.findMany();
+    
+
+    
+
+}
+
+main();

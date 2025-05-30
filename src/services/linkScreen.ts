@@ -34,7 +34,7 @@ const fontFace = {
 };
 registerFont(fontPath, fontFace);
 
-export async function getlinkScreen(id: string, name: string, content: string, date: string) {
+export async function getlinkScreen(id: number, name: string, content: string, date: string) {
     setName(name);
     text(content);
 
@@ -110,7 +110,7 @@ function setName(name: string) {
     ctx.fillText(name, 71, 50);
 }
 
-function setId(id: string) {
+function setId(id: number) {
     ctx.imageSmoothingEnabled = false;
     ctx.fillStyle = 'red';
     ctx.font = '42px wenquan';

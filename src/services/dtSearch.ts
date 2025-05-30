@@ -1,4 +1,4 @@
-import { dtList } from "../models/dt";
+import { dtList } from "../models/dt/dt";
 import { setWorld } from "./worlds";
 import { Comtent, Lists } from "../type";
 import { dbSql } from "@/utils/dbSql";
@@ -9,7 +9,7 @@ const db = require('../config/db/mysql');
 // setWorld()
 export async function dtFind(word: string) {
     let List = await dtList('yw', 1);
-    let idArr: { id: string, num: number }[] = [];
+    let idArr: { id: number, num: number }[] = [];
 
     //预计算所有标签与搜索词相识度
     let bqArr: Set<string> = new Set();
@@ -55,7 +55,7 @@ export async function dtFinds(word: string, user: string | undefined, loa: numbe
     let imgText = await dbSql<{ dt_id: number, text: string }[]>(sql);
 
 
-    let idArr: { id: string, num: number }[] = [];
+    let idArr: { id: number, num: number }[] = [];
 
     if (word.includes('&&')) {
 
@@ -81,7 +81,7 @@ export async function dtFinds(word: string, user: string | undefined, loa: numbe
  * @returns 返回匹配结果
  */
 function listFind(List: Lists[], imgText: { dt_id: number; text: string; }[], word: string) {
-    let idArr: { id: string, num: number }[] = [];
+    let idArr: { id: number, num: number }[] = [];
 
     for (let dt of List) {
         let num = 0;
@@ -121,7 +121,7 @@ function listFind(List: Lists[], imgText: { dt_id: number; text: string; }[], wo
             num += 100;
         }
         if (num > 0) {
-            idArr.push({ id: a.dt_id.toString(), num });
+            idArr.push({ id: a.dt_id, num });
         }
     }
 

@@ -1,7 +1,7 @@
 import express, { NextFunction, Request, Response } from 'express';
 import { Reqs } from '../type';
 import { getUser } from '../services/token';
-import { getDtUser } from '@/models/dt';
+import { getDtUser } from '@/models/dt/dt';
 const apps1 = express();
 
 //图片视频
