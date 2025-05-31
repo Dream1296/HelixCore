@@ -2,6 +2,7 @@ import { BadmintonData, dtFile, KeepRunRecord } from "@/type";
 import { dbSql } from "@/utils/dbSql";
 import moment from "moment";
 import { prisma } from '@/config/prisma'
+import { number } from "io-ts";
 
 
 //获取跑步信息
@@ -108,4 +109,61 @@ export async function sqlGetDtIndexAll() {
 //获取动态文件目录
 export async function getDtFile() {
     return await prisma.dt_file.findMany();
+}
+
+
+//插入视频
+export async function setDtVideo(id: number, videoIndex: number, videoName: string) {
+    let video_src = process.env.dtVideoSrc;
+    if (!video_src) {
+        return new Error('请先配置视频目录');
+    }
+    try {
+        await prisma.dt_video.create({
+            data: {
+                dt_id: id,
+                video_index: videoIndex,
+                video_src: video_src,
+                video_name: videoName,
+            },
+        });
+    } catch {
+        return false
+    }
+    return true;
+
+}
+
+//插入图片
+export async function setImgDt(id: number, imgIndex: number, imgName: string) {
+    let img_src = process.env.dtImgSrc;
+    if (!img_src) {
+        return new Error('请先配置视频目录');
+    }
+    try {
+        await prisma.dt_img.create({
+            data: {
+                dt_id: id,
+                img_index: imgIndex,
+                img_src: img_src,
+                img_name: imgName,
+            },
+        });
+    } catch {
+        return false
+    }
+    return true;
+}
+
+
+
+
+export async function getDtVideoFile(dtid: number, index: number){
+    return await prisma.dt_video.findMany({
+        where: {
+            dt_id: dtid,
+            video_index: index
+        }
+    })
+
 }

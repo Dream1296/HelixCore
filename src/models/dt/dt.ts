@@ -5,8 +5,10 @@ import { dbSql } from "@/utils/dbSql";
 import moment from "moment";
 import { chinese_English } from "@/tool/chineseTrEnglish";
 import { prisma } from '@/config/prisma';
-import { delDtData, dtComment, getDtFile, getKeepBadmintonList, getKeepRunList, getText, setKeyword, sqlGetDtIndex, sqlGetDtIndexAll } from "./queries";
+import { delDtData, dtComment, getDtFile, getDtVideoFile, getKeepBadmintonList, getKeepRunList, getText, setDtVideo, setImgDt, setKeyword, sqlGetDtIndex, sqlGetDtIndexAll } from "./queries";
 import { formatComment, fusionObj, iskeywords, jiamiConmit } from "./helpers";
+import path from "path";
+import { getUrl } from "@/pathUtils";
 
 
 
@@ -184,41 +186,40 @@ export async function getDtUser(dtid: number) {
 }
 
 //添加图片
-export async function setImg(id: string, imgArr: string[], imgSrc: string, headNum?: number) {
+export async function setImg(id: number, imgArr: string[], imgSrc: string, headNum?: number) {
     let falg = true;
     if (!headNum) {
         headNum = 0;
     }
+
     for (let i = headNum; i < imgArr.length; i++) {
-        let sql = `INSERT into dt_img (dt_id,img_index,img_src,img_name) VALUES (?,?,?,?)`;
-        let a = await dbSql<number>(sql, [id, i.toString(), imgSrc, imgArr[i]]);
-        if (a != 1) {
-            falg = false;
+        let a = await setImgDt(id, i, imgArr[i]);
+        if (!a) {
+            return false
         }
     }
-    return falg
+    return true;
 }
 
 //添加视频
-export async function setVideo(id: string, videoArr: string[], headNum?: number) {
+export async function setVideo(id: number, videoArr: string[], headNum?: number) {
     let falg = true;
     if (!headNum) {
         headNum = 0;
     }
     for (let i = headNum; i < videoArr.length; i++) {
-        let sql = `INSERT into dt_video (dt_id,video_index,video_src)
-        VALUES (?,?,?)`;
-        let a = await dbSql(sql, [id, i.toString(), videoArr[i]])
-        if (a != 1) {
-            falg = false;
+        let a = await setDtVideo(id, i, videoArr[i]);
+        if (!a) {
+            return false
         }
+
     }
-    return falg;
+    return true;
 }
 //查询动态id值
 export async function getIdMax() {
     let ids = await dbSql<{ id: string }[]>('SELECT MAX(id) as id FROM dt;');
-    return ids[0].id + 1;
+    return ids[0].id;
 }
 
 
@@ -476,3 +477,15 @@ export async function getdts(user: string, id: number, loa: number) {
 
 
 
+
+
+
+
+//获取视频的地址
+export async function getVideoSrc(dtid: number, index: number) {
+    let videoSrc = await getDtVideoFile(dtid, index);
+    if (!videoSrc || videoSrc.length == 0) {
+        return false
+    }
+    return videoSrc[0];
+}

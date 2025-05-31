@@ -59,6 +59,7 @@ app.get('/dtvideo', dtvideo);
 app.get('/dtvideoImg', dtvideoImg);
 
 
+
 //上传图片
 // 路由：处理文件上传
 app.post('/updt', uploadSingleFile, updt);

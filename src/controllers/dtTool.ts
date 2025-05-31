@@ -24,43 +24,27 @@ export function isImgTemp(imgArr: string[]) {
     return true;
 }
 
-//重命名图片
-export function isMvNameImg(imgArr: string[]) {
-    let newImgArr: string[] = [];
-    let urls = getUrl('assets', 'dtimg_temp');
-    // 用于生成不重名的文件名  
-    let fileCounter = 0;
-    for (let i = 0; i < imgArr.length; i++) {
-        // 生成唯一的时间戳（毫秒级）  
-        const uniqueTimestamp = Date.now().toString();
-        const ext = path.extname(imgArr[i]);
-        let newName = `${imgArr[i]}_${uniqueTimestamp}_${fileCounter++}${ext}`;
-        try {
-             fs.renameSync(path.join(urls,imgArr[i]),path.join(urls,newName) );
-        } catch (error) {
-            return false
+//判断图片是否包含在上传临时文件夹中
+export function isVideoTemp(videoArr: string[]) {
+    for (let i = 0; i < videoArr.length; i++) {
+        if (!fileIsDir(getUrl('assets', 'dtvideo_temp'), videoArr[i])) {
+            return false;
         }
-
-        newImgArr[i] = newName;
-    }   
-    return newImgArr;
+    }
+    return true;
 }
 
-//移动临时图片
-export function isMvImg(imgArr: string[], loa?: number) {
-    let newNameArr = isMvNameImg(imgArr);
-    if(newNameArr == false){
-        return false;
-    }
 
+//移动临时图片
+export function mvImg(imgArr: string[], loa?: number) {
     //移动图片
-    for (let i = 0; i < newNameArr.length; i++) {
+    for (let i = 0; i < imgArr.length; i++) {
         let url = 'dtimg';
         if (loa == 13) {
             url = 'dtimg_13';
         }
-        const path1 = path.join(getUrl('assets', 'dtimg_temp'), newNameArr[i]);
-        const path2 = path.join(getUrl('assets', url), newNameArr[i]);
+        const path1 = path.join(getUrl('assets', 'dtimg_temp'), imgArr[i]);
+        const path2 = path.join(getUrl('assets', url), imgArr[i]);
         try {
             fs.renameSync(path1, path2);
         } catch (error) {
@@ -68,6 +52,24 @@ export function isMvImg(imgArr: string[], loa?: number) {
             return false;
         }
     }
-    return newNameArr;
+    return true;
+}
 
+//移动视频
+export function mvVideo(videoArr: string[], loa?: number) {
+    for (let i = 0; i < videoArr.length; i++) {
+        let url = 'dtvideo';
+        if (loa == 13) {
+            url = 'dtvideo_13';
+        }
+        const path1 = path.join(getUrl('assets', 'dtvideo_temp'), videoArr[i]);
+        const path2 = path.join(getUrl('assets', url), videoArr[i]);
+        try {
+            fs.renameSync(path1, path2);
+        } catch (error) {
+            console.log(error);
+            return false;
+        }
+    }
+    return true;
 }

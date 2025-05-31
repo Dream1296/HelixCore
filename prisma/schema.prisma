@@ -194,6 +194,7 @@ model dt_video {
   dt_id       Int
   video_index Int
   video_src   String @db.VarChar(300)
+  video_name  String @db.VarChar(300)
 }
 
 model explanatory {
