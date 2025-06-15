@@ -3,7 +3,7 @@ import { Request } from 'express';
 type user = {
     username: string | 'guest',
     dtid:string,
-    type: "ltk" | "rat",
+    type: "ltk" | "rat",    //ltk为永久令牌  rat为临时令牌
 }
 
 export interface Reqs extends Request {

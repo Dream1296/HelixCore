@@ -6,6 +6,7 @@ import { prisma } from './config/prisma';
 import { formatString, mvFileName } from './utils/time';
 import { getUrl } from './pathUtils';
 import fs from 'fs';
+import { isDtExist } from './models/dt/dt';
 // import { addDB, processImage } from "./services/imgdataArr";
 // import { vectorAdd } from "./services/vector";
 // import { dbSql } from "./utils/dbSql";
@@ -53,27 +54,9 @@ import fs from 'fs';
 
 async function main() {
 
-    //    let urls = '/dream/HelixCore/assets/dtimgUpTemp';
-    //     const files = fs.readdirSync(urls);
-    //     let falg = fs.existsSync(urls);
-    //     console.log(files);
-    let arr = await prisma.dt_video.findMany();
-    for (let a of arr) {
-        let video_name = a.video_name;
-        let nameArr = video_name.split('/')
-        await prisma.dt_video.update({
-            where: {
-                id: a.id
-            },
-            data: {
-                video_name: nameArr[2],
-                video_src: nameArr[1]
-            }
-        })
-        console.log(a.id);
-        
-
-    }
+   let falg = await isDtExist(26)
+    console.log(falg);
+    
 
 
 

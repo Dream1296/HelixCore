@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, getLongVideoList, setDtBgStyle, getRedisListData, setDtM, setShareDb, setUserss, getShareDbToken, dtidS, getDtLongData, findFile, setDtComB, getVideoSrc } from '../models/dt/dt';
+import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, getLongVideoList, setDtBgStyle, getRedisListData, setDtM, setShareDb, setUserss, getShareDbToken, dtidS, getDtLongData, findFile, setDtComB, getVideoSrc, isDtExist } from '../models/dt/dt';
 import { getemojis } from '../models/emoji';
 import { List, Reqs } from '../type';
 import path, { join } from 'path';
@@ -87,11 +87,10 @@ export async function setDtBgStyles(req: Reqs, res: Response) {
 
 
 export async function getdt(req: Reqs, res: Response) {
-    const dtid = req.query.id;
-    const loa = req.query.loa || 0;
+    const dtid = Number(req.query.id);
     let user = req.user?.username || 'guest';
 
-    if (!dtid || dtid == '-1') {
+    if (!dtid || dtid == -1) {
         return res.status(400).send({ code: 400, msg: "参数不全" });
     }
 
@@ -99,32 +98,55 @@ export async function getdt(req: Reqs, res: Response) {
         user = "guest";
     }
 
-    let dtT = await dtidS(dtid.toString());
-    if (dtT.length != 1) {
-        return res.status(400).send({
-            code: 400,
-            msg: "查询动态不存在"
-        })
+    if (!isDtExist(dtid)) {
+        return res.status(404).send({ code: 404, msg: "dt不存在" });
     }
 
-    let resc = await getdts(user, Number(dtid), dtT[0].loa);
+    let list = await dtList(user, 1);
+    let dt = list.find(a => a.id == dtid);
+    if (!dt) {
+        return res.status(403).send({ code: 403, msg: "权限错误" });
+    }
 
-    if (!resc) {
-        return res.status(400).send({
-            code: 400,
-            msg: "查询为空"
-        })
-    }
-    if (dtT[0].loa != 0 && dtT[0].loa != loa) {
-        return res.status(400).send({
-            code: 400,
-            msg: "未正确指定分级"
-        })
-    }
+
+
     res.send({
         code: 200,
-        data: resc,
+        data: dt,
     })
+
+
+
+
+    // //查询动态的实际记录信息
+    // let dtT = await dtidS(dtid.toString());
+
+    // if (dtT.length != 1) {
+    //     return res.status(400).send({
+    //         code: 400,
+    //         msg: "查询动态不存在"
+    //     })
+    // }
+
+    // let resc = await getdts(user, Number(dtid), dtT[0].loa);
+
+    // if (!resc) {
+    //     return res.status(400).send({
+    //         code: 400,
+    //         msg: "查询为空"
+    //     })
+    // }
+
+    // if (dtT[0].loa != 0 &&  dtT[0].user !=  user ) {
+    //     return res.status(400).send({
+    //         code: 400,
+    //         msg: "未正确指定分级"
+    //     })
+    // }
+    // res.send({
+    //     code: 200,
+    //     data: resc,
+    // })
 }
 
 export async function dtfinds(req: Reqs, res: Response) {
@@ -312,8 +334,6 @@ export async function dtimgCom(req: Reqs, res: Response) {
 
 
     let imgSrc = (await dbSql<{ img_src: string, img_name: string }[]>(sqlStr))[0];
-    console.log(imgSrc);
-
 
     return resImg(imgSrc, size, res);
 
@@ -343,9 +363,6 @@ async function resImg(imgSrc: { img_src: string; img_name: string; }, isImg: any
     //文件全名
     let filePath = path.join(fileurl, filename);
 
-    console.log(filePath);
-
-
     //缩略图缓存目录
     let img_log = path.join(urls, "dtimg_log");
 
@@ -354,15 +371,11 @@ async function resImg(imgSrc: { img_src: string; img_name: string; }, isImg: any
 
 
     if (!fileIsDir(fileurl, filename)) {
-        console.log(fileurl);
-
         filePath = path.join(urls, './dtimg/imgError.png');
         return res.sendFile(filePath);
     }
-    console.log(123);
 
-    console.log(isImg);
-    
+
     if (isImg == 0 || !isImg) {
         if (filename.endsWith('.gif')) {
             return res.sendFile(filePath, {
@@ -606,8 +619,6 @@ export async function dtvideoImg(req: Reqs, res: Response) {
         return res.sendFile(path.join(videoSrc, videoImg));
     }
 
-    console.log(file.video_src);
-
     // 使用 ffmpeg 生成第一帧作为封面
     ffmpeg(videoFileSrc)
         .screenshots({
@@ -752,6 +763,7 @@ export async function postdt(req: Request, res: Response) {
 
     //处理图片文件夹
     if (imgDir) {
+        //待上传图片存储目录
         let urls = getUrl('assets', 'dtimgUpTemp');
 
         //判断文件夹是否存在
@@ -775,14 +787,28 @@ export async function postdt(req: Request, res: Response) {
             }
             const ext = path.extname(fileName); // 获取文件扩展名
 
-            function fn(fileName: string) {
+            function fn(fileName: string, type: 'img' | 'video') {
                 let newName = mvFileName(fileName)
                 let newFilePath = path.join(urls, newName);
-
+                let url = 'dtimg';
+                if (type == 'img') {
+                    if (loa == '13') {
+                        url = 'dtimg_13';
+                    }
+                } else if (type == 'video') {
+                    if (loa == '13') {
+                        url = 'dtvideo_13';
+                    } else {
+                        url = 'dtvideo';
+                    }
+                }
+                const newPath = path.join(getUrl('assets', url), newName);
                 // 移动文件到目标目录  
                 try {
-                    fs.renameSync(filePath, path.join(urls, newFilePath));
-
+                    //重命名
+                    fs.renameSync(filePath, newFilePath);
+                    //移动
+                    fs.renameSync(newFilePath, newPath);
                 } catch (err) {
                     return false
                 }
@@ -790,7 +816,7 @@ export async function postdt(req: Request, res: Response) {
             }
 
             if (ext == '.jpg' || ext == '.png' || ext == '.JPG' || ext == '.jpeg') {
-                let falg = fn(fileName)
+                let falg = fn(fileName, 'img')
                 if (!falg) {
                     return res.send({
                         code: 400,
@@ -798,17 +824,20 @@ export async function postdt(req: Request, res: Response) {
                     })
                 }
                 img.push(falg);
+                img_all_num = img.length.toString();
             }
 
             if (ext == '.mp4' || ext == '.avi') {
-                let falg = fn(fileName)
+                let falg = fn(fileName, 'video')
                 if (!falg) {
                     return res.send({
                         code: 400,
                         error: 4
                     })
                 }
+
                 video.push(falg);
+                videoNum = video.length.toString();
             }
         }
     }

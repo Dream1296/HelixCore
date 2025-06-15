@@ -20,6 +20,11 @@ export async function dtList(user: string, loa: number | string) {
     //获取主列表
     let list: Lists[] = await dtLists(user, loa);
 
+    //初始化评论数组
+    list.forEach(e=>{
+        e.com = []
+    })
+
     //获取评论信息
     let comment: Comtent[] = formatComment(await dtComment());
     //混淆非公开评论
@@ -473,6 +478,23 @@ export async function getdts(user: string, id: number, loa: number) {
     list.keyword = keyword;
 
     return list;
+}
+
+//判断某个动态是否存在
+export async function isDtExist(dtid: number) {
+    let po = await prisma.dt.findFirst({
+        where: {
+            id: dtid
+        }
+    })
+
+    if (po) {
+        return true;
+    } else {
+        return false;
+
+    }
+
 }
 
 

@@ -7,7 +7,7 @@ let wywData:{name:string,touxian:string,content:string};
 let Weather:WeatherResponse;
 export async function dtAdd(dtData: Lists[]) {
     let data: Lists = {
-        id: "999",
+        id: 999,
         user: "yw",
         name: "",
         touxian: "",

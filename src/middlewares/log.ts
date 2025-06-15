@@ -98,8 +98,8 @@ function delData(data: Object): string {
     let datas = JSON.stringify(data);
     let newResBody = JSON.parse(datas);
 
-    if (newResBody && typeof newResBody === 'object' && 'data' in newResBody) {
-        if (newResBody.data.length > 100) {
+    if (newResBody && typeof newResBody === 'object' && 'data' in newResBody ) {
+        if (newResBody.data?.length > 100) {
             newResBody.data = newResBody.data.length;
         }
     }
