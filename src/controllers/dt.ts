@@ -11,7 +11,7 @@ import axios from "axios";
 const multer = require('multer');
 const jiami = require('../utils/usErcrypto.js').jiami;
 import fs from 'fs';
-import { dtAdd } from '../services/dtAdd';
+import { dtAdd, dtComPro, imgcl } from '../services/dtAdd';
 // import { dtAdd_ah } from '../services/dt_ah';
 import { dtFind, dtFinds } from '../services/dtSearch';
 import { jiamiString } from '../utils/cryptoUtils';
@@ -56,9 +56,11 @@ export async function getDtList(req: Reqs, res: Response) {
     let listData = await getRedisListData(user, loa, aes);
 
     // listData = await dtAdd(listData);
+    await dtAdd( listData ,user, loa );
+
 
     //插入其他组件数据
-    let datas = await dtDataAdd(listData);
+    let datas = await dtDataAdd(listData , loa);
 
     let resData = {
         code: 200,
@@ -83,9 +85,6 @@ export async function setDtBgStyles(req: Reqs, res: Response) {
         return res.send({ tf: 0 });
     }
 }
-
-
-
 export async function getdt(req: Reqs, res: Response) {
     const dtid = Number(req.query.id);
     let user = req.user?.username || 'guest';
@@ -108,45 +107,11 @@ export async function getdt(req: Reqs, res: Response) {
         return res.status(403).send({ code: 403, msg: "权限错误" });
     }
 
-
-
     res.send({
         code: 200,
         data: dt,
     })
 
-
-
-
-    // //查询动态的实际记录信息
-    // let dtT = await dtidS(dtid.toString());
-
-    // if (dtT.length != 1) {
-    //     return res.status(400).send({
-    //         code: 400,
-    //         msg: "查询动态不存在"
-    //     })
-    // }
-
-    // let resc = await getdts(user, Number(dtid), dtT[0].loa);
-
-    // if (!resc) {
-    //     return res.status(400).send({
-    //         code: 400,
-    //         msg: "查询为空"
-    //     })
-    // }
-
-    // if (dtT[0].loa != 0 &&  dtT[0].user !=  user ) {
-    //     return res.status(400).send({
-    //         code: 400,
-    //         msg: "未正确指定分级"
-    //     })
-    // }
-    // res.send({
-    //     code: 200,
-    //     data: resc,
-    // })
 }
 
 export async function dtfinds(req: Reqs, res: Response) {
@@ -216,7 +181,7 @@ export async function postCom(req: Reqs, res: Response) {
     }
     const user = req.user.username;
     const content = req.body.content;
-    const dtId = req.body.dtId;
+    const dtId = req.body.dtId as number;
     const imgNameArr = req.body.imgNameArr as string[];
     const imgNum = imgNameArr.length;
     const date = getnowDate();
@@ -235,9 +200,11 @@ export async function postCom(req: Reqs, res: Response) {
             let comId = Number((await dbSql<{ id: string }[]>('SELECT max(id) as id FROM `dt_comments` '))[0].id) + 1;
             let a = await setDtComB(comId, imgNameArr);
         }
-
-
     }
+
+    await dtComPro(dtId,content);
+
+
 
     const a: any = await setDtCom(date, content, dtId, user, imgNum);
     if (a.tf == 1) {
@@ -310,7 +277,7 @@ export async function dtimg(req: Reqs, res: Response) {
 
 
     let imgSrc = (await dbSql<{ img_src: string, img_name: string }[]>(sqlStr))[0];
-
+    imgcl(imgSrc,dtid,index,req.user?.username)
     resImg(imgSrc, isImg, res);
 }
 
@@ -1315,5 +1282,6 @@ export async function keepRun(req: Reqs, res: Response) {
     // await keepBadminton('822');
     res.send("ok");
 }
+
 
 

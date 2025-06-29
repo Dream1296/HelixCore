@@ -21,7 +21,7 @@ export async function dtList(user: string, loa: number | string) {
     let list: Lists[] = await dtLists(user, loa);
 
     //初始化评论数组
-    list.forEach(e=>{
+    list.forEach(e => {
         e.com = []
     })
 
@@ -29,11 +29,6 @@ export async function dtList(user: string, loa: number | string) {
     let comment: Comtent[] = formatComment(await dtComment());
     //混淆非公开评论
     jiamiConmit(comment, loa);
-
-    // 我也不知道为什么要清空这个！！！！
-    for (let i = 0; i < list.length; i++) {
-        list[i].textTile = "";
-    }
 
     //评论添加
     let addCommentCb = (b: Lists, a: any) => {
@@ -79,7 +74,26 @@ export async function dtList(user: string, loa: number | string) {
 
     //长文章挂载
     let textList = await getText();
-    fusionObj(list, textList, 'textTile', 'tile');
+
+    for (let dt of list) {
+        dt.longText = [];
+    }
+
+
+    for (let textObj of textList) {
+        let id = textObj.dtid;
+        let dt = list.find((b) => b.id == id);
+        if (!dt) {
+            continue;
+        }
+        dt.longText.push({
+            id: textObj.id,
+            dtid: textObj.dtid,
+            tetile: textObj.title
+        })
+
+    }
+
 
     //运动跑步
     let runList = await getKeepRunList();
@@ -425,7 +439,7 @@ export async function setDt(id: string, user: string, text: string, img_show_num
 }
 
 
-export async function setDtCom(date: string, content: string, dtId: string, user: string, imgNum?: number) {
+export async function setDtCom(date: string, content: string, dtId: number, user: string, imgNum?: number) {
 
     imgNum = imgNum || 0;
     let sql = "INSERT INTO dt_comments (date, content, dtId, user,img_all_num,loa) VALUES (?,?,?,?,?,1)";

@@ -121,7 +121,13 @@ function listFind(List: Lists[], imgText: { dt_id: number; text: string; }[], wo
             num += 100;
         }
         if (num > 0) {
-            idArr.push({ id: a.dt_id, num });
+            let obj = idArr.find(e => e.id == a.dt_id)
+            if (obj) {
+                obj.num += num;
+            } else {
+                idArr.push({ id: a.dt_id, num });
+            }
+
         }
     }
 

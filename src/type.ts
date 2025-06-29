@@ -2,7 +2,7 @@ import { Request } from 'express';
 
 type user = {
     username: string | 'guest',
-    dtid:string,
+    dtid: string,
     type: "ltk" | "rat",    //ltk为永久令牌  rat为临时令牌
 }
 
@@ -32,29 +32,34 @@ export interface Lists {
     user: string;
     name: string;
     touxian: string;
-    touxianUrl?:string;
+    touxianUrl?: string;
     text: string;
     textArr?: { type: string, text: string }[],
     imgShowAll: number;
     imgAllNum: number;
     videoNum: number;
-    imgUrl? :string;
+    imgUrl?: string;
     date: string;
     idea?: string;
     po: number;
     com?: Comtent[];
     longVideo?: { id: number, name: string, src: string }[];
     keyword?: { keyword: string, isAi: number }[];
-    File?:{name:string,fileId:string};
-    bgStyle:number;
-    KeepRun?:KeepRunRecord;
-    KeepBadminton?:BadmintonData;
-    textTile:string;
-    loa:number
+    File?: { name: string, fileId: string };
+    bgStyle: number;
+    KeepRun?: KeepRunRecord;
+    KeepBadminton?: BadmintonData;
+    // textTile:string;
+    longText: {
+        id: number,
+        dtid: number,
+        tetile: string
+    }[];
+    loa: number
 }
 
-export interface Listsc extends Lists{
-    type:"A"
+export interface Listsc extends Lists {
+    type: "A"
 }
 
 export interface dataImg {
@@ -65,47 +70,53 @@ export interface dataImg {
 }
 
 export type Mood = {
-    type:"mood",
-    id:string,
-    touxian:string,
-    name:string,
+    type: "mood",
+    id: string,
+    touxian: string,
+    name: string,
 }
 
 export type Top = {
-    type:"top",
-    id:string,
-    touxian:string,
-    name:string,
+    type: "top",
+    id: string,
+    touxian: string,
+    name: string,
+}
+
+export type Year = {
+    type: "year",
+    id:number,
+    year: number
 }
 
 export interface Comtent {
-    id:number,
+    id: number,
     date: string,
     content: string,
     dtId: number,
     user: string,
-    imgAllNum:number,
+    imgAllNum: number,
     name: string,
-    loa:number,
+    loa: number,
 }
 
 //动态的文件
 export interface dtFile {
-    dt_id:number,
-    name:string,
-    file_src:string,
-    loa:number
+    dt_id: number,
+    name: string,
+    file_src: string,
+    loa: number
 }
 
 export interface TokenObj {
     user_id: string | "guest",
-    dtid:string,
+    dtid: string,
     date: number,
     type: "ltk" | "rat"
 }
 
 export interface KeepRunRecord {
-    dt_id:string,
+    dt_id: string,
     type: string; // 运动类型
     date: string; // 时间和日期
     location: string; // 位置
@@ -125,12 +136,12 @@ export interface KeepRunRecord {
     xunlanxiaoguo_you: string; // 训练效果，有氧
     xunlanxiaoguo_wu: string; // 训练效果，无氧
     cut: string; // 跑步能力评估
-    ocr_text?:string;
-  }
+    ocr_text?: string;
+}
 
-  export type BadmintonData = {
-    dt_id:number;
-    id:number
+export type BadmintonData = {
+    dt_id: number;
+    id: number
     type: string; // 运动类型
     date: string; // 运动日期时间段
     xiaohao: number; // 运动消耗（单位：千卡）

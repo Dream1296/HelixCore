@@ -7,6 +7,8 @@ import { formatString, mvFileName } from './utils/time';
 import { getUrl } from './pathUtils';
 import fs from 'fs';
 import { isDtExist } from './models/dt/dt';
+import moment from 'moment';
+import { getLoaDate, setLoaDate } from './services/loaDate';
 // import { addDB, processImage } from "./services/imgdataArr";
 // import { vectorAdd } from "./services/vector";
 // import { dbSql } from "./utils/dbSql";
@@ -49,15 +51,41 @@ import { isDtExist } from './models/dt/dt';
 
 // a();
 
+//将时间存入mysql
+// async  function setdate(){
+//     let dateArr:string[] = fs.readFileSync('/dream/HelixCore/src/ahda1.txt', 'utf8').split('\n');
+//     dateArr = dateArr.filter(item => item.trim() !== '');
+//     let dateArr1:Date[] = [];
+//     for(let i = 0; i < dateArr.length; i++){
+//         let d = moment(dateArr[i], 'YYYY-MM-DD HH:mm','Asia/Shanghai').toDate();
+//         dateArr1.push( new Date(d.getTime() + 8 * 3600 * 1000) )
 
+//     }
 
+//     await prisma.dt_date.createMany({
+//         data:dateArr1.map((item,index) => ({
+//             date:item,
+//         }))
+//     })
+
+    
+
+// }
+
+ 
+async function jisuan(){
+    
+}
 
 async function main() {
 
-   let falg = await isDtExist(26)
-    console.log(falg);
-    
+    let a = await setLoaDate()
 
+    console.log( a );
+    
+    
+  
+    
 
 
 }
