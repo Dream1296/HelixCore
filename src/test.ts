@@ -68,24 +68,56 @@ import { getLoaDate, setLoaDate } from './services/loaDate';
 //         }))
 //     })
 
-    
+
 
 // }
 
- 
-async function jisuan(){
-    
+
+async function jisuan() {
+
+}
+
+
+async function dyBack() {
+    let dtIndexArr = await prisma.dt_index.findMany({
+        where: {
+            keyword: "抖音"
+        }
+    });
+    let dtIdArr = new Set<number>();
+    for (let a of dtIndexArr) {
+        dtIdArr.add(a.dt_id);
+    }
+
+    for (let a of dtIdArr) {
+
+        // 先查询记录是否存在
+        const existingRecord = await prisma.dt.findUnique({
+            where: { id: a } // 假设 a 是你要更新的记录ID
+        });
+
+        if (existingRecord) {
+            // 记录存在才执行更新
+            await prisma.dt.update({
+                where: { id: a },
+                data: {
+                    save: true,
+                }
+            });
+        } else {
+            console.log(a + '不存在');
+
+        }
+    }
 }
 
 async function main() {
 
-    let a = await setLoaDate()
+    await dyBack();
+    console.log('end');
 
-    console.log( a );
-    
-    
-  
-    
+
+
 
 
 }

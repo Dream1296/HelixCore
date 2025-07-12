@@ -14,13 +14,15 @@ import {
     keepRun,
     linksc,
     linkScreenControl,
-    dtimgCom
+    dtimgCom,
+    getYear
 }
     from '@/controllers/dt';
 import { PublishAfterExecution } from '@/services/upListData';
 
 import * as t from '../middlewares/routesType';
 import { isRequest } from '../middlewares/types';
+import { getImgDB } from '@/models/dt/dthc';
 
 //获取动态数据
 app.get('/getDtList', isRequest(t.Query), getDtList);
@@ -124,6 +126,17 @@ app.get("/keepOcr", keepRun);
 
 // 刷新redis
 app.get('/upDtData', upDtData);
+
+// 年份图片获取
+app.get('/getYear',getYear);
+
+
+
+
+
+//缓存相关
+app.get('/getImgDB',getImgDB);
+
 
 
 

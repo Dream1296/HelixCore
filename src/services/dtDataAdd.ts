@@ -40,7 +40,7 @@ export async function dtDataAdd(datas: Lists[], loa?: number) {
     }
 
     //向数组适当位置添加year
-
+    setYear(data);
 
 
 
@@ -50,11 +50,23 @@ export async function dtDataAdd(datas: Lists[], loa?: number) {
 
 export function setYear(data: (Listsc | dataImg | Top | Mood | Year)[]) {
     let year = -1;
-    for(let a of data){
-        if(a.type != 'A'){
+    let id = 6100;
+    for (let a of data) {
+        if (a.type != 'A') {
             continue;
         }
-        
+        let date = new Date(a.date).getFullYear();
+        year = year == -1 ? date : year;
+        if (date != year) {
+            let yearData: Year = {
+                type: 'year',
+                id: id++,
+                year: date
+            }
+            let index = data.findIndex(b => b.id == a.id);
+            data.splice(index, 0, yearData);
+            year = date;
+        }
     }
 
 

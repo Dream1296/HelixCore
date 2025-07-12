@@ -56,11 +56,11 @@ export async function getDtList(req: Reqs, res: Response) {
     let listData = await getRedisListData(user, loa, aes);
 
     // listData = await dtAdd(listData);
-    await dtAdd( listData ,user, loa );
+    await dtAdd(listData, user, loa);
 
 
     //插入其他组件数据
-    let datas = await dtDataAdd(listData , loa);
+    let datas = await dtDataAdd(listData, loa);
 
     let resData = {
         code: 200,
@@ -202,7 +202,7 @@ export async function postCom(req: Reqs, res: Response) {
         }
     }
 
-    await dtComPro(dtId,content);
+    await dtComPro(dtId, content);
 
 
 
@@ -277,11 +277,12 @@ export async function dtimg(req: Reqs, res: Response) {
 
 
     let imgSrc = (await dbSql<{ img_src: string, img_name: string }[]>(sqlStr))[0];
-    imgcl(imgSrc,dtid,index,req.user?.username)
+    imgcl(imgSrc, dtid, index, req.user?.username)
     resImg(imgSrc, isImg, res);
 }
 
 export async function dtimgCom(req: Reqs, res: Response) {
+    
     let Reqdtid = req.query.comid;
     let Reqindex = req.query.index;
     let size = req.query.size;
@@ -469,6 +470,7 @@ export async function dtvideo(req: Request, res: Response) {
         res.writeHead(206, head);
         audioStream.pipe(res);
     } else {
+    //    res.sendFile(fileSrc);
         const head = {
             'Content-Length': fileSize,
             'Content-Type': 'video/mp4',
@@ -1223,6 +1225,25 @@ export async function linkScreenShow(req: Reqs, res: Response) {
 
 }
 
+//年份图片
+export async function getYear(req: Reqs, res: Response) {
+    let file = getUrl('assets', 'system/year');
+    let yearNum = Number(req.query.year);
+
+    if (!req.query.year) {
+        return res.sendFile(path.join(file, '20xx.png'));
+    }
+    
+    if (yearNum >= 2015 && yearNum <= 2025) {
+        return res.sendFile(path.join(file, yearNum + '.png'));
+    }
+
+    return res.sendFile(path.join(file, '20xx.png'));
+
+
+
+
+}
 
 export async function dtFile(req: Reqs, res: Response) {
     let dtId = req.query.dtid;

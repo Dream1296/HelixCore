@@ -61,6 +61,7 @@ model dt {
   bg_style     Int      @default(0)
   loa          Int      @default(0)
   shows        Boolean  @default(true)
+  save         Boolean  @default(false) 
   date_real    String   @db.VarChar(30)
 
   @@index([loa], map: "loa")

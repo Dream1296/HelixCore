@@ -3,9 +3,10 @@ const mysql2 = require('mysql');
 //连接mysql
 
 module.exports = mysql2.createPool({
-    host:process.env.mysqlHost,
+    host: process.env.mysqlHost,
     user: process.env.mysqlUser,
     password: process.env.mysqlPassword,
-    database:process.env.mysqlFY,
+    database: process.env.mysqlFY,
     port: 3306,
+    charset: 'utf8mb4'
 });

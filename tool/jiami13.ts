@@ -3,7 +3,7 @@ import * as crypto from 'crypto';
 
 let key = "A8412640";
 
-let text1 = ``
+let text1 = `契约`
 
 let res = jiamiString(text1,key);
 console.log("^AES^" + res);
