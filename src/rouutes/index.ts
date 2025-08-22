@@ -38,8 +38,14 @@ app.use('/api',vi);
 import book from './book';
 app.use('/api',book);
 
+//会话
+import Chat from './chat';
+app.use('/api',Chat);
+
 import { getHTML} from '../controllers/audio';
 app.get('/lx',getHTML);
+
+
 
 //
 

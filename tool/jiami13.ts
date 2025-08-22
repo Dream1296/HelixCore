@@ -2,8 +2,7 @@ import * as crypto from 'crypto';
 // const db = require('./src/config/db/mysql');
 
 let key = "A8412640";
-
-let text1 = `契约`
+let text1 = `末世下，可以自由的做自己想做的事，在学校里，程序化的走完最后的时间，有痛苦的，也有温柔的`
 
 let res = jiamiString(text1,key);
 console.log("^AES^" + res);

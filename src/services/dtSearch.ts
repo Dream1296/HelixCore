@@ -56,9 +56,6 @@ export async function dtFinds(word: string, user: string | undefined, loa: numbe
     //查询视频名匹配文本
     let sql1 = `SELECT dt_id,video_name as text FROM dt_video`;
     let videoText = await dbSql<{ dt_id: number, text: string }[]>(sql1);
-
-    console.log(videoText);
-
     
     let idArr: { id: number, num: number }[] = [];
 

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { Comtent, List, Lists } from "../type";
+import { Comtent, Lists } from "../type";
 import { weatherData } from "@/controllers/weather";
 import { WeatherResponse, getWeatherData } from "@/models/weather";
 import { getLoaDate, setLoaDate } from "./loaDate";
@@ -56,7 +56,7 @@ export async function imgcl(imgSrc: { img_src: string; img_name: string; }, dtid
 
 //拦截评论
 export async function dtComPro(dtId: number, content: string) {
-    if(dtId == 1010 && content == "刷新" ){
+    if (dtId == 1010 && content == "刷新") {
         await setLoaDate();
     }
 

@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, getLongVideoList, setDtBgStyle, getRedisListData, setDtM, setShareDb, setUserss, getShareDbToken, dtidS, getDtLongData, findFile, setDtComB, getVideoSrc, isDtExist } from '../models/dt/dt';
 import { getemojis } from '../models/emoji';
-import { List, Reqs } from '../type';
+import { Reqs } from '../type';
 import path, { join } from 'path';
 import { imgCompression } from '../utils/img';
 import { userWeizhi, SetuserWeizhi } from '../models/weizhi';
@@ -19,7 +19,7 @@ import { dbSql } from '@/utils/dbSql';
 import { getUrl } from '@/pathUtils';
 import { getDtDataImg } from '@/services/dtDataT';
 import { dtDataAdd } from '@/services/dtDataAdd';
-import { spawn } from 'child_process';
+import { execSync, spawn } from 'child_process';
 import { emit } from 'process';
 import { myEvent } from '@/services/evenTs';
 import { getShareToken } from '@/services/token';
@@ -51,6 +51,8 @@ export async function getDtList(req: Reqs, res: Response) {
     if (req.user?.dtid && req.user.dtid != "-1") {
         user = "guest";
     }
+
+    myEvent.emit('upDtList');
 
     //从redis中获取主数据
     let listData = await getRedisListData(user, loa, aes);
@@ -126,18 +128,23 @@ export async function dtfinds(req: Reqs, res: Response) {
     //搜索
     let numArr = await dtFinds(bq as string, req.user?.username, Number(loa));
 
-    //
+
     let List = await dtList(user, Number(loa));
 
     let newList = [];
     for (let id of numArr) {
+        let dt = finds(id.id);
+
+        if (!dt) {
+            continue;
+        }
         newList.push({
             type: 'A',
-            ...finds(id.id),
+            ...dt,
             score: id.num,
         })
     }
-    let time = -(date - (+new Date())) / 1000;
+    let time = -(date - (+new Date()));
 
     return res.send({ code: 200, time, data: newList, });
 
@@ -282,7 +289,7 @@ export async function dtimg(req: Reqs, res: Response) {
 }
 
 export async function dtimgCom(req: Reqs, res: Response) {
-    
+
     let Reqdtid = req.query.comid;
     let Reqindex = req.query.index;
     let size = req.query.size;
@@ -423,7 +430,7 @@ export async function dtimgs(req: Request, res: Response) {
 let videoSet = new Set<string>([]);
 
 //视频
-export async function dtvideo(req: Request, res: Response) {
+export async function dtvideo(req: Reqs, res: Response) {
 
     let Reqdtid = req.query.dtid;
     let Reqindex = req.query.index;
@@ -439,6 +446,10 @@ export async function dtvideo(req: Request, res: Response) {
         return res.send({ code: 402 });
     }
 
+    if (req.user?.username != 'yw') {
+        return res.send({ code: 402 });
+    }
+
 
     let file = await getVideoSrc(dtid, index);
     if (!file) {
@@ -448,6 +459,7 @@ export async function dtvideo(req: Request, res: Response) {
 
     let fileSrc = getUrl('assets', file.video_src, file.video_name);
 
+    fileSrc = ensureVideoIsMP4(fileSrc);
 
     const stat = fs.statSync(fileSrc);
     const fileSize = stat.size;
@@ -456,10 +468,19 @@ export async function dtvideo(req: Request, res: Response) {
     if (range) {
         const parts = range.replace(/bytes=/, "").split("-");
         const start = parseInt(parts[0], 10);
-        const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+        const maxChunkSize = 1024 * 1024;
+
+        // const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+        const end = parts[1]
+            ? parseInt(parts[1], 10)
+            : Math.min(start + maxChunkSize - 1, fileSize - 1);
 
         const chunksize = (end - start) + 1;
         const audioStream = fs.createReadStream(fileSrc, { start, end });
+
+
+
+
         const head = {
             'Content-Range': `bytes ${start}-${end}/${fileSize}`,
             'Accept-Ranges': 'bytes',
@@ -467,10 +488,16 @@ export async function dtvideo(req: Request, res: Response) {
             'Content-Type': 'video/mp4',
         };
 
+
         res.writeHead(206, head);
         audioStream.pipe(res);
+        // res.end(buffer);
+
+
+
+
     } else {
-    //    res.sendFile(fileSrc);
+        //    res.sendFile(fileSrc);
         const head = {
             'Content-Length': fileSize,
             'Content-Type': 'video/mp4',
@@ -488,9 +515,11 @@ export async function dtvideo(req: Request, res: Response) {
  * @returns 转换后的视频文件路径
  */
 
-const ensureVideoIsMP4 = (inputPath: string): string => {
+let taskSet = new Set<string>();
+export function ensureVideoIsMP4(inputPath: string): string {
     // 定义输出路径，通过替换 /dtimg/ 为 /dtimgs/ 来构造
     const outputPath = inputPath.replace('/dtvideo/', '/dtvideos/');
+
 
     // 检查转换后的文件是否已经存在
     if (fs.existsSync(outputPath)) {
@@ -500,6 +529,16 @@ const ensureVideoIsMP4 = (inputPath: string): string => {
         console.log(`转换后的文件已经存在: ${outputPath}`);
         return outputPath;
     }
+
+
+    if (taskSet.has(outputPath)) {
+        return inputPath;
+    }
+
+    taskSet.add(outputPath);
+
+
+
 
 
     console.log(`正在转换视频: ${inputPath} -> ${outputPath}`);
@@ -516,14 +555,20 @@ const ensureVideoIsMP4 = (inputPath: string): string => {
 
     videoSet.add(inputPath);
 
-    const ffmpeg = spawn('ffmpeg', [
-        '-i', inputPath,          // 输入文件路径
-        '-c:v', 'libx264',        // 视频编码格式
-        '-c:a', 'aac',            // 音频编码格式
-        '-strict', 'experimental',// 允许使用实验性音频特性
-        '-y',                     // 如果文件已存在，覆盖文件
-        outputPath                // 输出文件路径
-    ]);
+    // 用 ffprobe 检查视频编码
+    const codecInfo = execSync(`ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of csv=p=0 ${inputPath}`).toString().trim();
+    const audioInfo = execSync(`ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of csv=p=0 ${inputPath}`).toString().trim();
+
+    let args;
+    if (codecInfo === 'h264' && audioInfo === 'aac') {
+        // 已经是 h264 + aac，直接 copy
+        args = ['-i', inputPath, '-c:v', 'copy', '-c:a', 'copy', '-y', outputPath];
+    } else {
+        // 否则强制转码
+        args = ['-i', inputPath, '-c:v', 'libx264', '-c:a', 'aac', '-y', outputPath];
+    }
+
+    const ffmpeg = spawn('ffmpeg', args);
 
     // 捕获 ffmpeg 的标准错误输出
     ffmpeg.stderr.on('data', (data) => {
@@ -1233,7 +1278,7 @@ export async function getYear(req: Reqs, res: Response) {
     if (!req.query.year) {
         return res.sendFile(path.join(file, '20xx.png'));
     }
-    
+
     if (yearNum >= 2015 && yearNum <= 2025) {
         return res.sendFile(path.join(file, yearNum + '.png'));
     }

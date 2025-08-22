@@ -167,3 +167,7 @@ export async function getDtVideoFile(dtid: number, index: number){
     })
 
 }
+
+export async function getChatAll(){
+    return await prisma.dt_chat.findMany();
+}

@@ -61,7 +61,7 @@ model dt {
   bg_style     Int      @default(0)
   loa          Int      @default(0)
   shows        Boolean  @default(true)
-  save         Boolean  @default(false) 
+  save         Boolean  @default(false)
   date_real    String   @db.VarChar(30)
 
   @@index([loa], map: "loa")
@@ -85,15 +85,29 @@ model dt_com {
 }
 
 model dt_comments {
-  id           Int      @id @default(autoincrement())
-  date         DateTime @db.DateTime(0)
-  content      String   @db.Text
-  img_all_num  Int      @default(0)
-  dtId         Int
-  user String   @db.VarChar(200)
-  shoes        Int      @default(1)
-  loa          Int
-  userInfo     dt_name  @relation(fields: [user], references: [user])
+  id          Int      @id @default(autoincrement())
+  date        DateTime @db.DateTime(0)
+  content     String   @db.Text
+  img_all_num Int      @default(0)
+  dtId        Int
+  user        String   @db.VarChar(200)
+  shoes       Int      @default(1)
+  loa         Int
+  userInfo    dt_name  @relation(fields: [user], references: [user])
+}
+
+model dt_chat {
+  id      Int    @id @default(autoincrement())
+  dt_id   Int
+  root_id String @db.VarChar(60)
+  name    String @db.VarChar(50)
+}
+
+model chat_com {
+  id   Int      @id @default(autoincrement())
+  node String   @db.VarChar(60)
+  con  String   @db.Text
+  date DateTime @db.DateTime(0)
 }
 
 model dt_name {
@@ -115,7 +129,7 @@ model dt_comments_img {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model dt_date {
-  id   Int     @id @default(autoincrement())
+  id   Int      @id @default(autoincrement())
   date DateTime
 }
 

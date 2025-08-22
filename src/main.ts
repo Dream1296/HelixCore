@@ -20,6 +20,8 @@ let figlet = require("figlet");
 //杂乱配置项
 app.use(configs);
 
+import '@/services/socket/socket';
+
 
 
 //事件监听

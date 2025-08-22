@@ -1,6 +1,7 @@
 const dbDream = require('@/config/db/mysql');
 const dbLog = require('@/config/db/mysql_log');
 const dbAi = require('@/config/db/mysql_ai');
+const dbChat = require('@/config/db/mysql_chat');
 
 
 /**
@@ -11,7 +12,7 @@ const dbAi = require('@/config/db/mysql_ai');
  * @param dbC - 数据库句柄
  * @returns 
  */
-export function dbSql<T>(sqlStr: string, canshu?: any[], isPut?: boolean, dbName?:"log"| "ai" | "dream"): Promise<T> {
+export function dbSql<T>(sqlStr: string, canshu?: any[], isPut?: boolean, dbName?:"log"| "ai" | "dream" | "chat"): Promise<T> {
     return new Promise((resolve, reject) => {
         let isPuts = !!isPut;  // 确保 isPuts 是布尔值
         let db = dbDream;
@@ -20,6 +21,9 @@ export function dbSql<T>(sqlStr: string, canshu?: any[], isPut?: boolean, dbName
         }
         if(dbName=='ai'){
             db = dbAi;
+        }
+        if(dbName=='chat'){
+            db = dbChat;
         }
 
         // 执行 SQL 查询

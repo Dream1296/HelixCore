@@ -1,3 +1,4 @@
+import { md5Text } from '@/utils/cryptoUtils';
 import { Request, Response, NextFunction } from 'express';
 import { ServerResponse } from 'http';
 import moment from 'moment-timezone';
@@ -79,12 +80,20 @@ export function setLog(req: Request, res: Response, next: NextFunction) {
 
     serverRes.on('finish', (e: any) => {
         const duration = Date.now() - start;
-        if(path == '/api/getLongText'){
+        if (path == '/api/getLongText') {
             resBody = "null";
         }
-        let sql = "INSERT INTO `dream_req_log` (`id`,`req_url`,`ip`, `req_query`, `req_headers`, `req_body`, `req_file`, `time_start`, `time_duration`, `res_body`) VALUES (NULL,?, ?,?,?,?,?,?,?,?);"
-        dbSql(sql, [path, ip, requestQuery, requestHeaders, requestBody, file, startTime, duration, resBody], true)
-            .then((len)=>{
+        let md5 = md5Text(resBody);
+        let sql = `INSERT IGNORE INTO has (md5, data) VALUES (?, ?);`;
+        dbSql(sql, [md5, resBody], true);
+
+        let md5_1 = md5Text(requestHeaders);
+        sql = `INSERT IGNORE INTO has (md5, data) VALUES (?, ?);`;
+        dbSql(sql, [md5_1, requestHeaders], true);
+
+        sql = "INSERT INTO `dream_req_log` (`id`,`req_url`,`ip`, `req_query`, `req_headers`, `req_body`, `req_file`, `time_start`, `time_duration`, `res_body`) VALUES (NULL,?, ?,?,?,?,?,?,?,?);"
+        dbSql(sql, [path, ip, requestQuery, md5_1, requestBody, file, startTime, duration, md5], true)
+            .then((len) => {
 
             })
     });
@@ -98,7 +107,7 @@ function delData(data: Object): string {
     let datas = JSON.stringify(data);
     let newResBody = JSON.parse(datas);
 
-    if (newResBody && typeof newResBody === 'object' && 'data' in newResBody ) {
+    if (newResBody && typeof newResBody === 'object' && 'data' in newResBody) {
         if (newResBody.data?.length > 100) {
             newResBody.data = newResBody.data.length;
         }
@@ -123,13 +132,13 @@ function dbSql<T>(sqlStr: string, canshu?: any[], isPut?: boolean): Promise<T> {
         // 执行 SQL 查询
         db.query(sqlStr, canshu, (error: any, results: any) => {
             if (error) {
-                return reject(error);  
+                return reject(error);
             }
 
             if (isPuts) {
                 if (results.affectedRows !== undefined) {
                     return resolve(results.affectedRows); // 返回影响的行数
-                }else{
+                } else {
                     return reject(0);
                 }
             }

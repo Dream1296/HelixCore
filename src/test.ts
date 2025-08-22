@@ -9,6 +9,9 @@ import fs from 'fs';
 import { isDtExist } from './models/dt/dt';
 import moment from 'moment';
 import { getLoaDate, setLoaDate } from './services/loaDate';
+import { dbSql } from './utils/dbSql';
+import { md5Text } from './utils/cryptoUtils';
+import e from 'express';
 // import { addDB, processImage } from "./services/imgdataArr";
 // import { vectorAdd } from "./services/vector";
 // import { dbSql } from "./utils/dbSql";
@@ -111,10 +114,72 @@ async function dyBack() {
     }
 }
 
+
+// let sql = `SELECT id, req_headers FROM dream_req_log`;
+// let list = await dbSql<{ id: number, req_headers: string }[]>(sql, [], false, 'log');
+// for (let item of list) {
+//     let text = item.req_headers;
+//     let md5 = md5Text(text);
+//     let sql = `INSERT IGNORE INTO res_has (md5, data) VALUES (?, ?);`;
+//     await dbSql(sql, [md5, text], true, 'log');
+//     sql = `UPDATE dream_req_log SET req_headers = ? WHERE id = ?;`;
+//     await dbSql(sql, [md5, item.id], true, 'log');
+//     console.log(item.id);
+// }
+
+
+
+
+async function getNode(id: string) {
+    let list = await dbSql<{ id: string,parent_id:string }[]>('SELECT id,parent_id FROM node where id = ?', [id], undefined, 'chat');
+    return list[0];
+}
+
+let titleSet = new Set<string>();
+
+
 async function main() {
 
-    await dyBack();
-    console.log('end');
+    let arr = await dbSql<{ root_id: string }[]>('SELECT root_node FROM `list`', [], undefined, 'chat');
+    for (let a of arr) {
+        titleSet.add(a.root_id);
+    }
+    let rootId = 'eaa812f8-53ad-4377-a5e6-5475eca5b450';
+    while (true) {
+        let a = (await getNode(rootId));
+        if (!a) {
+            console.log('error');
+            return
+        }
+        let id = a.parent_id;
+        if (titleSet.has(id)) {
+            console.log(id);
+            return
+        } else {
+            rootId = id;
+            console.log(id);
+
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    console.log(0);
+    process.exit(0);
+
+
 
 
 

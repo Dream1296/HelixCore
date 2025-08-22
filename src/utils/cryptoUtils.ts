@@ -1,6 +1,7 @@
 // src/cryptoUtils.ts
 
 import * as crypto from 'crypto';
+const md5 = require('@/utils/md5.min.js');
 
 /**
  * 待加密对象的类型定义
@@ -93,5 +94,12 @@ export function verifySignature(data: string, signature: string, secretKey: stri
   return generatedSignature === signature;  
 }
 
+/**
+ * 
+ */
+export function md5Text(text:string){
+  return md5(text);
+
+}
 
 

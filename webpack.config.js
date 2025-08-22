@@ -27,7 +27,7 @@ module.exports = {
       },
     ],
   },
-  externals: [nodeExternals()], // 排除 Node.js 内置模块
+  externals: [nodeExternals(),'i2c-bus'], // 排除 Node.js 内置模块
   plugins: [
     new NodePolyfillPlugin(), // 使用 Node.js Polyfills
   ],

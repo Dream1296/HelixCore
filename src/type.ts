@@ -10,23 +10,7 @@ export interface Reqs extends Request {
     user?: user; // 注意这里的 ? 表示 user 属性是可选的  
 }
 
-//旧的
-export interface List {
-    user: string;
-    name: string;
-    touxian: string;
-    text: string;
-    textArr?: { type: string, text: string }[],
-    img: string;
-    video: string;
-    date: string;
-    id: string;
-    idea: string;
-    com?: Comtent[];
-    keyword?: { keyword: string, isAi: number }[];
-}
-
-//新的
+//主数据列表
 export interface Lists {
     id: number;
     user: string;
@@ -55,8 +39,16 @@ export interface Lists {
         dtid: number,
         tetile: string
     }[];
+    chatRoot?:chatRoot[];
     loa: number
 }
+
+
+export type chatRoot = {
+    rootId: string,
+    name: string,
+}
+
 
 export interface Listsc extends Lists {
     type: "A"

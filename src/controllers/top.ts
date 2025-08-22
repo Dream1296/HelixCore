@@ -2,6 +2,8 @@ import express, { Request, Response } from 'express';
 import os from 'os';
 import { exec } from 'child_process';
 import util from 'util';
+import { getFan, readAHT10Data, setFan } from '@/services/sensor';
+import { number } from 'io-ts';
 
 const execAsync = util.promisify(exec);
 
@@ -48,7 +50,7 @@ export async function getIp(req: Request, res: Response) {
         code: 200,
         ip: ip
     });
-    
+
 
 
 
@@ -69,6 +71,7 @@ async function xnlist(req: Request, res: Response) {
         } catch (error: any) {
             res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
         }
+
     };
 
     const intervalId = setInterval(sendPerformanceData, 2000);
@@ -115,9 +118,37 @@ function getTemperatureInfo(): Promise<{ cpuTemperature: number; gpuTemperature:
     });
 }
 
+
 // 获取数据
-async function getdata() {
-    const data: any = {};
+interface Data {
+    cpuTemperature: string | number;
+    gpuTemperature: string | number;
+    sddisk: string;
+    ssddisk: string;
+    cpuUsage: string | number;
+    memoryUsage: string;
+    fenSanNun: string | number;
+    aht10: {
+        temperature: number;
+        humidity: number;
+    },
+}
+async function getdata(): Promise<Data> {
+
+
+    const data: Data = {
+        cpuTemperature: 'N/A',
+        gpuTemperature: 'N/A',
+        sddisk: 'N/A',
+        ssddisk: 'N/A',
+        cpuUsage: 'N/A',
+        memoryUsage: 'N/A',
+        fenSanNun: NaN,
+        aht10: {
+            temperature: -1,
+            humidity: -1,
+        },
+    };
 
     try {
         const { cpuTemperature, gpuTemperature } = await getTemperatureInfo();
@@ -160,21 +191,14 @@ async function getdata() {
         data.fenSanNun = NaN;
     }
 
+    data.aht10 = await readAHT10Data();
+
     return data;
 }
 
-export async function getFan() {
-    let a = await execAsync('gpio read 3');
-    let nowFan = Number(a.stdout.slice(0, 1));
-    return nowFan;
-}
 
-export async function setFan(num: number) {
-    let nowFan = await getFan();
-    if (nowFan != num) {
-        await execAsync('gpio write 3 ' + num);
-    }
-}
+
+
 
 
 async function setFanL(req: Request, res: Response) {

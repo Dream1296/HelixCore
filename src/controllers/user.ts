@@ -9,7 +9,12 @@ import { getUrl } from '@/pathUtils';
 import moment from 'moment';
 
 async function userClass(req: Reqs, res: Response) {
-    res.send(req.user?.username);
+    res.send({
+        code:200,
+        data:{
+            username:req.user?.username,
+        }
+    });
 }
 
 async function userIn(req: Reqs, res: Response) {    

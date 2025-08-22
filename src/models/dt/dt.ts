@@ -1,11 +1,11 @@
 import { redisDB } from "@/config/db/redis";
-import { BadmintonData, Comtent, KeepRunRecord, List, Lists, dtFile } from "../../type";
+import { BadmintonData, Comtent, KeepRunRecord, Lists, dtFile } from "../../type";
 const mi = require("../../utils/usErcrypto");
 import { dbSql } from "@/utils/dbSql";
 import moment from "moment";
 import { chinese_English } from "@/tool/chineseTrEnglish";
 import { prisma } from '@/config/prisma';
-import { delDtData, dtComment, getDtFile, getDtVideoFile, getKeepBadmintonList, getKeepRunList, getText, setDtVideo, setImgDt, setKeyword, sqlGetDtIndex, sqlGetDtIndexAll } from "./queries";
+import { delDtData, dtComment, getChatAll, getDtFile, getDtVideoFile, getKeepBadmintonList, getKeepRunList, getText, setDtVideo, setImgDt, setKeyword, sqlGetDtIndex, sqlGetDtIndexAll } from "./queries";
 import { formatComment, fusionObj, iskeywords, jiamiConmit } from "./helpers";
 import path from "path";
 import { getUrl } from "@/pathUtils";
@@ -77,6 +77,7 @@ export async function dtList(user: string, loa: number | string) {
 
     for (let dt of list) {
         dt.longText = [];
+        dt.chatRoot = [];
     }
 
 
@@ -91,7 +92,6 @@ export async function dtList(user: string, loa: number | string) {
             dtid: textObj.dtid,
             tetile: textObj.title
         })
-
     }
 
 
@@ -102,6 +102,19 @@ export async function dtList(user: string, loa: number | string) {
     //运动羽毛球
     let keepBadmintonList = await getKeepBadmintonList();
     fusionObj(list, keepBadmintonList, 'KeepBadminton', undefined, 'ocr_text');
+
+    //chat
+    let chatList = await getChatAll();
+    for (let a of chatList) {
+        let dt = list.find(b => b.id == a.dt_id);
+        if (!dt) {
+            continue;
+        }
+        dt.chatRoot!.push({
+            rootId: a.root_id,
+            name: a.name,
+        });
+    }
 
     //排序
     const sortedArray = list.sort((a, b) => {
