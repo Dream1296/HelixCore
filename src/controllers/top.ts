@@ -63,10 +63,13 @@ async function xnlist(req: Request, res: Response) {
         'Connection': 'keep-alive',
         'Cache-Control': 'no-cache',
     });
+    console.log('top');
 
     const sendPerformanceData = async () => {
+
         try {
             const data = await getdata();
+
             res.write(`data: ${JSON.stringify(data)}\n\n`);
         } catch (error: any) {
             res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);

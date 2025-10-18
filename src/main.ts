@@ -20,14 +20,19 @@ let figlet = require("figlet");
 //杂乱配置项
 app.use(configs);
 
+
 import '@/services/socket/socket';
+import { systemInit } from './init';
 
 
+systemInit();
 
 //事件监听
 import "@/services/emits";
 import { getUrl } from './pathUtils';
 import { getMqttDate } from './services/Aether';
+import { readAHT10Data } from './services/sensor';
+
 
 //中间件
 app.use(mid);
@@ -70,6 +75,8 @@ app.get('/', (req: Request, res: Response) => {
 
 getMqttDate();
 
+readAHT10Data();
+
 
 // 创建 HTTP/2 服务器
 // const server = expressHttp2.createServer(sslConfig, app);
@@ -86,7 +93,7 @@ getMqttDate();
 // webSocketInit(servers);
 app.listen(process.env.PORT, () => {
     // console.log('启动成功，端口3010');
-    let fontSrc = getUrl('assets', 'font/standard.flf');
+    let fontSrc = getUrl('assets', 'system/font/standard.flf');
     let fontData = fs.readFileSync(fontSrc, "utf8");
     // 注册字体到 figlet
     figlet.parseFont('standard', fontData);

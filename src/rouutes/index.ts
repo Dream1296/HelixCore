@@ -45,9 +45,11 @@ app.use('/api',Chat);
 import { getHTML} from '../controllers/audio';
 app.get('/lx',getHTML);
 
+import list from './list'
+app.use('/api',list);
 
 
-//
+
 
 
 

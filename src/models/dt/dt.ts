@@ -5,7 +5,7 @@ import { dbSql } from "@/utils/dbSql";
 import moment from "moment";
 import { chinese_English } from "@/tool/chineseTrEnglish";
 import { prisma } from '@/config/prisma';
-import { delDtData, dtComment, getChatAll, getDtFile, getDtVideoFile, getKeepBadmintonList, getKeepRunList, getText, setDtVideo, setImgDt, setKeyword, sqlGetDtIndex, sqlGetDtIndexAll } from "./queries";
+import { delDtData, dtComment, getChatAll, getDtFile, getDtVideoFile, getDtVideoProportion, getImgShowProportion, getKeepBadmintonList, getKeepRunList, getText, setDtVideo, setImgDt, setKeyword, sqlGetDtIndex, sqlGetDtIndexAll } from "./queries";
 import { formatComment, fusionObj, iskeywords, jiamiConmit } from "./helpers";
 import path from "path";
 import { getUrl } from "@/pathUtils";
@@ -24,6 +24,34 @@ export async function dtList(user: string, loa: number | string) {
     list.forEach(e => {
         e.com = []
     })
+
+
+    let imgProportion = await getImgShowProportion();
+    let videoImgProportion = await getDtVideoProportion();
+
+    for (let i = 0; i < list.length; i++) {
+        let id = list[i].id;
+        list[i].imgShowProportion = [];
+        let imgProportionArr = imgProportion.filter(e => e.dt_id == id);
+        let videoProportionArr = videoImgProportion.filter(e => e.dt_id == id);
+
+        for (let j = 0; j < list[i].imgShowAll; j++) {
+            let imgPro = imgProportionArr.find(e => e.dt_id == id && e.img_index == j);
+            if (!imgPro) {
+                continue;
+            }
+            list[i].imgShowProportion.push(imgPro.show_proportion);
+        }
+        for (let j = 0; j < list[i].videoNum; j++) {
+            let videoPro = videoProportionArr.find(e => e.dt_id == id && e.video_index == j);
+            if (!videoPro) {
+                continue;
+            }
+            list[i].imgShowProportion.push(videoPro.show_proportion);
+        }
+
+    }
+
 
     //获取评论信息
     let comment: Comtent[] = formatComment(await dtComment());
@@ -161,6 +189,7 @@ export async function dtLists(user: string, loa: number | string, findId?: numbe
             dt.img_show_num as imgShowAll,
             dt.img_all_num as imgAllNum,
             dt.video_num as videoNum,
+            dt.video_show_num as videoShowAll,
             dt.date as date,
             dt.idea as idea,
             dt.bg_style as bgStyle,
@@ -260,7 +289,7 @@ export async function setDtComB(comId: number, imgNameArr: string[]) {
     let img_index = 0;
     let sql = "INSERT INTO dt_comments_img (comment_id, img_index, img_src, img_name) VALUES (?,?,?,?)";
     for (let i = 0; i < imgNameArr.length; i++) {
-        let a = await dbSql(sql, [comId, img_index, 'dtimg', imgNameArr[i]], true);
+        let a = await dbSql(sql, [comId, img_index, process.env.aNew, imgNameArr[i]], true);
         if (a == 1) {
             img_index++;
         } else {
@@ -268,7 +297,6 @@ export async function setDtComB(comId: number, imgNameArr: string[]) {
         }
     }
     return true;
-
 }
 
 
@@ -440,9 +468,9 @@ export async function dtDate(year: number | string) {
 export async function setDt(id: string, user: string, text: string, img_show_num: string, img_all_num: string, video_num: string,
     date: string, loa: string, idea?: string): Promise<boolean> {
     let dateReal = moment().format('YYYY-MM-DD HH:mm');
-    let sql = `INSERT INTO dt (id,user, text, img,img_show_num, img_all_num ,video,video_num, date, loa,date_real) VALUES 
-                (?,?, ?, '0', ?, ?, '0', ?,?,?,?  );`;
-    let canshuArr = [id, user, text, img_show_num, img_all_num, video_num, date, loa, dateReal];
+    let sql = `INSERT INTO dt (id,user, text,img_show_num, img_all_num ,video_num, video_show_num,date, loa,date_real) VALUES 
+                (?,?, ?,  ?, ?, ?,?,?,? ,? );`;
+    let canshuArr = [id, user, text, img_show_num, img_all_num, video_num, video_num, date, loa, dateReal];
     let a = await dbSql<number>(sql, canshuArr, true);
     if (a == 1) {
         return true

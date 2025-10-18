@@ -6,6 +6,7 @@ import { getVideoSrc } from '@/models/dt/dt';
 import { getUrl } from '@/pathUtils';
 import fs from 'fs';
 import { ensureVideoIsMP4 } from '@/controllers/dt';
+import path from 'path';
 const PORT = 5000;
 
 const socketInfo = new Map<net.Socket, { token: string }>();
@@ -47,7 +48,9 @@ async function setVideo(msg: ParsedMessage, socket: net.Socket) {
     if (!file) {
         return
     }
-    let fileSrc = getUrl('assets', file.video_src, file.video_name);
+    let videoUrl = path.join(getUrl('assets'), 'a', file.video_src, 'video/');
+
+    let fileSrc = path.join(videoUrl, 'original', file.video_name);
     fileSrc = ensureVideoIsMP4(fileSrc);
 
     const stat = fs.statSync(fileSrc);

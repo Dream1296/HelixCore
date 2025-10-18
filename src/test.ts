@@ -12,6 +12,7 @@ import { getLoaDate, setLoaDate } from './services/loaDate';
 import { dbSql } from './utils/dbSql';
 import { md5Text } from './utils/cryptoUtils';
 import e from 'express';
+import path from 'path';
 // import { addDB, processImage } from "./services/imgdataArr";
 // import { vectorAdd } from "./services/vector";
 // import { dbSql } from "./utils/dbSql";
@@ -131,7 +132,7 @@ async function dyBack() {
 
 
 async function getNode(id: string) {
-    let list = await dbSql<{ id: string,parent_id:string }[]>('SELECT id,parent_id FROM node where id = ?', [id], undefined, 'chat');
+    let list = await dbSql<{ id: string, parent_id: string }[]>('SELECT id,parent_id FROM node where id = ?', [id], undefined, 'chat');
     return list[0];
 }
 
@@ -140,28 +141,56 @@ let titleSet = new Set<string>();
 
 async function main() {
 
-    let arr = await dbSql<{ root_id: string }[]>('SELECT root_node FROM `list`', [], undefined, 'chat');
-    for (let a of arr) {
-        titleSet.add(a.root_id);
-    }
-    let rootId = 'eaa812f8-53ad-4377-a5e6-5475eca5b450';
-    while (true) {
-        let a = (await getNode(rootId));
-        if (!a) {
-            console.log('error');
-            return
-        }
-        let id = a.parent_id;
-        if (titleSet.has(id)) {
-            console.log(id);
-            return
-        } else {
-            rootId = id;
-            console.log(id);
+    // let arr = await dbSql<{ root_id: string }[]>('SELECT root_node FROM `list`', [], undefined, 'chat');
+    // for (let a of arr) {
+    //     titleSet.add(a.root_id);
+    // }
+    // let rootId = 'eaa812f8-53ad-4377-a5e6-5475eca5b450';
+    // while (true) {
+    //     let a = (await getNode(rootId));
+    //     if (!a) {
+    //         console.log('error');
+    //         return
+    //     }
+    //     let id = a.parent_id;
+    //     if (titleSet.has(id)) {
+    //         console.log(id);
+    //         return
+    //     } else {
+    //         rootId = id;
+    //         console.log(id);
 
+    //     }
+    // }
+
+    // let sql = 'SELECT video_name FROM dt_video';
+    // let videoList = await dbSql<{ video_name: string }[]>(sql, []);
+    // let videoPath = '/dream/HelixCore/assets/a/2024/video/original/';
+    // let videoPath1 = '/dream/HelixCore/assets/a/2025/video/original/';
+
+
+    // let fileSet = new Set([...getFilesSet(videoPath), ...getFilesSet(videoPath1)]);
+
+    // for (let a of videoList) {
+    //     let name = a.video_name;
+    //     if (!fileSet.has(name)) {
+    //         console.log(name);
+    //     }
+    // }
+    let sql = 'SELECT img_name FROM dt_img';
+    let videoList = await dbSql<{ img_name: string }[]>(sql, []);
+    let videoPath = '/dream/HelixCore/assets/a/2024/img/original';
+    let videoPath1 = '/dream/HelixCore/assets/a/2025/img/original';
+
+
+    let fileSet = new Set([...getFilesSet(videoPath), ...getFilesSet(videoPath1)]);
+
+    for (let a of videoList) {
+        let name = a.img_name;
+        if (!fileSet.has(name) && name != 'null') {
+            console.log(name);
         }
     }
-
 
 
 
@@ -185,6 +214,20 @@ async function main() {
 
 
 
+}
+
+function getFilesSet(dir: string) {
+    const files = fs.readdirSync(dir);  // 获取目录下的所有文件/文件夹
+    const fileSet = new Set();
+
+    files.forEach(file => {
+        const filePath = path.join(dir, file);
+        if (fs.statSync(filePath).isFile()) { // 只保留文件
+            fileSet.add(file);
+        }
+    });
+
+    return fileSet;
 }
 
 main();

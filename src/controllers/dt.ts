@@ -90,6 +90,7 @@ export async function setDtBgStyles(req: Reqs, res: Response) {
 export async function getdt(req: Reqs, res: Response) {
     const dtid = Number(req.query.id);
     let user = req.user?.username || 'guest';
+    let loa = Number(req.query.loa);
 
     if (!dtid || dtid == -1) {
         return res.status(400).send({ code: 400, msg: "参数不全" });
@@ -103,7 +104,7 @@ export async function getdt(req: Reqs, res: Response) {
         return res.status(404).send({ code: 404, msg: "dt不存在" });
     }
 
-    let list = await dtList(user, 1);
+    let list = await dtList(user, loa);
     let dt = list.find(a => a.id == dtid);
     if (!dt) {
         return res.status(403).send({ code: 403, msg: "权限错误" });
@@ -253,7 +254,7 @@ export async function dtDataImg(req: Reqs, res: Response) {
     res.send(buffer);
 }
 
-//获取缩略图
+//获取图片
 export async function dtimg(req: Reqs, res: Response) {
     let Reqdtid = req.query.dtid;
     let Reqindex = req.query.index;
@@ -333,17 +334,16 @@ async function resImg(imgSrc: { img_src: string; img_name: string; }, isImg: any
     //文件名
     let filename = imgSrc.img_name;
     //文件路径
-    let fileurl = path.join(urls, imgSrc.img_src);
+    let fileurl = path.join(urls, 'a', imgSrc.img_src, 'img/original');
 
     //文件全名
     let filePath = path.join(fileurl, filename);
 
     //缩略图缓存目录
-    let img_log = path.join(urls, "dtimg_log");
+    let img_log = path.join(urls, 'a', imgSrc.img_src, 'img/compressed');
 
     // 缩略图路径
     let thumbPath = path.join(img_log, filename);
-
 
     if (!fileIsDir(fileurl, filename)) {
         filePath = path.join(urls, './dtimg/imgError.png');
@@ -381,6 +381,8 @@ async function resImg(imgSrc: { img_src: string; img_name: string; }, isImg: any
             res.sendFile(filePath);
         }
     } else {
+
+
         res.sendFile(filePath);
     }
 }
@@ -434,7 +436,6 @@ export async function dtvideo(req: Reqs, res: Response) {
 
     let Reqdtid = req.query.dtid;
     let Reqindex = req.query.index;
-    let token = req.query.token;
 
     let dtid;
     let index;
@@ -456,8 +457,10 @@ export async function dtvideo(req: Reqs, res: Response) {
         return res.send({ code: 402 });
     }
 
+    let videoUrl = path.join(getUrl('assets'), 'a', file.video_src, 'video/');
 
-    let fileSrc = getUrl('assets', file.video_src, file.video_name);
+
+    let fileSrc = path.join(videoUrl, 'original', file.video_name);
 
     fileSrc = ensureVideoIsMP4(fileSrc);
 
@@ -518,7 +521,7 @@ export async function dtvideo(req: Reqs, res: Response) {
 let taskSet = new Set<string>();
 export function ensureVideoIsMP4(inputPath: string): string {
     // 定义输出路径，通过替换 /dtimg/ 为 /dtimgs/ 来构造
-    const outputPath = inputPath.replace('/dtvideo/', '/dtvideos/');
+    const outputPath = inputPath.replace('/original/', '/compressed/');
 
 
     // 检查转换后的文件是否已经存在
@@ -622,12 +625,14 @@ export async function dtvideoImg(req: Reqs, res: Response) {
         return res.send({ code: 402 });
     }
 
-    let videoFileSrc = path.join(getUrl('assets'), file.video_src, file.video_name);
+    let videoUrl = path.join(getUrl('assets'), 'a', file.video_src, 'video/');
+
+    let videoFileSrc = path.join(videoUrl, 'original', file.video_name);
 
     //视频预览图名字
     let videoImg = file.video_name.slice(0, -4) + '.png';
 
-    let videoSrc = path.join(getUrl('assets'), 'dtvideo_log');
+    let videoSrc = path.join(videoUrl, 'cover');
 
     if (fileIsDir(videoSrc, videoImg)) {
         return res.sendFile(path.join(videoSrc, videoImg));
@@ -638,12 +643,12 @@ export async function dtvideoImg(req: Reqs, res: Response) {
         .screenshots({
             timestamps: ['00:00:01'], // 第1秒
             filename: videoImg, // 保存的文件名
-            folder: path.join(getUrl('assets'), 'dtvideo_log'), // 保存到的文件夹
+            folder: path.join(videoUrl, 'cover'), // 保存到的文件夹
             size: '320x240' // 缩略图的尺寸
         })
         .on('end', () => {
             setTimeout(() => {
-                return res.sendFile(getUrl('assets', 'dtvideo_log', videoImg)); // 发送封面图片
+                return res.sendFile(path.join(videoUrl, 'cover', videoImg)); // 发送封面图片
             }, 300);
         })
         .on('error', (err: Error) => {
@@ -657,11 +662,11 @@ export async function dtvideoImg(req: Reqs, res: Response) {
 
 
 
-
 // 设置图片存储引擎和文件名
 const storage = multer.diskStorage({
     destination: function (req: Request, file: Response, cb: any) {
-        cb(null, getUrl('assets', 'dtimg_temp')); // 存储的目录，如果不存在会自动创建
+        let upImg = getUrl('assets', 'a/dtimg_temp')
+        cb(null, upImg); // 存储的目录，如果不存在会自动创建
     },
     filename: function (req: Request, file: Response, cb: any) {
         let fileName = req.body.filename;
@@ -674,7 +679,7 @@ const storage = multer.diskStorage({
 //视频存储
 const storageVideo = multer.diskStorage({
     destination: function (req: Request, file: Response, cb: any) {
-        cb(null, getUrl('assets', 'dtvideo_temp')); // 存储的目录，如果不存在会自动创建
+        cb(null, getUrl('assets', 'a/dtvideo_temp')); // 存储的目录，如果不存在会自动创建
     },
     filename: function (req: Request, file: Response, cb: any) {
         let fileName = req.body.filename;
@@ -728,7 +733,6 @@ export async function postdt(req: Request, res: Response) {
     const loa = req.body.loa || '0';
     let video = req.body.video as string[];
     let videoNum = video.length.toString();
-
     if (img_show_num > img_all_num) {
         img_show_num = Number(img_all_num) > 6 ? '6' : img_all_num;
     }
@@ -804,19 +808,13 @@ export async function postdt(req: Request, res: Response) {
             function fn(fileName: string, type: 'img' | 'video') {
                 let newName = mvFileName(fileName)
                 let newFilePath = path.join(urls, newName);
-                let url = 'dtimg';
+                let newPath = '';
                 if (type == 'img') {
-                    if (loa == '13') {
-                        url = 'dtimg_13';
-                    }
-                } else if (type == 'video') {
-                    if (loa == '13') {
-                        url = 'dtvideo_13';
-                    } else {
-                        url = 'dtvideo';
-                    }
+                    newPath = path.join(getUrl('assets', 'a/', process.env.aNew!, "img/original"), newName);
                 }
-                const newPath = path.join(getUrl('assets', url), newName);
+                if (type == 'video') {
+                    newPath = path.join(getUrl('assets', 'a/', process.env.aNew!, "video/original"), newName);
+                }
                 // 移动文件到目标目录  
                 try {
                     //重命名

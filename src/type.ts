@@ -20,7 +20,9 @@ export interface Lists {
     text: string;
     textArr?: { type: string, text: string }[],
     imgShowAll: number;
+    imgShowProportion: string[];
     imgAllNum: number;
+    videoShowAll: number;
     videoNum: number;
     imgUrl?: string;
     date: string;

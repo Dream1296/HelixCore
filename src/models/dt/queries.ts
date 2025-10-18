@@ -114,7 +114,7 @@ export async function getDtFile() {
 
 //插入视频
 export async function setDtVideo(id: number, videoIndex: number, videoName: string) {
-    let video_src = process.env.dtVideoSrc;
+    let video_src = process.env.aNew;
     if (!video_src) {
         return new Error('请先配置视频目录');
     }
@@ -124,6 +124,7 @@ export async function setDtVideo(id: number, videoIndex: number, videoName: stri
                 dt_id: id,
                 video_index: videoIndex,
                 video_src: video_src,
+                show_proportion: process.env.showProportion!,
                 video_name: videoName,
             },
         });
@@ -136,7 +137,7 @@ export async function setDtVideo(id: number, videoIndex: number, videoName: stri
 
 //插入图片
 export async function setImgDt(id: number, imgIndex: number, imgName: string) {
-    let img_src = process.env.dtImgSrc;
+    let img_src = process.env.aNew;
     if (!img_src) {
         return new Error('请先配置视频目录');
     }
@@ -147,6 +148,7 @@ export async function setImgDt(id: number, imgIndex: number, imgName: string) {
                 img_index: imgIndex,
                 img_src: img_src,
                 img_name: imgName,
+                show_proportion: process.env.showProportion!
             },
         });
     } catch {
@@ -158,7 +160,7 @@ export async function setImgDt(id: number, imgIndex: number, imgName: string) {
 
 
 
-export async function getDtVideoFile(dtid: number, index: number){
+export async function getDtVideoFile(dtid: number, index: number) {
     return await prisma.dt_video.findMany({
         where: {
             dt_id: dtid,
@@ -168,6 +170,28 @@ export async function getDtVideoFile(dtid: number, index: number){
 
 }
 
-export async function getChatAll(){
+
+export async function getChatAll() {
     return await prisma.dt_chat.findMany();
+}
+
+
+export async function getImgShowProportion() {
+    return await prisma.dt_img.findMany({
+        select: {
+            dt_id: true,
+            img_index: true,
+            show_proportion: true
+        }
+    })
+}
+
+export async function getDtVideoProportion() {
+    return await prisma.dt_video.findMany({
+        select: {
+            dt_id: true,
+            video_index: true,
+            show_proportion: true
+        }
+    })
 }

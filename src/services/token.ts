@@ -5,7 +5,7 @@ import { createSignature, jiami, jie, verifySignature } from "@/utils/cryptoUtil
 
 const passwd = process.env.tokenPasswd! + process.env.tokenR!;
 const day = 30;
-const mintime = 10;
+const mintime = 20;
 
 //传入用户名，生成token
 function generateToken(username: string) {

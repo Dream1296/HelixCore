@@ -17,7 +17,7 @@ export function fileIsDir(dir: string, file: string) {
 //判断图片是否包含在上传临时文件夹中
 export function isImgTemp(imgArr: string[]) {
     for (let i = 0; i < imgArr.length; i++) {
-        if (!fileIsDir(getUrl('assets', 'dtimg_temp'), imgArr[i])) {
+        if (!fileIsDir(getUrl('assets', 'a/dtimg_temp'), imgArr[i])) {
             return false;
         }
     }
@@ -27,7 +27,7 @@ export function isImgTemp(imgArr: string[]) {
 //判断图片是否包含在上传临时文件夹中
 export function isVideoTemp(videoArr: string[]) {
     for (let i = 0; i < videoArr.length; i++) {
-        if (!fileIsDir(getUrl('assets', 'dtvideo_temp'), videoArr[i])) {
+        if (!fileIsDir(getUrl('assets', 'a/dtvideo_temp'), videoArr[i])) {
             return false;
         }
     }
@@ -39,12 +39,8 @@ export function isVideoTemp(videoArr: string[]) {
 export function mvImg(imgArr: string[], loa?: number) {
     //移动图片
     for (let i = 0; i < imgArr.length; i++) {
-        let url = 'dtimg';
-        if (loa == 13) {
-            url = 'dtimg_13';
-        }
-        const path1 = path.join(getUrl('assets', 'dtimg_temp'), imgArr[i]);
-        const path2 = path.join(getUrl('assets', url), imgArr[i]);
+        const path1 = path.join(getUrl('assets', 'a/dtimg_temp'), imgArr[i]);
+        const path2 = path.join(getUrl('assets', 'a/', process.env.aNew!, "img/original"), imgArr[i]);
         try {
             fs.renameSync(path1, path2);
         } catch (error) {
@@ -58,12 +54,8 @@ export function mvImg(imgArr: string[], loa?: number) {
 //移动视频
 export function mvVideo(videoArr: string[], loa?: number) {
     for (let i = 0; i < videoArr.length; i++) {
-        let url = 'dtvideo';
-        if (loa == 13) {
-            url = 'dtvideo_13';
-        }
-        const path1 = path.join(getUrl('assets', 'dtvideo_temp'), videoArr[i]);
-        const path2 = path.join(getUrl('assets', url), videoArr[i]);
+        const path1 = path.join(getUrl('assets', 'a/dtvideo_temp'), videoArr[i]);
+        const path2 = path.join(getUrl('assets', 'a/', process.env.aNew!, "video/original"), videoArr[i]);
         try {
             fs.renameSync(path1, path2);
         } catch (error) {

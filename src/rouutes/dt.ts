@@ -128,14 +128,14 @@ app.get("/keepOcr", keepRun);
 app.get('/upDtData', upDtData);
 
 // 年份图片获取
-app.get('/getYear',getYear);
+app.get('/getYear', getYear);
 
 
 
 
 
 //缓存相关
-app.get('/getImgDB',getImgDB);
+app.get('/getImgDB', getImgDB);
 
 
 

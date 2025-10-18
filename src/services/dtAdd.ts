@@ -16,21 +16,21 @@ let dataImgArr = [
     }
 ]
 
-let dataT: Lists = {
-    id: 999,
-    user: "yw",
-    name: "不爱吃糖",
-    touxian: "yw01.png",
-    text: "这是一个正文",
-    date: (new Date()).toISOString(),
-    imgShowAll: 0,
-    imgAllNum: 0,
-    videoNum: 0,
-    po: 0,
-    bgStyle: 0,
-    longText: [],
-    loa: 0
-}
+// let dataT: Lists = {
+//     id: 999,
+//     user: "yw",
+//     name: "不爱吃糖",
+//     touxian: "yw01.png",
+//     text: "这是一个正文",
+//     date: (new Date()).toISOString(),
+//     imgShowAll: 0,
+//     imgAllNum: 0,
+//     videoNum: 0,
+//     po: 0,
+//     bgStyle: 0,
+//     longText: [],
+//     loa: 0
+// }
 
 async function loa13(dtData: Lists[]) {
 

@@ -47,22 +47,21 @@ model diary {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model dt {
-  id           Int      @id @default(autoincrement())
-  user         String   @db.VarChar(10)
-  text         String   @db.Text
-  img          String   @default("0") @db.VarChar(2000)
-  img_show_num Int
-  img_all_num  Int
-  video        String   @default("0") @db.VarChar(200)
-  video_num    Int
-  date         DateTime @db.DateTime(0)
-  idea         String   @default("0") @db.VarChar(50)
-  pin_order    Int      @default(0)
-  bg_style     Int      @default(0)
-  loa          Int      @default(0)
-  shows        Boolean  @default(true)
-  save         Boolean  @default(false)
-  date_real    String   @db.VarChar(30)
+  id             Int      @id @default(autoincrement())
+  user           String   @db.VarChar(10)
+  text           String   @db.Text
+  img_show_num   Int
+  img_all_num    Int
+  video_show_num Int
+  video_num      Int
+  date           DateTime @db.DateTime(0)
+  idea           String   @default("0") @db.VarChar(50)
+  pin_order      Int      @default(0)
+  bg_style       Int      @default(0)
+  loa            Int      @default(0)
+  shows          Boolean  @default(true)
+  save           Boolean  @default(false)
+  date_real      String   @db.VarChar(30)
 
   @@index([loa], map: "loa")
   @@index([shows], map: "shows")
@@ -150,12 +149,13 @@ model dt_id {
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model dt_img {
-  id        Int     @id @default(autoincrement())
-  dt_id     Int
-  img_index Int
-  img_src   String? @db.VarChar(200)
-  img_name  String  @db.VarChar(300)
-  text      String? @db.Text
+  id              Int     @id @default(autoincrement())
+  dt_id           Int
+  img_index       Int
+  img_src         String? @db.VarChar(200)
+  img_name        String  @db.VarChar(300)
+  show_proportion String  @db.VarChar(10)
+  text            String? @db.Text
 
   @@index([dt_id, img_index], map: "dt_id")
 }
@@ -205,11 +205,12 @@ model dt_text {
 }
 
 model dt_video {
-  id          Int    @id @default(autoincrement())
-  dt_id       Int
-  video_index Int
-  video_src   String @db.VarChar(300)
-  video_name  String @db.VarChar(300)
+  id              Int    @id @default(autoincrement())
+  dt_id           Int
+  video_index     Int
+  video_src       String @db.VarChar(300)
+  video_name      String @db.VarChar(300)
+  show_proportion String @db.VarChar(10)
 }
 
 model explanatory {

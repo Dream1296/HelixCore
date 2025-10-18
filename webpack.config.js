@@ -13,10 +13,11 @@ module.exports = {
     clean: true, // 每次构建前清理输出目录
   },
   resolve: {
-    extensions: ['.ts', '.js'], // 支持的文件扩展名
+    extensions: ['.ts', '.js', '.node'], // 支持的文件扩展名
     alias: {
       '@': path.resolve(__dirname, 'src'), // 设置路径别名
     },
+
   },
   module: {
     rules: [
@@ -25,9 +26,24 @@ module.exports = {
         use: 'ts-loader', // 使用 ts-loader 编译 TypeScript
         exclude: /node_modules/,
       },
+      {
+        test: /\.node$/,
+        use: 'node-loader'
+      }
     ],
   },
-  externals: [nodeExternals(),'i2c-bus'], // 排除 Node.js 内置模块
+  externals: [
+    nodeExternals(), // 保持原有功能：排除 node_modules
+    function ({ request }, callback) {
+      if (request && request.endsWith(".node")) {
+        // 排除所有 .node 文件
+        return callback(null, `commonjs ${request}`);
+      }
+      callback();
+    }
+
+
+  ], // 排除 Node.js 内置模块
   plugins: [
     new NodePolyfillPlugin(), // 使用 Node.js Polyfills
   ],
