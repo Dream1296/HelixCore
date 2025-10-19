@@ -3,6 +3,8 @@ import util from "util";
 import fs from 'fs';
 import path from 'path';
 import { md5Text } from "@/utils/cryptoUtils";
+import { ensureDir, upImgCacheDir } from "./upImgCache";
+import { access, mkdir, constants } from 'fs/promises';
 
 // type 0为文件夹，1为图片, 2为视频， 其他为3
 type listFile = {
@@ -43,18 +45,30 @@ export async function getList(pathStr: string): Promise<listFile[]> {
                 type,
                 hash: '',
             })
-
-
         }
 
-
+        upImgCacheDir(pathStr);
 
         return fileArr;
     } catch (err) {
         console.error('Error reading directory:', err);
         return fileArr;
-        // throw err;
     }
+
+}
+
+
+export async function getImgT(dir: string, hash: string) {
+    let a = hash.slice(0, 2);
+    let b = hash.slice(2, 4);
+    let filePath = path.join(imgCache, a, b, (hash + '.png'));
+    try {
+        await access(filePath, constants.F_OK);
+        return filePath;
+    } catch {
+        return '-1';
+    }
+
 
 }
 
@@ -65,7 +79,7 @@ export async function getList(pathStr: string): Promise<listFile[]> {
  * @param {string} filename - 文件名（如 'example.jpg'）
  * @returns {number} 1=图片, 2=视频, 3=其他
  */
-function getFileType(filename: string): 1 | 2 | 3 {
+export function getFileType(filename: string): 1 | 2 | 3 {
     // 获取文件扩展名（小写）
     const ext = path.extname(filename).toLowerCase();
 
@@ -152,7 +166,7 @@ export async function fastListDir(dir: string): Promise<FileInfo[]> {
 }
 
 
-export function getFileHash(fileInfo:FileInfo){
+export function getFileHash(fileInfo: FileInfo): string {
     let str = fileInfo.name + fileInfo.size.toString() + fileInfo.date + fileInfo.fullPath;
     return md5Text(str);
 }
