@@ -2,6 +2,7 @@ const dbDream = require('@/config/db/mysql');
 const dbLog = require('@/config/db/mysql_log');
 const dbAi = require('@/config/db/mysql_ai');
 const dbChat = require('@/config/db/mysql_chat');
+const dbFeel = require('@/config/db/mysql_feel');
 
 
 /**
@@ -12,32 +13,35 @@ const dbChat = require('@/config/db/mysql_chat');
  * @param dbC - 数据库句柄
  * @returns 
  */
-export function dbSql<T>(sqlStr: string, canshu?: any[], isPut?: boolean, dbName?:"log"| "ai" | "dream" | "chat"): Promise<T> {
+export function dbSql<T>(sqlStr: string, canshu?: any[], isPut?: boolean, dbName?: "log" | "ai" | "dream" | "chat" | "feel"): Promise<T> {
     return new Promise((resolve, reject) => {
         let isPuts = !!isPut;  // 确保 isPuts 是布尔值
         let db = dbDream;
-        if(dbName=='log'){
+        if (dbName == 'log') {
             db = dbLog;
         }
-        if(dbName=='ai'){
+        if (dbName == 'ai') {
             db = dbAi;
         }
-        if(dbName=='chat'){
+        if (dbName == 'chat') {
             db = dbChat;
+        }
+        if (dbName == 'feel') {
+            db = dbFeel
         }
 
         // 执行 SQL 查询
         db.query(sqlStr, canshu, (error: any, results: any) => {
             if (error) {
                 console.log(error.message);
-                
-                return reject(error);  
+
+                return reject(error);
             }
 
             if (isPuts) {
                 if (results.affectedRows !== undefined) {
                     return resolve(results.affectedRows); // 返回影响的行数
-                }else{
+                } else {
                     return reject(0);
                 }
             }

@@ -93,7 +93,7 @@ export async function getMqttDate() {
         myEvent.emit('mqtt_ack', data);
 
         // 处理消息
-        console.log(msg.content.toString());
+        // console.log(msg.content.toString());
 
         // 确认消息已被处理
         con.ack(msg);

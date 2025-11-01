@@ -1,7 +1,8 @@
 import { getImgT, getList } from '@/models/list/list';
 import express, { Request, Response } from 'express';
 import { access, mkdir, constants } from 'fs/promises';
-
+import ffmpeg from 'fluent-ffmpeg';
+import fs from 'fs';
 
 export async function getPathListR(req: Request, res: Response) {
     let pathStr = req.query.path as string;
@@ -56,4 +57,86 @@ export async function listImg(req: Request, res: Response) {
     } catch (err) {
         return res.status(400).send({ code: 400 });
     }
+}
+
+export async function listVideo(req: Request, res: Response) {
+    let filePath = req.query.path as string;
+    console.log(filePath);
+    
+    if (!filePath) {
+        return res.status(400).send({ code: 400 });
+    }
+    try {
+        // 1. 判断文件是否存在
+        await access(filePath)
+    } catch {
+        // 文件不存在
+        return res.status(400).send({ code: 400 });
+    }
+
+    // // 尝试读取媒体信息
+    // await new Promise((resolve) => {
+    //     ffmpeg.ffprobe(filePath, (err, metadata) => {
+    //         if (err) {
+    //             console.error(`⚠️ ffprobe 解析失败: ${err.message}`);
+    //             return res.status(400).send({ code: 400 });
+    //         } else {
+    //             const hasVideoStream = metadata.streams.some(
+    //                 (s) => s.codec_type === 'video'
+    //             );
+    //             if (!hasVideoStream) {
+    //                 return res.status(400).send({ code: 400 });
+    //             }
+    //         }
+    //     })
+    // })
+
+    let fileSrc = filePath;
+
+    const stat = fs.statSync(fileSrc);
+    const fileSize = stat.size;
+
+    const range = req.headers.range;
+    if (range) {
+        const parts = range.replace(/bytes=/, "").split("-");
+        const start = parseInt(parts[0], 10);
+        const maxChunkSize = 1024 * 1024;
+
+        // const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+        const end = parts[1]
+            ? parseInt(parts[1], 10)
+            : Math.min(start + maxChunkSize - 1, fileSize - 1);
+
+        const chunksize = (end - start) + 1;
+        const audioStream = fs.createReadStream(fileSrc, { start, end });
+
+
+
+
+        const head = {
+            'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+            'Accept-Ranges': 'bytes',
+            'Content-Length': chunksize,
+            'Content-Type': 'video/mp4',
+        };
+
+
+        res.writeHead(206, head);
+        audioStream.pipe(res);
+        // res.end(buffer);
+
+
+
+
+    } else {
+        //    res.sendFile(fileSrc);
+        const head = {
+            'Content-Length': fileSize,
+            'Content-Type': 'video/mp4',
+        };
+        res.writeHead(200, head);
+        fs.createReadStream(fileSrc).pipe(res);
+    }
+
+
 }
