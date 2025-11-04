@@ -63,7 +63,7 @@ async function xnlist(req: Request, res: Response) {
         'Connection': 'keep-alive',
         'Cache-Control': 'no-cache',
     });
-    console.log('top');
+    // console.log('top');
 
     const sendPerformanceData = async () => {
 

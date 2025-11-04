@@ -4,17 +4,13 @@ import { pollingKeepBadminton, pollingKeepRun } from "./keep";
 
 
 // 更新数据事件监测
-myEvent.addListener('upDtList',(data:any)=>{
+myEvent.addListener('upDtList', (data: any) => {
     //更新redis缓存
     reDtListData();
-    
-    pollingKeepRun();
-    pollingKeepBadminton();
-})
 
+    // pollingKeepRun();
+    // pollingKeepBadminton();
+});
 
-setTimeout(()=>{
-    myEvent.emit('upDtList','start');
-},100);
 
 

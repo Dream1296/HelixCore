@@ -11,6 +11,7 @@ import axios from "axios";
 const multer = require('multer');
 const jiami = require('../utils/usErcrypto.js').jiami;
 import fs from 'fs';
+import fsPromises from 'fs/promises';
 import { dtAdd, dtComPro, imgcl } from '../services/dtAdd';
 // import { dtAdd_ah } from '../services/dt_ah';
 import { dtFind, dtFinds } from '../services/dtSearch';
@@ -32,6 +33,7 @@ import { linkScreenRefresh } from '@/services/Aether';
 import { addDB, processImage } from '@/services/imgdataArr';
 import { fileIsDir, isImgTemp, isVideoTemp, mvImg, mvVideo } from './dtTool';
 import { formatString, mvFileName } from '@/utils/time';
+import { getThumbnail, setThumbnail } from '@/services/MyLRU';
 // import { getDtDataImg } from '@/services/dtDataT';
 // import { getlinkScreen, processImageForEInk } from '@/services/linkScreen';
 
@@ -285,7 +287,7 @@ export async function dtimg(req: Reqs, res: Response) {
 
 
     let imgSrc = (await dbSql<{ img_src: string, img_name: string }[]>(sqlStr))[0];
-    imgcl(imgSrc, dtid, index, req.user?.username)
+    imgcl(imgSrc, dtid, index, req.user?.username);
     resImg(imgSrc, isImg, res);
 }
 
@@ -324,8 +326,18 @@ export async function dtimgCom(req: Reqs, res: Response) {
  * @returns 
  */
 async function resImg(imgSrc: { img_src: string; img_name: string; }, isImg: any, res: Response) {
+    // console.log(1);
+
     if (!imgSrc) {
         let filePath = path.join(getUrl('assets'), './dtimg/imgError.png');
+        let ThumbnailData = getThumbnail(filePath);
+        res.setHeader('Content-Type', 'image/png');
+        if (ThumbnailData) {
+            console.log('从缓存中拿缩略图');
+            return res.send(ThumbnailData);
+        }
+        let errorImgData = await fsPromises.readFile(filePath);
+        setThumbnail(filePath, errorImgData);
         return res.sendFile(filePath);
     }
 
@@ -352,14 +364,37 @@ async function resImg(imgSrc: { img_src: string; img_name: string; }, isImg: any
 
 
     if (isImg == 0 || !isImg) {
+
+
         if (filename.endsWith('.gif')) {
+            let ThumbnailData = getThumbnail(filePath);
+            if (ThumbnailData) {
+                res.setHeader('Content-Type', 'image/gif');
+                console.log('从缓存中拿缩略图');
+                return res.send(ThumbnailData);
+            }
             return res.sendFile(filePath, {
                 headers: {
                     'Content-Type': 'image/gif' // 设置响应头为 GIF 格式
                 }
             });
         }
+        // console.log(2);
+
+        //判断是否缓存
+        let ThumbnailData = getThumbnail(thumbPath);
+        // console.log(ThumbnailData == false);
+        // console.log(thumbPath);
+
+        if (ThumbnailData) {
+            res.setHeader('Content-Type', 'image/png');
+            // console.log('从缓存中拿缩略图');
+            return res.send(ThumbnailData);
+        }
+
         if (fileIsDir(img_log, filename)) {
+            // console.log('从io中拿图');
+            
             return res.sendFile(thumbPath);
         }
         try {
@@ -633,6 +668,15 @@ export async function dtvideoImg(req: Reqs, res: Response) {
     let videoImg = file.video_name.slice(0, -4) + '.png';
 
     let videoSrc = path.join(videoUrl, 'cover');
+
+    let ThumbnailData = getThumbnail(path.join(videoSrc, videoImg));
+    if (ThumbnailData) {
+        res.setHeader('Content-Type', 'image/png');
+        // console.log('从缓存中拿视频封面图');
+        return res.send(ThumbnailData);
+    }
+
+
 
     if (fileIsDir(videoSrc, videoImg)) {
         return res.sendFile(path.join(videoSrc, videoImg));
