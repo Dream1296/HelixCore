@@ -26,6 +26,7 @@ export async function linkScreenRefresh() {
 
         setTimeout(() => {
             res = 408;
+            //移除事件
             myEvent.removeListener('mqtt_ack', fn);
             resolve(null);
         }, 5000);
@@ -54,7 +55,7 @@ export type mqtt_message = {
     time: string
 }
 
-getMqttDate();
+// getMqttDate();
 
 
 //数据获取
@@ -66,7 +67,7 @@ export async function getMqttDate() {
     await con.assertExchange(exchange, 'direct', { durable: true });
 
     // 3️⃣ 声明任务处理队列（Queue）
-    const queue = 'mqtt_a';
+    const queue = 'mqtt_a_HelixCore';
     await con.assertQueue(queue, { durable: true });
 
     // 4️⃣ 绑定队列到交换机，并指定 Routing Key

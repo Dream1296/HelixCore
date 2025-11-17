@@ -200,7 +200,7 @@ export async function ocrStart(dtid: number, index: number) {
     let imgSrc = (await dbSql<{ img_src: string, img_name: string }[]>(`SELECT img_src,img_name FROM dt_img WHERE dt_id = ${dtid} AND img_index = ${index};`))[0];
 
     if (!imgSrc) {
-        let filePath = path.join(getUrl( 'assets'), './dtimg/imgError.png');
+        let filePath = path.join(getUrl( 'assets'), './system/imgError.png');
         return
     }
 

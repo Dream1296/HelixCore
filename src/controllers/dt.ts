@@ -329,7 +329,7 @@ async function resImg(imgSrc: { img_src: string; img_name: string; }, isImg: any
     // console.log(1);
 
     if (!imgSrc) {
-        let filePath = path.join(getUrl('assets'), './dtimg/imgError.png');
+        let filePath = path.join(getUrl('assets'), './system/imgError.png');
         let ThumbnailData = getThumbnail(filePath);
         res.setHeader('Content-Type', 'image/png');
         if (ThumbnailData) {
@@ -358,7 +358,7 @@ async function resImg(imgSrc: { img_src: string; img_name: string; }, isImg: any
     let thumbPath = path.join(img_log, filename);
 
     if (!fileIsDir(fileurl, filename)) {
-        filePath = path.join(urls, './dtimg/imgError.png');
+        filePath = path.join(urls, './system/imgError.png');
         return res.sendFile(filePath);
     }
 
@@ -411,7 +411,7 @@ async function resImg(imgSrc: { img_src: string; img_name: string; }, isImg: any
             console.log('压缩错误',);
             // filePath = path.join(fileurl, filename);
             // return res.sendFile(filePath);
-            filePath = path.join(urls, './dtimg/imgError.png');
+            filePath = path.join(urls, './system/imgError.png');
 
             res.sendFile(filePath);
         }
@@ -912,10 +912,9 @@ export async function postdt(req: Request, res: Response) {
     //loa是否为13
     if (loa == 13) {
         text = "^AES^" + jiamiString(text, process.env.loa13!);
-        im = setImg(id, img, 'dtimg_13');
-    } else {
-        im = setImg(id, img, 'dtimg');
-    }
+    } 
+
+    im = setImg(id, img, 'dtimg');
 
     const dt = setDt(id.toString(), 'yw', text, img_show_num, img_all_num, videoNum, date, loa);
     Promise.all([im, vi, dt]).then((a) => {

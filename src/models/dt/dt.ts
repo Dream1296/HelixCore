@@ -9,6 +9,7 @@ import { delDtData, dtComment, getChatAll, getDtFile, getDtVideoFile, getDtVideo
 import { formatComment, fusionObj, iskeywords, jiamiConmit } from "./helpers";
 import path from "path";
 import { getUrl } from "@/pathUtils";
+import { convertRawToPngIfNeeded } from "@/tool/ramToPng";
 
 
 
@@ -254,7 +255,9 @@ export async function setImg(id: number, imgArr: string[], imgSrc: string, headN
     }
 
     for (let i = headNum; i < imgArr.length; i++) {
-        let a = await setImgDt(id, i, imgArr[i]);
+        let imgSrc = getUrl('assets', 'a/', process.env.aNew!, "img/original");
+        let newImgSrc = await convertRawToPngIfNeeded(imgSrc, imgArr[i]);
+        let a = await setImgDt(id, i, newImgSrc);
         if (!a) {
             return false
         }
