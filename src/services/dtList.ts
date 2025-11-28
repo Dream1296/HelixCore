@@ -22,7 +22,7 @@ export async function upData(user: string, loa: number, aes: number) {
 
 export async function reDtListData() {
     let user = ['yw', 'guest'];
-    let loa = [0, 1,13];
+    let loa = [0, 1,13,12];
     let aes = [0, 1];
 
     for (let i = 0; i < user.length; i++) {

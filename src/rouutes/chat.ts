@@ -1,14 +1,17 @@
 import { getChatNode } from '@/controllers/chat';
-import express, { Request, Response } from 'express';
-const app = express();
+import { onlyUser } from '@/middlewares/onlyUser';
+import express, { Request, Response, Router } from 'express';
+const router = Router();
 
 
+
+// router.use(onlyUser(['yw','123']));
 
 //获取动态数据
-app.get('/getChatNode',getChatNode);
+router.get('/getChatNode', getChatNode);
 
 
 
-export default app;
+export default router;
 
 

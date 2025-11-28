@@ -1,19 +1,20 @@
-import express, { Request, Response } from 'express';
-const app = express();
+import express, { Request, Response, Router } from 'express';
+const router = Router();
+
 
 import  {login, getTempToken } from '../controllers/login';
 
 //登录
-app.post('/login',  login);
+router.post('/login',  login);
 
 //刷新token
-app.get('/getTempToken',getTempToken);
+router.get('/getTempToken',getTempToken);
 
 
 
 
 
-export default app;
+export default router;
 
 
   

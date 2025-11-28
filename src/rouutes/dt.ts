@@ -1,5 +1,6 @@
-import express, { Request, Response } from 'express';
-const app = express();
+import express, { Request, Response, Router } from 'express';
+const app = Router();
+
 import {
     getDtList, dtDates, dtimg, dtimgs, dtvideo, uploadSingleFile, uploadVideos, upvideo,
     updt, postdt, postCom, delDts, getemoji, getemojilist, getweizhi, gpsc, getdt, dtindex,

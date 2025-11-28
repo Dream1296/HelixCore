@@ -1,52 +1,56 @@
-import express, { Request, Response } from 'express';
-const app = express();
+import express, { Request, Response, Router } from 'express';
+const app = Router();
+
 
 //登录
 import login from './login';
-app.use('/api',login);
+app.use(login);
+
+//会话
+import Chat from './chat';
+app.use(Chat);
+
+// import { getHTML} from '../controllers/audio';
+// app.get('/lx',getHTML);
+
+import list from './list'
+app.use(list);
+
 
 //用户信息
 import user from './user';
-app.use('/api',user);
+app.use(user);
 
 //笔记
-import note  from './note';
-app.use('/api',note);
+import note from './note';
+app.use(note);
 
 //动态功能
 import dt from './dt';
-app.use('/api',dt);
+app.use(dt);
 
 //天气
 // import weather from './weather';
 import weather from '@/rouutes/weather';
-app.use('/api',weather);
+app.use(weather);
 
 //性能数据获取
 import top from './top';
-app.use('/api',top);
+app.use(top);
 
 //树，
 import tree from './tree';
-app.use('/api',tree);
+app.use(tree);
 
 //视频使
 import vi from './web';
-app.use('/api',vi);
+app.use(vi);
 
 //小说
 import book from './book';
-app.use('/api',book);
+app.use(book);
 
-//会话
-import Chat from './chat';
-app.use('/api',Chat);
 
-import { getHTML} from '../controllers/audio';
-app.get('/lx',getHTML);
-
-import list from './list'
-app.use('/api',list);
 
 
 

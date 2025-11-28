@@ -230,4 +230,56 @@ function getFilesSet(dir: string) {
     return fileSet;
 }
 
-main();
+// main();
+
+
+async function main1() {
+    // console.log(1);
+    // let arr:string[] = [];
+    // let sql = "SELECT content FROM node where author = 'user'"
+    // let a = await dbSql<{content:string}[]>(sql,[],false,'chat');
+    // for(let b of a ){
+    //     arr.push(b.content);
+    // }
+    // fs.writeFileSync('/dev/shm/chat.json',JSON.stringify(arr));
+    // console.log('1');
+    let arr = JSON.parse(fs.readFileSync('/dev/shm/chat.json').toString()) as string[];
+    console.log(arr.length);
+    
+    // console.log(findMostCommonPrefix(arr));
+
+    process.exit(0);
+
+}
+
+function findMostCommonPrefix(lines: string[], maxPrefixLength = 20) {
+    const freq = new Map();
+
+    for (const line of lines) {
+        // 去掉前后空白
+        const text = line.trim();
+        if (!text) continue;
+
+        // 生成前缀
+        for (let len = 1; len <= Math.min(maxPrefixLength, text.length); len++) {
+            const prefix = text.slice(0, len);
+            freq.set(prefix, (freq.get(prefix) || 0) + 1);
+        }
+    }
+
+    // 找出最高频的前缀
+    let maxPrefix = "";
+    let maxCount = 0;
+
+    for (const [prefix, count] of freq) {
+        if (count > maxCount || (count === maxCount && prefix.length > maxPrefix.length)) {
+            maxPrefix = prefix;
+            maxCount = count;
+        }
+    }
+
+    return { prefix: maxPrefix, count: maxCount };
+}
+
+
+main1();

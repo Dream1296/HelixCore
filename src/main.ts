@@ -38,7 +38,7 @@ import { readAHT10Data } from './services/sensor';
 app.use(mid);
 
 //路由处理
-app.use(rouutes);
+app.use('/api',rouutes);
 
 //静态资源
 // app.use(express.static(path.join(__dirname, '../public/web')));

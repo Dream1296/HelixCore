@@ -17,7 +17,7 @@ import { convertRawToPngIfNeeded } from "@/tool/ramToPng";
  * 主动态列表
  * @returns 
  */
-export async function dtList(user: string, loa: number | string) {
+export async function dtList(user: string, loa: number) {
     //获取主列表
     let list: Lists[] = await dtLists(user, loa);
 
@@ -169,16 +169,22 @@ export async function getRedisListData(user: string, loa: Number, aes: Number) {
 }
 
 //从数据库中获取动态主数据
-export async function dtLists(user: string, loa: number | string, findId?: number | string) {
-    let sqlend = '';
-    if (Number(loa) == 13 && user == 'yw') {
-        sqlend = `dt.loa = 13`
-    } else
-        if (Number((loa)) == 1 && user != 'guest') {
-            sqlend = `((dt.loa = 1 AND dt.user = '${user}') OR dt.loa = 0) `;
-        } else {
-            sqlend = `dt.loa = 0`;
-        }
+export async function dtLists(user: string, loa: number, findId?: number | string) {
+    let sqlend = 'dt.loa = 0';
+
+    //如果请求loa=1且用户不是guest，则查询该用户的loa=1和所有loa=0的数据
+    if (loa == 1 && user != 'guest') {
+        sqlend = `((dt.loa = 1 AND dt.user = '${user}') OR dt.loa = 0) `;
+    }
+    //如果是管理员请求特殊数据(请求loa不等于1或0),则查询对应loa的数据
+    if (user == 'yw' && loa != 1 && loa != 0) {
+        sqlend = `dt.loa = ${loa}`;
+    }
+    //如果是游客只查询loa=0的数据
+    if (user == 'guest') {
+        sqlend = `dt.loa = 0`;
+    }
+
     let findIdStr = findId ? `AND dt.id = ${findId}` : '';
     let sqlStr = `
         select
@@ -205,7 +211,8 @@ export async function dtLists(user: string, loa: number | string, findId?: numbe
 
     let data = await dbSql<Lists[]>(sqlStr);
     for (let i = 0; i < data.length; i++) {
-        if (data[i].text.startsWith("^AES^") && loa == 13) {
+        //前缀为^AES^的内容且loa不为0或1的需要解密
+        if (data[i].text.startsWith("^AES^") && loa != 0 && loa != 1) {
             let key = process.env.miKey
             data[i].text = mi.jie(data[i].text.slice(5), key);
         }
@@ -469,7 +476,7 @@ export async function dtDate(year: number | string) {
 
 //添加主数据
 export async function setDt(id: string, user: string, text: string, img_show_num: string, img_all_num: string, video_num: string,
-    date: string, loa: string, idea?: string): Promise<boolean> {
+    date: string, loa: number, idea?: string): Promise<boolean> {
     let dateReal = moment().format('YYYY-MM-DD HH:mm');
     let sql = `INSERT INTO dt (id,user, text,img_show_num, img_all_num ,video_num, video_show_num,date, loa,date_real) VALUES 
                 (?,?, ?,  ?, ?, ?,?,?,? ,? );`;

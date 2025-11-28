@@ -3,9 +3,17 @@ import express, { Request, Response } from 'express';
 import { access, mkdir, constants } from 'fs/promises';
 import ffmpeg from 'fluent-ffmpeg';
 import fs from 'fs';
+import { Reqs } from '@/type';
 
-export async function getPathListR(req: Request, res: Response) {
+export async function getPathListR(req: Reqs, res: Response) {
     let pathStr = req.query.path as string;
+    if (req.user?.username !== 'yw') {
+        res.status(400).send({
+            code: 400,
+        });
+        return
+    }
+
     // let pathStr = '/havens/img/2023/2023.12'
     if (!pathStr) {
         return res.status(400).send({
@@ -21,7 +29,13 @@ export async function getPathListR(req: Request, res: Response) {
     });
 }
 
-export async function listImgT(req: Request, res: Response) {
+export async function listImgT(req: Reqs, res: Response) {
+    if (req.user?.username !== 'yw') {
+        res.status(400).send({
+            code: 400,
+        });
+        return
+    }
     let dir = req.query.path;
     let hash = req.query.hash;
     if (!dir || !hash) {
@@ -41,7 +55,13 @@ export async function listImgT(req: Request, res: Response) {
 
 }
 
-export async function listImg(req: Request, res: Response) {
+export async function listImg(req: Reqs, res: Response) {
+    if (req.user?.username !== 'yw') {
+        res.status(400).send({
+            code: 400,
+        });
+        return
+    }
     let filePath = req.query.path;
     if (!filePath) {
         return res.status(400).send({ code: 400 });
@@ -59,10 +79,16 @@ export async function listImg(req: Request, res: Response) {
     }
 }
 
-export async function listVideo(req: Request, res: Response) {
+export async function listVideo(req: Reqs, res: Response) {
+    if (req.user?.username !== 'yw') {
+        res.status(400).send({
+            code: 400,
+        });
+        return;
+    }
     let filePath = req.query.path as string;
     console.log(filePath);
-    
+
     if (!filePath) {
         return res.status(400).send({ code: 400 });
     }

@@ -1,23 +1,24 @@
-import express, { NextFunction, Request, Response } from 'express';
-import { apps } from './httpToken';
-import { apps1 } from './assetsLoa';
+import express, { NextFunction, Request, Response, Router } from 'express';
+import { setToken } from './httpToken';
+import { loas } from './assetsLoa';
 import { upDtList } from './upDtList';
 import { setLog } from './log';
-const app = express();
+const router = Router();
 
 
 //token验证中间件
-app.use(apps);
+router.use(setToken);
 //鉴权
-app.use(apps1);
+router.use(loas);
+
 // 判断是否刷新redis
-app.use(upDtList);
+router.use(upDtList);
 
 //日志记录
-app.use(setLog);
+router.use(setLog);
 
 
 
 
-export default app;
+export default router;
 

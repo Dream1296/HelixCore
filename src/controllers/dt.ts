@@ -394,7 +394,7 @@ async function resImg(imgSrc: { img_src: string; img_name: string; }, isImg: any
 
         if (fileIsDir(img_log, filename)) {
             // console.log('从io中拿图');
-            
+
             return res.sendFile(thumbPath);
         }
         try {
@@ -773,8 +773,7 @@ export async function postdt(req: Request, res: Response) {
     let img_all_num = img.length.toString();
     const date = req.body.date;
     const imgDir = req.body.imgDir as string | undefined;
-
-    const loa = req.body.loa || '0';
+    const loa :number = isNaN(Number(req.body.loa)) ? 0 : Number(req.body.loa);
     let video = req.body.video as string[];
     let videoNum = video.length.toString();
     if (img_show_num > img_all_num) {
@@ -909,10 +908,10 @@ export async function postdt(req: Request, res: Response) {
     let im;
     const vi = setVideo(id, video);
 
-    //loa是否为13
-    if (loa == 13) {
+    //loa不为0或1时，加密文本内容
+    if (loa != 0 && loa != 1) {
         text = "^AES^" + jiamiString(text, process.env.loa13!);
-    } 
+    }
 
     im = setImg(id, img, 'dtimg');
 

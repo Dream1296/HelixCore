@@ -1,15 +1,19 @@
 import { getPathListR, listImg, listImgT ,listVideo } from '@/controllers/list/list';
-import express, { Request, Response } from 'express';
-const app = express();
-
-app.get('/listPath',getPathListR);
-
-app.get('/listImgT',listImgT);
-
-app.get('/listImg',listImg);
-
-app.get('/listVideo',listVideo);
+import { onlyUser } from '@/middlewares/onlyUser';
+import express, { Request, Response, Router } from 'express';
+const router = Router();
 
 
+// router.use(onlyUser(['yw','234']));
 
-export default app;
+router.get('/listPath',getPathListR);
+
+router.get('/listImgT',listImgT);
+
+router.get('/listImg',listImg);
+
+router.get('/listVideo',listVideo);
+
+
+
+export default router;

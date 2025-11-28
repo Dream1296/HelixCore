@@ -1,5 +1,5 @@
-import express, { Request, Response } from 'express';
-const app = express();
+import express, { Request, Response, Router } from 'express';
+const router = Router();
 
 
 
@@ -7,4 +7,5 @@ const app = express();
 
 
 
-export default app;
+
+export default router;
