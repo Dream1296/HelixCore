@@ -245,7 +245,7 @@ async function main1() {
     // console.log('1');
     let arr = JSON.parse(fs.readFileSync('/dev/shm/chat.json').toString()) as string[];
     console.log(arr.length);
-    
+
     // console.log(findMostCommonPrefix(arr));
 
     process.exit(0);
@@ -282,4 +282,131 @@ function findMostCommonPrefix(lines: string[], maxPrefixLength = 20) {
 }
 
 
-main1();
+// main1();
+import util from "util";
+import child_process from "child_process";
+
+const exec = util.promisify(child_process.exec);
+
+async function main2() {
+
+    await cleanupCompressedVideos();
+
+    process.exit(0);
+}
+
+
+
+const ORIGINAL_DIR = "/dream/HelixCore/assets/a/2024/video/original";
+const COMPRESSED_DIR = "/dream/HelixCore/assets/a/2024/video/compressed";
+
+// main2();
+
+/**
+ * 使用 ffprobe 判断视频是否为 H.264 编码
+ */
+async function isH264(videoPath: string): Promise<boolean> {
+    try {
+        const { stdout } = await exec(
+            `ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of csv=p=0 "${videoPath}"`
+        );
+
+        const codec = stdout.trim();
+        return codec === "h264";
+    } catch (err) {
+        console.error("ffprobe error:", err);
+        return false;
+    }
+}
+
+/**
+ * 遍历 original 目录，
+ * 如果视频本来就是 H.264，则删除 compressed 中对应文件
+ */
+export async function cleanupCompressedVideos() {
+    const files = fs.readdirSync(ORIGINAL_DIR);
+
+    for (const file of files) {
+        const ext = path.extname(file).toLowerCase();
+        if (![".mp4", ".mov", ".mkv", ".avi"].includes(ext)) {
+            console.log(`跳过非视频文件: ${file}`);
+            continue;
+        }
+
+        const originalPath = path.join(ORIGINAL_DIR, file);
+        const compressedPath = path.join(COMPRESSED_DIR, file);
+
+        console.log(`检查视频: ${file}`);
+
+        const h264 = await isH264(originalPath);
+
+        if (h264) {
+            console.log(`✔ 是 H.264 视频: ${file}`);
+
+            if (fs.existsSync(compressedPath)) {
+                fs.unlinkSync(compressedPath);
+                console.log(`🗑 删除 compressed 中多余文件: ${file}`);
+            } else {
+                console.log(`compressed 中无同名文件，无需删除`);
+            }
+        } else {
+            console.log(`✖ 不是 H.264，跳过: ${file}`);
+        }
+    }
+
+    console.log("处理完成");
+}
+
+
+
+// let aDir = '/dream/HelixCore/assets/a/2024/img/original/';
+// let bDir = '/dream/HelixCore/assets/recycle';
+// async function main3() {
+//     let sql = "SELECT img_src,img_name FROM `dt_img`";
+//     let imgList = await dbSql<{ img_src: string, img_name: string }[]>(sql, []);
+//     //遍历aDir目录下的文件，判断文件是否在imgList中存在,如果不存在，将文件移动到bdir目录下
+//     let files = fs.readdirSync(aDir);
+//     let imgNameSet = new Set<string>();
+//     for (let a of imgList) {
+//         if (a.img_src == '2024') {
+//             imgNameSet.add(a.img_name);
+//         }
+
+//     }
+//     for (let file of files) {
+//         if (!imgNameSet.has(file)) {
+//             //移动文件
+//             fs.renameSync(aDir + file, bDir + '/' + file);
+//             console.log('移动文件：' + file);
+//         }
+//     }
+
+
+// }
+
+let aDir = '/dream/HelixCore/assets/a/2024/video/original/';
+let bDir = '/dream/HelixCore/assets/recycle';
+async function main3() {
+    let sql = "SELECT img_src,img_name FROM `dt_img`";
+    let imgList = await dbSql<{ img_src: string, img_name: string }[]>(sql, []);
+    //遍历aDir目录下的文件，判断文件是否在imgList中存在,如果不存在，将文件移动到bdir目录下
+    let files = fs.readdirSync(aDir);
+    let imgNameSet = new Set<string>();
+    for (let a of imgList) {
+        if (a.img_src == '2024') {
+            imgNameSet.add(a.img_name);
+        }
+
+    }
+    for (let file of files) {
+        if (!imgNameSet.has(file)) {
+            //移动文件
+            fs.renameSync(aDir + file, bDir + '/' + file);
+            console.log('移动文件：' + file);
+        }
+    }
+
+
+}
+
+// main4();

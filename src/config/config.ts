@@ -1,8 +1,8 @@
 import { getUrl } from '@/pathUtils';
 import path from 'path';
-import express, { Request, Response } from 'express';
+import express, { Request, Response, Router } from 'express';
 import fs from 'fs';
-const configs = express();
+const configs = Router();
 const cors = require('cors');
 const bodyParser = require('body-parser');   //post请求接收模块
 

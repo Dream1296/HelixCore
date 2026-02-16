@@ -10,6 +10,7 @@ import { formatComment, fusionObj, iskeywords, jiamiConmit } from "./helpers";
 import path from "path";
 import { getUrl } from "@/pathUtils";
 import { convertRawToPngIfNeeded } from "@/tool/ramToPng";
+import { ensureVideoIsh254 } from "@/controllers/dt";
 
 
 
@@ -283,10 +284,16 @@ export async function setVideo(id: number, videoArr: string[], headNum?: number)
         if (!a) {
             return false
         }
-
     }
+    setTimeout(() => {
+        ensureVideoIsh254(videoArr);        
+    }, 5000);
     return true;
 }
+
+
+
+
 //查询动态id值
 export async function getIdMax() {
     let ids = await dbSql<{ id: string }[]>('SELECT MAX(id) as id FROM dt;');

@@ -494,10 +494,19 @@ export async function dtvideo(req: Reqs, res: Response) {
 
     let videoUrl = path.join(getUrl('assets'), 'a', file.video_src, 'video/');
 
-
+    //原视频文件
     let fileSrc = path.join(videoUrl, 'original', file.video_name);
+    //处理后的视频文件
+    let fileSrcCompressed = path.join(videoUrl, 'compressed', file.video_name);
+    //如果fileSrcCompressed存在，则fileSrc值为fileSrc，否则为fileSrcCompressed
+    if (fs.existsSync(fileSrcCompressed)) {
+        fileSrc = fileSrcCompressed;
+    }
 
-    fileSrc = ensureVideoIsMP4(fileSrc);
+    //如果fileSrc不存在，则返回错误
+    if (!fileIsDir(path.dirname(fileSrc), path.basename(fileSrc))) {
+        return res.send({ code: 402 });
+    }
 
     const stat = fs.statSync(fileSrc);
     const fileSize = stat.size;
@@ -545,6 +554,60 @@ export async function dtvideo(req: Reqs, res: Response) {
     }
 }
 
+
+//传入一个视频数组，判断视频是否为h254，如果不是在指定目录生成h254编码视频
+export async function ensureVideoIsh254(videoArr: string[]) {
+    let video_src = process.env.aNew as string;
+    let videoSrcOriginal = path.join(getUrl('assets'), 'a', video_src, 'video/original');
+    let videoSrcCompressed = path.join(getUrl('assets'), 'a', video_src, 'video/compressed');
+    for (let inputPath of videoArr) {
+        let videoUrl = path.join(videoSrcOriginal, inputPath);
+        // 用 ffprobe 检查视频编码
+        if (!fileIsDir(videoSrcOriginal, inputPath)) {
+            console.log('视频不存在');
+
+            continue;
+        }
+        const codecInfo = execSync(`ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of csv=p=0 ${videoUrl}`).toString().trim();
+        const audioInfo = execSync(`ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of csv=p=0 ${videoUrl}`).toString().trim();
+
+        let args;
+        if (codecInfo === 'h264' && audioInfo === 'aac') {
+            console.log('视频为h254格式');
+            continue;
+        }
+        let outputPath = path.join(videoSrcCompressed, inputPath);
+        let inputPathSrc = path.join(videoSrcOriginal, inputPath);
+        // 否则强制转码
+        args = ['-i', inputPathSrc, '-c:v', 'libx264', '-c:a', 'aac', '-y', outputPath];
+        await new Promise<void>((resolve, reject) => {
+            const ffmpeg = spawn('ffmpeg', args);
+
+            // 捕获 ffmpeg 的标准错误输出
+            ffmpeg.stderr.on('data', (data) => {
+                console.error('FFmpeg输出:', data.toString());
+            });
+
+            // ffmpeg 处理完成后的回调
+            ffmpeg.on('close', (code) => {
+                if (code === 0) {
+                    console.log(`视频转换成功: ${outputPath}`);
+                    resolve();
+                } else {
+                    console.log('转换失败');
+                    reject(new Error(`FFmpeg 进程退出，状态码: ${code}`)); // 转换失败
+                }
+            });
+
+            // 错误处理
+            ffmpeg.on('error', (err) => {
+                console.log("错误");
+                reject(err);
+            });
+        });
+    }
+
+}
 
 
 /**
@@ -773,7 +836,7 @@ export async function postdt(req: Request, res: Response) {
     let img_all_num = img.length.toString();
     const date = req.body.date;
     const imgDir = req.body.imgDir as string | undefined;
-    const loa :number = isNaN(Number(req.body.loa)) ? 0 : Number(req.body.loa);
+    const loa: number = isNaN(Number(req.body.loa)) ? 0 : Number(req.body.loa);
     let video = req.body.video as string[];
     let videoNum = video.length.toString();
     if (img_show_num > img_all_num) {
@@ -870,7 +933,7 @@ export async function postdt(req: Request, res: Response) {
                 return newName;
             }
 
-            if (ext == '.jpg' || ext == '.png' || ext == '.JPG' || ext == '.jpeg') {
+            if (checkFileType(ext) == 'img') {
                 let falg = fn(fileName, 'img')
                 if (!falg) {
                     return res.send({
@@ -882,7 +945,7 @@ export async function postdt(req: Request, res: Response) {
                 img_all_num = img.length.toString();
             }
 
-            if (ext == '.mp4' || ext == '.avi') {
+            if (checkFileType(ext) == 'video') {
                 let falg = fn(fileName, 'video')
                 if (!falg) {
                     return res.send({
@@ -890,7 +953,6 @@ export async function postdt(req: Request, res: Response) {
                         error: 4
                     })
                 }
-
                 video.push(falg);
                 videoNum = video.length.toString();
             }
@@ -920,6 +982,23 @@ export async function postdt(req: Request, res: Response) {
         res.send({ tf: 1 });
     })
 
+}
+
+
+export function checkFileType(ext: string): 'video' | 'img' | null {
+    // 统一转为小写，并确保扩展名以 '.' 开头（如果传入的是 '.jpg' 或 'jpg' 都能处理）
+    const normalizedExt = ext.startsWith('.') ? ext.toLowerCase() : `.${ext.toLowerCase()}`;
+
+    const imgExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg', '.tiff', '.dng'];
+    const videoExtensions = ['.mp4', '.avi', '.mov', '.webm', '.mkv', '.flv'];
+
+    if (imgExtensions.includes(normalizedExt)) {
+        return 'img';
+    }
+    if (videoExtensions.includes(normalizedExt)) {
+        return 'video';
+    }
+    return null;
 }
 
 export async function getLongText(req: Reqs, res: Response) {

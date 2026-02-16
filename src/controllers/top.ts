@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import os from 'os';
 import { exec } from 'child_process';
 import util from 'util';
-import { getFan, readAHT10Data, setFan } from '@/services/sensor';
+import { getFan, setFan } from '@/services/sensor';
 import { number } from 'io-ts';
 
 const execAsync = util.promisify(exec);
@@ -194,7 +194,8 @@ async function getdata(): Promise<Data> {
         data.fenSanNun = NaN;
     }
 
-    data.aht10 = await readAHT10Data();
+    // data.aht10 = await readAHT10Data();
+    data.aht10 = { temperature: -1, humidity: -1 };
 
     return data;
 }

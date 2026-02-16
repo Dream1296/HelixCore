@@ -5,9 +5,9 @@ import { solarEnergyData } from "./services/solarEnergy";
 export function systemInit() {
 
     //监听mqtt中数据
-    setTimeout(() => {
-        solarEnergyData();
-    }, 3000);
+    // setTimeout(() => {
+    //     solarEnergyData();
+    // }, 3000);
 
 
 
@@ -17,7 +17,6 @@ export function systemInit() {
     }, 180 * 1000);
 
     //触发动态缓存更新
-
     setTimeout(() => {
         // 监听更新在services/emits.ts函数中
         myEvent.emit('upDtList', 'start');
