@@ -10,6 +10,7 @@
     "copy-js": "copyfiles -u 1 \"src/**/*.js\" dist",
     "start": "node dist/bundle.js",
     "test": "ts-node -r tsconfig-paths/register src/test.ts",
+    "file":"ts-node -r tsconfig-paths/register tool/dtFileMd5Mysql.ts",
     "dev": "nodemon --config nodemon_dev.json",
     "devs": "nodemon --config nodemon.json --exec ts-node-dev -r tsconfig-paths/register src/main.ts",
     "img": " ts-node -r tsconfig-paths/register src/tool/fork/a.ts",

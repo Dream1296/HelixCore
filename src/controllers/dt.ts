@@ -124,12 +124,13 @@ export async function dtfinds(req: Reqs, res: Response) {
     const bq = req.query.bq;
     const loa = req.query.loa || 0;
     const user = req.user?.username || "guest";
+    // const user = 'yw';
 
     if (!bq) {
         return res.send({ code: 400 });
     }
-    //搜索
-    let numArr = await dtFinds(bq as string, req.user?.username, Number(loa));
+    //搜索 返回排序后的id和质信度
+    let numArr = await dtFinds(bq as string, user, Number(loa));
 
 
     let List = await dtList(user, Number(loa));

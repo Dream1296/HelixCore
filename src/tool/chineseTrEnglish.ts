@@ -1,7 +1,8 @@
+import { getUrl } from "@/pathUtils";
 import pinyin from "pinyin";
 
 
-
+getUrl
 
 
 export function chinese_English(str: string) {

@@ -410,3 +410,13 @@ async function main3() {
 }
 
 // main4();
+
+
+
+async function mian5(){
+    let a = await dbSql('select * from dt');
+    console.log(a);
+    
+}
+
+mian5();

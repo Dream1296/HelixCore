@@ -13,7 +13,8 @@ export function systemInit() {
 
     // 建立图片和视频封面缓存
     setTimeout(() => {
-        ThumbnailInit(100, 100);
+        // 缓存普通类似和特殊类似图片封面数量
+        ThumbnailInit(500, 500);
     }, 180 * 1000);
 
     //触发动态缓存更新

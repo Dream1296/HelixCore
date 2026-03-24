@@ -31,6 +31,10 @@ export async function dtFind(word: string) {
     idArr.sort((a, b) => b.num - a.num);
     return idArr;
 }
+type MArr = {
+    imgNameText: Set<string>;
+    videoName: Set<string>;
+}
 
 /**
  * 
@@ -40,7 +44,7 @@ export async function dtFind(word: string) {
  * @returns "{id:动态id，num:匹配指数}"
  */
 export async function dtFinds(word: string, user: string | undefined, loa: number) {
-    let List;
+    let List: Lists[];
 
     if (user) {
         List = await dtList(user, loa);
@@ -50,20 +54,49 @@ export async function dtFinds(word: string, user: string | undefined, loa: numbe
 
 
 
+    //媒体文件信息采集
+    let mediaArr: Map<number, MArr> = new Map();
+    function mediaArrAdd(dt_id: number) {
+        mediaArr.set(dt_id, {
+            imgNameText: new Set(),
+            videoName: new Set(),
+        })
+    }
+
+
     //查询图片匹配文本
     let sql = `SELECT dt_id,text FROM dt_img`;
+
     let imgText = await dbSql<{ dt_id: number, text: string }[]>(sql);
+    for (let a of imgText) {
+        if (mediaArr.has(a.dt_id)) {
+            mediaArr.get(a.dt_id)?.imgNameText.add(a.text);
+        } else {
+            mediaArrAdd(a.dt_id);
+            mediaArr.get(a.dt_id)?.imgNameText.add(a.text);
+        }
+    }
+
     //查询视频名匹配文本
     let sql1 = `SELECT dt_id,video_name as text FROM dt_video`;
     let videoText = await dbSql<{ dt_id: number, text: string }[]>(sql1);
-    
+
+    for (let a of imgText) {
+        if (mediaArr.has(a.dt_id)) {
+            mediaArr.get(a.dt_id)?.videoName.add(a.text);
+        } else {
+            mediaArrAdd(a.dt_id);
+            mediaArr.get(a.dt_id)?.videoName.add(a.text);
+        }
+    }
+
     let idArr: { id: number, num: number }[] = [];
 
     if (word.includes('&&')) {
 
     }
 
-    idArr = listFind(List, imgText, videoText, word);
+    idArr = listFind(List, mediaArr, word);
 
 
 
@@ -72,6 +105,8 @@ export async function dtFinds(word: string, user: string | undefined, loa: numbe
     idArr.sort((a, b) => b.num - a.num);
     return idArr;
 }
+
+
 
 
 //简单的逻辑匹配
@@ -83,7 +118,7 @@ export async function dtFinds(word: string, user: string | undefined, loa: numbe
  * @param world 关键词
  * @returns 返回匹配结果
  */
-function listFind(List: Lists[], imgText: { dt_id: number; text: string; }[], videoText: { dt_id: number; text: string; }[] , word: string) {
+function listFind(List: Lists[], mediaArr: Map<number, MArr>, word: string) {
     let idArr: { id: number, num: number }[] = [];
 
     for (let dt of List) {
@@ -111,42 +146,26 @@ function listFind(List: Lists[], imgText: { dt_id: number; text: string; }[], vi
             }
         }
 
+        //对结构数据比对
+        if (mediaArr.has(dt.id)) {
+            let obj = mediaArr.get(dt.id)!;
+            //图片
+            for (let a of obj.imgNameText) {
+                if (a && a.includes(word)) {
+                    num += 100;
+                }
+            }
+            //视频
+            for(let a of obj.videoName){
+                if(a && a.includes(word)){
+                    num += 100;
+                }
+            }
+        }
+
         //任意一项命中存储
         if (num > 0) {
             idArr.push({ id: dt.id, num });
-        }
-    }
-
-    //图片信息匹配
-    for (let a of imgText) {
-        let num = 0;
-        if (a.text && a.text.includes(word)) {
-            num += 100;
-        }
-        if (num > 0) {
-            let obj = idArr.find(e => e.id == a.dt_id)
-            if (obj) {
-                obj.num += num;
-            } else {
-                idArr.push({ id: a.dt_id, num });
-            }
-
-        }
-    }
-
-    //视频名称匹配
-    for (let a of videoText) {
-        let num = 0;
-        if (a.text && a.text.includes(word)) {
-            num += 100;
-        }
-        if (num > 0) {
-            let obj = idArr.find(e => e.id == a.dt_id)
-            if (obj) {
-                obj.num += num;
-            } else {
-                idArr.push({ id: a.dt_id, num });
-            }
         }
     }
 

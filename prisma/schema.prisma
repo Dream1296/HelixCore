@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "mysql"
+  // url = "mysql://yw:A8412640@127.0.0.1:3306/dream?charset=utf8mb4"
   url      = env("DATABASE_URL")
 }
 
