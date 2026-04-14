@@ -34,7 +34,7 @@ app.get('/getdt', getdt);
 //设置动态的标签
 app.post('/dtindex', dtindex);
 
-//查询动态
+//查询动态 搜索动态
 app.get('/dtfind', dtfinds);
 
 //时间信息

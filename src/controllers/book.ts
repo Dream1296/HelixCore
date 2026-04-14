@@ -58,8 +58,10 @@ async function bookAU(req:Request, res:Response){
     if(!bookId || !id){
         return res.send({code:404});
     }
+    
     let paths = await getAu(bookId.toString(),id.toString());    
     let datas = fs.readFileSync(paths).toString('base64');
+    
     if(datas == ''){
         datas = fs.readFileSync(path.join(getUrl('assets') ,'bookData/audios/null.mp3')).toString('base64');
     }

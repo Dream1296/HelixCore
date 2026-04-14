@@ -71,12 +71,13 @@ export async function getAu(bookId: string, id: number | string) {
     let end = data.time_end;
 
 
-
+    console.log(start,end);
+    
     if (start == -1 || end == -1) {
         let outPath = path.join(getUrl('assets'), 'bookData/audios');
         let fileName = `${bookId}-${id}.mp3`;
         let pathFile = path.join(outPath, fileName);
-
+        
         if (fileIsDir(outPath, fileName)) {
             setAuduilie(bookId, id.toString(), pathFile, 5, outPath);
             return pathFile;
@@ -105,7 +106,8 @@ export async function getAu(bookId: string, id: number | string) {
     let pathFile: string;
 
 
-
+    console.log(outPath,fileName);
+    
     if (fileIsDir(outPath, fileName)) {
         pathFile = path.join(outPath, fileName);
     } else {

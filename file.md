@@ -1,0 +1,33 @@
+# 文件存放规范
+src/
+    src/config  配置文件夹
+        src/config/db  数据库连接配置文件
+    src/routes   路由处理
+    src/controllers 控制器
+    src/services  服务
+        Aether   物联网控制
+    src/models  数据模型
+    src/middlewares  中间件
+    src/utils  工具函数
+tool/      全局工具
+temp/      临时文件
+
+# 第三方文件
+key.json    连接信息
+ssl/        ssl证书
+public/     静态资源目录
+assets/     资源文件存放
+
+# 打包
+dist/       正式打包目录
+distDev/    开发服务器打包目录
+
+# git
+git add .                      修改添加到暂存区
+git commit -m "这是一次修改"    提交修改
+git push -u origin master      推送到github
+
+# 更新schema.prisma文件后更新
+npx prisma generate
+
+

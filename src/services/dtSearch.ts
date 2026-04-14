@@ -44,13 +44,26 @@ type MArr = {
  * @returns "{id:动态id，num:匹配指数}"
  */
 export async function dtFinds(word: string, user: string | undefined, loa: number) {
-    let List: Lists[];
+    let List: Lists[] = [];
+    let idArr: { id: number, num: number }[] = [];
 
     if (user) {
         List = await dtList(user, loa);
     } else {
         List = await dtList('yw', 0);
     }
+// console.log(List);
+    // console.log(List.filter(a => a.id == 1404));
+    
+
+    //如果搜索词为以"#"开头的数字，则直接返回null
+    if (word.startsWith('#') && Number(word.slice(1, word.length))) {
+        let id = Number(word.slice(1, word.length));
+        if(List.some(dt => dt.id == id)){
+            idArr.push({ id, num: 1000 });
+        }
+    }
+
 
 
 
@@ -90,13 +103,11 @@ export async function dtFinds(word: string, user: string | undefined, loa: numbe
         }
     }
 
-    let idArr: { id: number, num: number }[] = [];
-
     if (word.includes('&&')) {
 
     }
 
-    idArr = listFind(List, mediaArr, word);
+    idArr.push(...listFind(List, mediaArr, word));
 
 
 
@@ -156,8 +167,8 @@ function listFind(List: Lists[], mediaArr: Map<number, MArr>, word: string) {
                 }
             }
             //视频
-            for(let a of obj.videoName){
-                if(a && a.includes(word)){
+            for (let a of obj.videoName) {
+                if (a && a.includes(word)) {
                     num += 100;
                 }
             }

@@ -1,33 +1,97 @@
-# 文件存放规范
-src/
-    src/config  配置文件夹
-        src/config/db  数据库连接配置文件
-    src/routes   路由处理
-    src/controllers 控制器
-    src/services  服务
-        Aether   物联网控制
-    src/models  数据模型
-    src/middlewares  中间件
-    src/utils  工具函数
-tool/      全局工具
-temp/      临时文件
+# ⚙️ Dynamic Content System - Backend
 
-# 第三方文件
-key.json    连接信息
-ssl/        ssl证书
-public/     静态资源目录
-assets/     资源文件存放
+## 📖 项目说明
 
-# 打包
-dist/       正式打包目录
-distDev/    开发服务器打包目录
+这是个人动态系统的后端服务，负责数据管理、接口提供以及与设备的通信逻辑。
 
-# git
-git add .                      修改添加到暂存区
-git commit -m "这是一次修改"    提交修改
-git push -u origin master      推送到github
+项目主要服务于我自己的内容记录系统，同时也承担：
+- 数据存储
+- 权限控制
+- 内容处理（如生成图片）
+- 与嵌入式设备的交互
 
-# 更新schema.prisma文件后更新
-npx prisma generate
+---
 
+## 🧩 核心功能
 
+- 提供动态相关 RESTful API
+- 用户内容的存储与管理
+- 权限控制（公开 / 私密）
+- 评论系统（含简单加密处理）
+- 服务端渲染页面并生成图片
+- MQTT 消息发布，用于设备内容更新
+
+---
+
+## 🛠 技术栈
+
+- Node.js
+- Express
+- TypeScript
+- MySQL
+
+### 其他组件
+- MQTT（设备通信）
+- Docker（部署环境）
+
+---
+
+## ✨ 一些实现思路
+
+### 关于 API 设计
+接口采用简单的 RESTful 风格，围绕“动态”和“评论”进行设计，  
+优先保证结构清晰和可维护性，而不是过度复杂的抽象。
+
+---
+
+### 关于图片生成
+后端会将 HTML 页面渲染后转换为图片，用于：
+- 前端统一展示效果
+- ESP8266 等设备直接显示
+
+这样可以避免不同终端分别实现 UI。
+
+---
+
+### 关于 MQTT 通信
+后端负责向 MQTT Broker 发布消息：
+
+- 当内容更新时，发送刷新指令
+- 设备接收后主动请求最新内容
+
+这种方式可以降低设备端逻辑复杂度。
+
+---
+
+### 关于数据与权限
+- 动态支持简单权限分级（公开 / 私密）
+- 评论内容会进行简单处理后再展示
+- 数据结构设计偏实用导向，便于快速迭代
+
+---
+
+## 🧠 项目结构（示意）
+├── src/
+│ ├── routes/ # 路由定义
+│ ├── controllers/ # 业务逻辑
+│ ├── services/ # 服务层（数据处理）
+│ ├── utils/ # 工具函数
+│ └── config/ # 配置
+│
+├── assets/ # 生成的图片 / 静态资源
+├── logs/ # 日志文件
+└── docker/ # 部署相关
+
+---
+
+## ⚙️ 运行方式（简要）
+
+```bash
+# 安装依赖
+npm install
+
+# 开发模式
+npm dev
+
+# 生产运行
+npm start

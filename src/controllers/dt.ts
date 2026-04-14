@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, getLongVideoList, setDtBgStyle, getRedisListData, setDtM, setShareDb, setUserss, getShareDbToken, dtidS, getDtLongData, findFile, setDtComB, getVideoSrc, isDtExist } from '../models/dt/dt';
 import { getemojis } from '../models/emoji';
-import { Reqs } from '../type';
+import { Lists, Reqs } from '../type';
 import path, { join } from 'path';
 import { imgCompression } from '../utils/img';
 import { userWeizhi, SetuserWeizhi } from '../models/weizhi';
@@ -21,7 +21,7 @@ import { getUrl } from '@/pathUtils';
 import { getDtDataImg } from '@/services/dtDataT';
 import { dtDataAdd } from '@/services/dtDataAdd';
 import { execSync, spawn } from 'child_process';
-import { emit } from 'process';
+import { abort, emit } from 'process';
 import { myEvent } from '@/services/evenTs';
 import { getShareToken } from '@/services/token';
 import { Query } from '../middlewares/routesType';
@@ -46,7 +46,10 @@ export async function getDtList(req: Reqs, res: Response) {
 
 
     let a = req.query as t.TypeOf<typeof Query>;
-    let loa = Number(req.query.loa || "0");
+    let loa = Number(req.query.loa);
+    if (isNaN(loa)) {
+        loa = 0; // 默认值
+    }
     let aes = Number(req.query.aes || "0");
     let user = (req.user?.username) ? req.user.username : "guest";
 
@@ -56,8 +59,20 @@ export async function getDtList(req: Reqs, res: Response) {
 
     myEvent.emit('upDtList');
 
-    //从redis中获取主数据
-    let listData = await getRedisListData(user, loa, aes);
+    let listData: Lists[] = [];
+
+    if (loa == 3) {
+        for (let a of [0, 1, 13, 12]) {
+            //从redis中获取主数据
+            listData.push(...await getRedisListData(user, a, aes));
+        }
+        listData.sort((a, b) => b.id - a.id);
+    } else {
+
+        listData.push(...await getRedisListData(user, loa, aes));
+    }
+
+
 
     // listData = await dtAdd(listData);
     await dtAdd(listData, user, loa);
@@ -121,7 +136,7 @@ export async function getdt(req: Reqs, res: Response) {
 
 export async function dtfinds(req: Reqs, res: Response) {
     let date = +new Date();
-    const bq = req.query.bq;
+    const bq = req.query.bq as string;
     const loa = req.query.loa || 0;
     const user = req.user?.username || "guest";
     // const user = 'yw';
@@ -129,8 +144,16 @@ export async function dtfinds(req: Reqs, res: Response) {
     if (!bq) {
         return res.send({ code: 400 });
     }
+
+    let numArr: {
+        id: number;
+        num: number;
+    }[];
+
+
+
     //搜索 返回排序后的id和质信度
-    let numArr = await dtFinds(bq as string, user, Number(loa));
+    numArr = await dtFinds(bq as string, user, Number(loa));
 
 
     let List = await dtList(user, Number(loa));
@@ -288,6 +311,8 @@ export async function dtimg(req: Reqs, res: Response) {
 
 
     let imgSrc = (await dbSql<{ img_src: string, img_name: string }[]>(sqlStr))[0];
+    // console.log(imgSrc);
+
     imgcl(imgSrc, dtid, index, req.user?.username);
     resImg(imgSrc, isImg, res);
 }
