@@ -31,7 +31,7 @@ export interface Lists {
     com?: Comtent[];
     longVideo?: { id: number, name: string, src: string }[];
     keyword?: { keyword: string, isAi: number }[];
-    File?: { name: string, fileId: string };
+    File?: { name: string, fileId: string , loa: number}[];
     bgStyle: number;
     KeepRun?: KeepRunRecord;
     KeepBadminton?: BadmintonData;
@@ -41,7 +41,7 @@ export interface Lists {
         dtid: number,
         tetile: string
     }[];
-    chatRoot?:chatRoot[];
+    chatRoot?: chatRoot[];
     loa: number
 }
 
@@ -79,7 +79,7 @@ export type Top = {
 
 export type Year = {
     type: "year",
-    id:number,
+    id: number,
     year: number
 }
 
@@ -96,6 +96,7 @@ export interface Comtent {
 
 //动态的文件
 export interface dtFile {
+    id: number,
     dt_id: number,
     name: string,
     file_src: string,
@@ -148,6 +149,5 @@ export type BadmintonData = {
     xunlanxiaoguo_you: number; // 训练效果（有氧）
     xunlanxiaoguo_wu: number; // 训练效果（无氧）
 };
-
 
 

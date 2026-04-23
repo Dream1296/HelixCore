@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, getLongVideoList, setDtBgStyle, getRedisListData, setDtM, setShareDb, setUserss, getShareDbToken, dtidS, getDtLongData, findFile, setDtComB, getVideoSrc, isDtExist } from '../models/dt/dt';
+import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, getLongVideoList, setDtBgStyle, getRedisListData, setDtM, setShareDb, setUserss, getShareDbToken, dtidS, getDtLongData, setDtComB, getVideoSrc, isDtExist } from '../models/dt/dt';
 import { getemojis } from '../models/emoji';
 import { Lists, Reqs } from '../type';
 import path, { join } from 'path';
@@ -33,6 +33,7 @@ import { linkScreenRefresh } from '@/services/Aether';
 import { addDB, processImage } from '@/services/imgdataArr';
 import { fileIsDir, isImgTemp, isVideoTemp, mvImg, mvVideo } from './dtTool';
 import { formatString, mvFileName } from '@/utils/time';
+import { prisma } from '@/config/prisma';
 import { getThumbnail, setThumbnail } from '@/services/MyLRU';
 // import { getDtDataImg } from '@/services/dtDataT';
 // import { getlinkScreen, processImageForEInk } from '@/services/linkScreen';
@@ -1436,20 +1437,35 @@ export async function getYear(req: Reqs, res: Response) {
 }
 
 export async function dtFile(req: Reqs, res: Response) {
-    let dtId = req.query.dtid;
-    if (!dtId) {
+    const rawFileId = req.query.fileId ?? req.query.dtid;
+    const fileId = Number(rawFileId);
+
+    if (!rawFileId || Number.isNaN(fileId)) {
         return res.send({
             code: 401,
         })
     }
 
-    let fileObj = await findFile(dtId.toString());
-    if (!fileObj || fileObj.length == 0) {
+    const fileObj = await prisma.dt_file.findUnique({
+        where: {
+            id: fileId,
+        }
+    });
+
+    if (!fileObj) {
         return res.send({
             code: 401,
         })
     }
-    let fileSrc = getUrl('assets', 'file', fileObj[0].file_src);
+
+    if (fileObj.loa !== 0 && req.user?.username !== 'yw') {
+        return res.status(403).send({
+            code: 403,
+            msg: "权限错误"
+        });
+    }
+
+    let fileSrc = getUrl('assets', 'file', fileObj.file_src);
 
     // 检查文件是否存在
     fs.access(fileSrc, fs.constants.F_OK, (err) => {
@@ -1459,8 +1475,8 @@ export async function dtFile(req: Reqs, res: Response) {
         }
 
         // 设置下载的文件名（可选，你可以从 file_src 中提取或设置其他名称）
-        // let expandName = fileObj[0].file_src.split('.')[fileObj[0].file_src.split('.').length -1 ];
-        const fileName = path.basename(fileObj[0].name + "&&" + fileObj[0].file_src);
+        // let expandName = fileObj.file_src.split('.')[fileObj.file_src.split('.').length -1 ];
+        const fileName = path.basename(fileObj.name + "&&" + fileObj.file_src);
         res.download(fileSrc, fileName, (err) => {
             if (err) {
                 // 处理下载错误
@@ -1493,6 +1509,5 @@ export async function keepRun(req: Reqs, res: Response) {
     // await keepBadminton('822');
     res.send("ok");
 }
-
 
 

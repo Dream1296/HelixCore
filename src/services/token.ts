@@ -4,8 +4,10 @@ import { TokenObj } from "@/type";
 import { createSignature, jiami, jie, verifySignature } from "@/utils/cryptoUtils";
 
 const passwd = process.env.tokenPasswd! + process.env.tokenR!;
+// 长期token有效期,默认30天
 const day = 30;
-const mintime = 20;
+// 临时token有效期,默认2小时
+const mintime = 120 * 60 * 1000;
 
 //传入用户名，生成token
 function generateToken(username: string) {
@@ -72,7 +74,7 @@ function getUser(token: string):TokenObj {
     if(tokenObj.type =='ltk' && ( +new Date()) > tokenObj.date + (day * 24 * 60 * 60 * 1000) ){
         return guest;
     }
-    if(tokenObj.type == 'rat' && ( +new Date()) > tokenObj.date + (mintime  * 60 * 1000) ){
+    if(tokenObj.type == 'rat' && ( +new Date()) > tokenObj.date +  mintime  ){
         return guest;
     }
 

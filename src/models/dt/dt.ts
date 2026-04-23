@@ -72,10 +72,14 @@ export async function dtList(user: string, loa: number) {
     //文件外链
     let dtFile = await getDtFile();
     let addDtFileCb = (b: Lists, a: any) => {
-        b.File = ({
+        if (!b.File) {
+            b.File = [];
+        }
+        b.File.push({
             name: a.name,
-            fileId: a.dt_id.toString()
-        })
+            fileId: a.id.toString(),
+            loa: a.loa,
+        });
     }
     fusionObj(list, dtFile, 'File', undefined, undefined, addDtFileCb);
 
