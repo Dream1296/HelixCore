@@ -16,6 +16,8 @@ let arr: number[]
 export function getDtDataImg(title:string, data:string[]) {
     ctx.fillStyle = 'black';
 
+    console.log(title);
+    
 
     // 获取数据数组
      arr = getDataArr(data);
@@ -26,6 +28,10 @@ export function getDtDataImg(title:string, data:string[]) {
 
     // 将绘制的图表保存为 PNG 图片
     const buffer = canvas.toBuffer('image/png');  // 将画布内容转换为 PNG 图片格式的缓冲区
+    //重制canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, 1920, 660);
     return buffer;
     // fs.writeFileSync('./drawing.png', buffer);  // 将图片保存到本地
 

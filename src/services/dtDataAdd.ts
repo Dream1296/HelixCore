@@ -34,12 +34,20 @@ export async function dtDataAdd(datas: Lists[], loa?: number) {
     if (loa == 0 || loa == 1) {
         let dataImg = await getCom('dataImg');
         // data.unshift(dataImg!);
+        dataImg!.id = '2000';
         data.splice(0, 0, dataImg!);
         let top = await getCom('top');
         data.splice(2, 0, top!);
     }
 
-    //向数组适当位置添加year
+    if (loa == 13) {
+        let dataImg = await getCom('dataImg');
+        dataImg!.id = '2013';
+        data.splice(1, 0, dataImg!);
+    }
+
+
+    //向数组适当位置添加年份信息
     setYear(data);
 
 

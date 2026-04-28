@@ -139,7 +139,9 @@ model dt_file {
   dt_id    Int
   name     String @db.VarChar(200)
   file_src String @db.VarChar(600)
+  file_name String @db.VarChar(600)
   loa      Int
+  shows    Int
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments

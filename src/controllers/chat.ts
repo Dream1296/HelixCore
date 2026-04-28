@@ -106,6 +106,10 @@ export async function getChatNode(req: Reqs, res: Response) {
 
     nodeList.length = 0;
 
+    if(!await getNode(id)){
+        console.log(id);
+    }
+
     nodeList.push(await getNode(id));
 
 

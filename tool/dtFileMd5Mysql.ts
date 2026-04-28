@@ -8,6 +8,7 @@ import { getUrl } from '../src/pathUtils';
 
 
 
+
 function getFileMD5(path: string) {
     return new Promise((resolve, reject) => {
         const hash = crypto.createHash("md5");
@@ -25,11 +26,11 @@ async function main() {
 
 
     // const md5 = await getFileMD5(fileHome);
-    let data = await dbSql<{ id: Number, file_src: string, has: string }[]>('SELECT * FROM `dt_file`');
+    let data = await dbSql<{ id: Number, file_src: string, file_name: string, has: string }[]>('SELECT * FROM `dt_file` WHERE `shows` = 1');
     for (let a of data) {
         if (a.has == '-1') {
-            console.log(a.file_src);
-            let fileSrc = getUrl('assets', 'file', a.file_src);
+            console.log(a.file_name);
+            let fileSrc = getUrl('assets', 'file', a.file_src, a.file_name);
             let hasStr = await getFileMD5(fileSrc);
             await dbSql("UPDATE `dt_file` SET `has` = ? WHERE `dt_file`.`id` = ?;", [hasStr, a.id]);
             console.log(hasStr, a.id);
@@ -42,6 +43,26 @@ async function main() {
     process.exit();
 }
 
+async function main2() {
+    // const md5 = await getFileMD5(fileHome);
+    let data = await dbSql<{ id: Number, file_src: string, file_name: string, has: string }[]>('SELECT * FROM `dt_file` WHERE `shows` = 1');
+    for (let a of data) {
+        console.log(a.file_name);
+        let fileSrc = getUrl('assets', 'file', a.file_src, a.file_name);
+        if(fs.existsSync(fileSrc)){
+            console.log(a.id + '存在');
+        }else{
+            throw new Error( a.id + ' 文件不存在');
+        }
 
 
-main();
+
+    }
+
+    process.exit();
+}
+
+
+
+// main();
+main2();

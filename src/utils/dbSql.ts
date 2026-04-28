@@ -3,7 +3,7 @@ const dbLog = require('@/config/db/mysql_log');
 const dbAi = require('@/config/db/mysql_ai');
 const dbChat = require('@/config/db/mysql_chat');
 const dbFeel = require('@/config/db/mysql_feel');
-
+const dbBook = require('@/config/db/mysql_book');
 
 /**
  * 执行sql语句函数
@@ -13,7 +13,7 @@ const dbFeel = require('@/config/db/mysql_feel');
  * @param dbC - 数据库句柄
  * @returns 
  */
-export function dbSql<T>(sqlStr: string, canshu?: any[], isPut?: boolean, dbName?: "log" | "ai" | "dream" | "chat" | "feel"): Promise<T> {
+export function dbSql<T>(sqlStr: string, canshu?: any[], isPut?: boolean, dbName?: "log" | "ai" | "dream" | "chat" | "feel" | "book"): Promise<T> {
     return new Promise((resolve, reject) => {
         let isPuts = !!isPut;  // 确保 isPuts 是布尔值
         let db = dbDream;
@@ -28,6 +28,9 @@ export function dbSql<T>(sqlStr: string, canshu?: any[], isPut?: boolean, dbName
         }
         if (dbName == 'feel') {
             db = dbFeel
+        }
+        if(dbName == 'book'){
+            db = dbBook
         }
 
         // 执行 SQL 查询

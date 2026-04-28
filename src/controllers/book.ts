@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
 
-import { getData ,getAu ,getBookList,bookCovers ,getBookJd,setBookJd,bookVDatas,bookRDatas } from '../models/book';
+import { getData ,getAu ,getBookListDb,bookCovers ,getBookJd,setBookJd,bookVDatas,bookRDatas } from '../models/book';
 import { getUrl } from '@/pathUtils';
 async function bookData(req:Request, res:Response){
     let bookId = req.query.id;
@@ -73,7 +73,7 @@ async function bookAU(req:Request, res:Response){
 }
 
 async function booklists(req:Request, res:Response){
-    let data = getBookList();
+    let data = await getBookListDb();
     res.send({
         code:200,
         data
@@ -98,6 +98,8 @@ async function bookJd(req:Request, res:Response){
     }
     if(!jd || jd == '-1'){
         let jds = await getBookJd(bookid);
+        console.log(jds);
+        
         return res.send({code:200,data:{jd:jds}});
     }
     

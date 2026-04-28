@@ -5,6 +5,7 @@ import zlib from 'zlib';
 const m3s = require('../utils/audios.js');
 import { aus } from '../utils/setAu';
 import { getUrl } from '@/pathUtils';
+import { dbSql } from '@/utils/dbSql';
 
 
 type A = {
@@ -31,10 +32,16 @@ export function getData(bookId: string) {
 
 export function bookRDatas(bookId: string) {
     return new Promise((resolve, rejects) => {
-        let paths = path.join( getUrl( 'assets'), `bookData/dataJson`);
-        let filePath = path.join( getUrl( 'assets'), `bookData/dataJson/${bookId}.json.gz`);
-        let jsonPath = path.join( getUrl( 'assets'), `bookData/dataJson/${bookId}.json`);
+        console.log(1);
+
+        let paths = path.join(getUrl('assets'), `bookData/dataJson`);
+        let filePath = path.join(getUrl('assets'), `bookData/dataJson/${bookId}.json.gz`);
+        let jsonPath = path.join(getUrl('assets'), `bookData/dataJson/${bookId}.json`);
+        console.log();
+
         if (fileIsDir(paths, filePath)) {
+            console.log(2);
+
             resolve(filePath);
         }
         let data = fs.readFileSync(jsonPath);
@@ -71,13 +78,13 @@ export async function getAu(bookId: string, id: number | string) {
     let end = data.time_end;
 
 
-    console.log(start,end);
-    
+    console.log(start, end);
+
     if (start == -1 || end == -1) {
         let outPath = path.join(getUrl('assets'), 'bookData/audios');
         let fileName = `${bookId}-${id}.mp3`;
         let pathFile = path.join(outPath, fileName);
-        
+
         if (fileIsDir(outPath, fileName)) {
             setAuduilie(bookId, id.toString(), pathFile, 5, outPath);
             return pathFile;
@@ -106,8 +113,8 @@ export async function getAu(bookId: string, id: number | string) {
     let pathFile: string;
 
 
-    console.log(outPath,fileName);
-    
+    console.log(outPath, fileName);
+
     if (fileIsDir(outPath, fileName)) {
         pathFile = path.join(outPath, fileName);
     } else {
@@ -179,6 +186,11 @@ export function getBookList() {
     return JSON.parse(fs.readFileSync(path.join(getUrl('assets'), 'bookData/bookList.json')).toString());
 }
 
+export async function getBookListDb() {
+    const sql = 'SELECT id, name FROM book_list ORDER BY sort ASC, id ASC';
+    return await dbSql<{ id: string, name: string }[]>(sql, [], false, 'book');
+}
+
 export function bookCovers(bookid: string) {
     let fileDir = path.join(getUrl('assets'), `bookData/cover`);
     let fileName = bookid + '.png';
@@ -192,19 +204,10 @@ export function bookCovers(bookid: string) {
 
 
 
-export function getBookJd(bookId: string) {
-    return new Promise((resolve, reject) => {
-        const sql = 'SELECT jdID FROM bookjd WHERE bookId = ?';
-        db.query(sql, bookId, (err: any, results: any) => {
-            if (err) {
-                reject('0')
-            }
-            if (results.length > 0) {
-                resolve(results[0].jdID);
-            }
-            reject(results);
-        })
-    })
+export async function getBookJd(bookId: string) {
+    const sql = 'SELECT jdID FROM bookjd WHERE bookId = ?';
+    let jd = await dbSql<{ jdID: number }[]>(sql, [bookId]);
+    return jd[0].jdID
 }
 
 export function setBookJd(bookId: string, jd: string) {

@@ -290,7 +290,7 @@ export async function setVideo(id: number, videoArr: string[], headNum?: number)
         }
     }
     setTimeout(() => {
-        ensureVideoIsh254(videoArr);        
+        ensureVideoIsh254(videoArr);
     }, 5000);
     return true;
 }
@@ -478,6 +478,28 @@ export async function dtDate(year: number | string) {
     let sql = `SELECT date FROM dt WHERE YEAR(date) = ${year}`;
     let results = await dbSql<{ date: string }[]>(sql);
     let a = [];
+    for (let i = 0; i < results.length; i++) {
+        a[i] = JSON.stringify(results[i].date).split('T')[0].split('"')[1].split('-').join(',')
+    }
+    return a;
+}
+
+export async function serviceDate(year: number | string) {
+    const start = new Date(Number(year), 0, 1);   // 当年1月1日
+    const end = new Date(Number(year) + 1, 0, 1); // 下一年1月1日
+
+    const results = await prisma.dt_date.findMany({
+        select:{
+            date: true,
+        },
+        where: {
+            date: {
+                gte: start,
+                lt: end,
+            },
+        },
+    });
+        let a = [];
     for (let i = 0; i < results.length; i++) {
         a[i] = JSON.stringify(results[i].date).split('T')[0].split('"')[1].split('-').join(',')
     }

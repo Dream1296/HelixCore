@@ -108,7 +108,11 @@ export async function sqlGetDtIndexAll() {
 
 //获取动态文件目录
 export async function getDtFile() {
-    return await prisma.dt_file.findMany();
+    return await prisma.dt_file.findMany({
+        where:{
+            shows:1
+        }
+    });
 }
 
 

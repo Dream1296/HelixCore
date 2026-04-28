@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, getLongVideoList, setDtBgStyle, getRedisListData, setDtM, setShareDb, setUserss, getShareDbToken, dtidS, getDtLongData, setDtComB, getVideoSrc, isDtExist } from '../models/dt/dt';
+import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, getLongVideoList, setDtBgStyle, getRedisListData, setDtM, setShareDb, setUserss, getShareDbToken, dtidS, getDtLongData, setDtComB, getVideoSrc, isDtExist, serviceDate } from '../models/dt/dt';
 import { getemojis } from '../models/emoji';
 import { Lists, Reqs } from '../type';
 import path, { join } from 'path';
@@ -271,14 +271,30 @@ export async function dtDates(req: Request, res: Response) {
 
 export async function dtDataImg(req: Reqs, res: Response) {
     let year = req.query.year || 2024;
+    let id = req.query.id || '2000';
 
-    let title = '动态提交历史';
-    const data = await dtDate(Number(year));
-    const dateNow = new Date();
-    data.push(`${dateNow.getFullYear()},${dateNow.getMonth() + 1},${dateNow.getDate()}`);
-    let buffer = getDtDataImg(title, data);
+
+    let buffer: Buffer<any> = Buffer.alloc(0);
+
+    if (id == '2000') {
+        let title = '动态提交历史';
+        const data = await dtDate(Number(year));
+        const dateNow = new Date();
+        data.push(`${dateNow.getFullYear()},${dateNow.getMonth() + 1},${dateNow.getDate()}`);
+        buffer = getDtDataImg(title, data);
+    }
+    if(id == '2013'){
+        let title = '服务器重启记录';
+        const data = await serviceDate(Number(year));
+        const dateNow = new Date();
+        data.push(`${dateNow.getFullYear()},${dateNow.getMonth() + 1},${dateNow.getDate()}`);
+        buffer = getDtDataImg(title, data);
+    }
+
+
     res.setHeader('Content-Type', 'image/jpg');
     res.send(buffer);
+
 }
 
 //获取图片
@@ -1465,7 +1481,7 @@ export async function dtFile(req: Reqs, res: Response) {
         });
     }
 
-    let fileSrc = getUrl('assets', 'file', fileObj.file_src);
+    let fileSrc = getUrl('assets', 'file', fileObj.file_src , fileObj.file_name);
 
     // 检查文件是否存在
     fs.access(fileSrc, fs.constants.F_OK, (err) => {
@@ -1479,9 +1495,20 @@ export async function dtFile(req: Reqs, res: Response) {
         const fileName = path.basename(fileObj.name + "&&" + fileObj.file_src);
         res.download(fileSrc, fileName, (err) => {
             if (err) {
-                // 处理下载错误
+                // 客户端主动中断下载时，响应通常已经开始，不能再写回错误响应。
+                const isClientAbort = err.code === 'ECONNABORTED' || err.code === 'ECONNRESET' || res.destroyed;
+                if (isClientAbort) {
+                    console.warn('Download aborted by client:', fileId, fileName);
+                    return;
+                }
+
                 console.error('Error downloading file:', err);
-                res.status(500).send('Error downloading file');
+
+                if (!res.headersSent && !res.writableEnded) {
+                    return res.status(500).send('Error downloading file');
+                }
+
+                return;
             } else {
                 // 下载成功
                 console.log('File downloaded successfully');
@@ -1509,5 +1536,4 @@ export async function keepRun(req: Reqs, res: Response) {
     // await keepBadminton('822');
     res.send("ok");
 }
-
 
