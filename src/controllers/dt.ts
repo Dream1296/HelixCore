@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, getLongVideoList, setDtBgStyle, getRedisListData, setDtM, setShareDb, setUserss, getShareDbToken, dtidS, getDtLongData, setDtComB, getVideoSrc, isDtExist, serviceDate } from '../models/dt/dt';
 import { getemojis } from '../models/emoji';
-import { Lists, Reqs } from '../type';
+import { Lists, Reqs, user } from '../type';
 import path, { join } from 'path';
 import { imgCompression } from '../utils/img';
 import { userWeizhi, SetuserWeizhi } from '../models/weizhi';
@@ -45,37 +45,43 @@ export async function getDtList(req: Reqs, res: Response) {
     const clientIp = req.headers['x-real-ip'] || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     console.log(clientIp);
 
-
     let a = req.query as t.TypeOf<typeof Query>;
     let loa = Number(req.query.loa);
+    let aes = Number(req.query.aes);
     if (isNaN(loa)) {
         loa = 0; // 默认值
     }
-    let aes = Number(req.query.aes || "0");
+    if (isNaN(aes)) {
+        aes = 0;
+    }
+
     let user = (req.user?.username) ? req.user.username : "guest";
 
-    if (req.user?.dtid && req.user.dtid != "-1") {
-        user = "guest";
+    if (req.user?.dtid && req.user.dtid != -1) {
+        user = process.env.Guest!;
     }
 
-    myEvent.emit('upDtList');
 
-    let listData: Lists[] = [];
+    // myEvent.emit('upDtList');
 
-    if (loa == 3) {
-        for (let a of [0, 1, 13, 12]) {
-            //从redis中获取主数据
-            listData.push(...await getRedisListData(user, a, aes));
-        }
-        listData.sort((a, b) => b.id - a.id);
-    } else {
+    let listData: Lists[] = await dtList(user, loa);;
 
-        listData.push(...await getRedisListData(user, loa, aes));
-    }
+    // if (loa == 3) {
+    //     for (let a of [0, 1, 13, 12]) {
+    //         //从redis中获取主数据
+    //         listData.push(...await getRedisListData(user, a, aes));
+    //     }
+    //     listData.sort((a, b) => b.id - a.id);
+    // } else {
+
+    //     listData.push(...await getRedisListData(user, loa, aes));
+    // }
 
 
 
     // listData = await dtAdd(listData);
+
+    // 暂时没有内容 不影响
     await dtAdd(listData, user, loa);
 
 
@@ -107,15 +113,15 @@ export async function setDtBgStyles(req: Reqs, res: Response) {
 }
 export async function getdt(req: Reqs, res: Response) {
     const dtid = Number(req.query.id);
-    let user = req.user?.username || 'guest';
+    let user = req.user?.username!;
     let loa = Number(req.query.loa);
 
     if (!dtid || dtid == -1) {
         return res.status(400).send({ code: 400, msg: "参数不全" });
     }
 
-    if (req.user?.dtid != dtid.toString() && req.user?.dtid != "-1") {
-        user = "guest";
+    if (req.user?.dtid != dtid && req.user?.dtid != -1) {
+        user = process.env.Guest!;
     }
 
     if (!isDtExist(dtid)) {
@@ -139,8 +145,7 @@ export async function dtfinds(req: Reqs, res: Response) {
     let date = +new Date();
     const bq = req.query.bq as string;
     const loa = req.query.loa || 0;
-    const user = req.user?.username || "guest";
-    // const user = 'yw';
+    const user = req.user?.username || process.env.Guest!;
 
     if (!bq) {
         return res.send({ code: 400 });
@@ -283,7 +288,7 @@ export async function dtDataImg(req: Reqs, res: Response) {
         data.push(`${dateNow.getFullYear()},${dateNow.getMonth() + 1},${dateNow.getDate()}`);
         buffer = getDtDataImg(title, data);
     }
-    if(id == '2013'){
+    if (id == '2013') {
         let title = '服务器重启记录';
         const data = await serviceDate(Number(year));
         const dateNow = new Date();
@@ -313,12 +318,8 @@ export async function dtimg(req: Reqs, res: Response) {
         return res.send({ code: 402, msg: "参数不全" });
     }
 
-    let userT = await dtidS(dtid.toString());
-    if (userT.length != 1) {
-        return res.send({ code: 402, smg: "id不存在" });
-    }
 
-    let tf = hasAccess(req.user?.username, req.user?.dtid, dtid.toString(), userT[0]);
+    let tf = await hasAccess(req.user!, dtid);
 
     if (!tf) {
         return res.send({ code: 402 });
@@ -470,29 +471,61 @@ async function resImg(imgSrc: { img_src: string; img_name: string; }, isImg: any
 
 
 
+/**
+ * 图片和视频鉴权
+ * @param username 用户id
+ * @param dtid 请求的动态id
+ * @param userDtID 当前用户是否限制访问
+ * @returns 是否运行访问
+ */
 
+export async function hasAccess(User: user, dtid: number) {
 
-function hasAccess(username?: string, userDtID?: string, dtid?: string, userT?: {
-    user: string;
-    loa: number;
-    shoes: number;
-},) {
+    let userT1 = await dtidS(dtid.toString());
+    let userT: {
+        user: string;
+        loa: number;
+        shows: number;
+    };
+    if (userT1.length != 1 && userT1[0]) {
+        console.log('-1-1-1');
+        return false
+    }
+    userT = userT1[0];
     //如果访问的是已经删除的动态
-    if (userT?.shoes == 1) {
+    if (userT.shows != 1) {
+        console.log('000');
         return false;
     }
     //如果访问的公开动态
-    if (userT && userT.loa != undefined && userT.loa == 0) {
+    if (userT.loa != undefined && userT.loa == 0) {
+        console.log(111);
+
         return true;
     }
-    //如果是登录后访问
-    if (username == userT?.user && userDtID == "-1") {
+    //如果访问者和动态作者一样
+    if (User.username == userT?.user && User.dtid == -1) {
+        console.log(222);
+
         return true;
     }
     //如果是通过分享链接访问
-    if (username == userT?.user && userDtID == dtid) {
+    if (User.username == userT?.user && User.dtid == dtid) {
+        console.log(333);
         return true;
     }
+
+    // 如果当前用户在所选组内
+    const groupIds = (await prisma.dt_group_view.findMany({
+        where: { user: User.username },
+        select: { group_id: true }
+    })).map(item => item.group_id);
+
+    if (userT.loa >= 10 && groupIds.includes(userT.loa)) {
+        return true;
+    }
+
+    return false;
 }
 
 //获取原图
@@ -525,8 +558,9 @@ export async function dtvideo(req: Reqs, res: Response) {
         return res.send({ code: 402 });
     }
 
-    if (req.user?.username != 'yw') {
-        return res.send({ code: 402 });
+    let tf = await hasAccess(req.user!, dtid);
+    if (!tf) {
+        return res.send({ code: 401 });
     }
 
 
@@ -759,6 +793,10 @@ export async function dtvideoImg(req: Reqs, res: Response) {
         return res.send({ code: 402 });
     }
 
+    let tf = await hasAccess(req.user!, dtid);
+    if (!tf) {
+        return res.send({ code: 401 });
+    }
 
 
     let file = await getVideoSrc(dtid, index);
@@ -1481,7 +1519,7 @@ export async function dtFile(req: Reqs, res: Response) {
         });
     }
 
-    let fileSrc = getUrl('assets', 'file', fileObj.file_src , fileObj.file_name);
+    let fileSrc = getUrl('assets', 'file', fileObj.file_src, fileObj.file_name);
 
     // 检查文件是否存在
     fs.access(fileSrc, fs.constants.F_OK, (err) => {

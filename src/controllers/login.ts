@@ -18,9 +18,8 @@ export async function login(req: Request, res: Response) {
         });
     }
 
-    let passwds = await getPasswd(username)
-    passwd = md5(passwd);
-    if (passwd == passwds) {
+    let passwds = await getPasswd(username);
+    if ( passwds != undefined && md5(passwd) == passwds[0].passwd) {
         //生成token
         const token = generateToken(username);
         return res.send({

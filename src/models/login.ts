@@ -1,21 +1,12 @@
 const db = require('../config/db/mysql');
 
 const getPasswd = (user: string) => {
-    return new Promise((resolve, reject) => {
-        let dbStr = 'select passwd from passwd where user = ? ';
-        try {
-            db.query(dbStr, user, (err: any, results: any) => {
-                if (err) {
-                    reject('0')
-                }
-                if (results.length > 0) {
-                    resolve(results[0].passwd);
-                }
-
-                return results;
-            })
-        } catch {
-            reject('0')
+    return prisma?.dt_user.findMany({
+        where: {
+            id: user,
+        },
+        select: {
+            passwd: true
         }
     })
 }
@@ -29,8 +20,8 @@ const registerWrite = async (user: string, passwd: string) => {
         },
     });
     //如果存在，则直接返回false
-    if(existingUser){
-       return false; 
+    if (existingUser) {
+        return false;
     }
 
     await prisma?.passwd.create({

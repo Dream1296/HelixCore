@@ -8,6 +8,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
+
+
+
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model MyFriend {
   id       Int      @id @default(autoincrement())
@@ -142,6 +146,14 @@ model dt_file {
   file_name String @db.VarChar(600)
   loa      Int
   shows    Int
+}
+
+model dt_user {
+  id      String  @id @default(cuid()) @db.VarChar(50) // 用户id
+  name    String  @db.VarChar(100) // 昵称
+  user_img  String  @db.VarChar(100) // 头像
+  passwd  String  @db.VarChar(32) // 密码
+
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -479,4 +491,59 @@ model xuanx {
   url  String @db.VarChar(20)
   img  String @db.VarChar(20)
   name String @db.VarChar(20)
+}
+
+
+
+model dt_find {
+  id             Int      @id
+  user           String   @db.VarChar(10)
+  name           String   @db.VarChar(100)
+  user_img       String?  @db.Text
+  text           String   @db.Text
+  img_show_num   Int
+  img_all_num    Int
+  video_show_num Int
+  video_num      Int
+  date           DateTime
+  date_real      String   @db.VarChar(30)
+  idea           String   @db.VarChar(50)
+  pin_order      Int
+  bg_style       Int
+  loa            Int
+  shows          Boolean
+  save           Boolean
+
+  @@map("dt_find")
+}
+
+
+model dt_group {
+  id    Int            @id
+  name  String         @db.VarChar(255)
+
+  maps  dt_group_map[]
+
+  @@map("dt_group")
+}
+
+model dt_group_map {
+  id       Int      @id @default(autoincrement())
+  group_id Int
+  user     String   @db.VarChar(255)
+
+  group    dt_group @relation(fields: [group_id], references: [id])
+
+  @@index([user], map: "idx_user")
+  @@index([group_id], map: "idx_group_id")
+  @@map("dt_group_map")
+}
+
+model dt_group_view {
+  user       String @db.VarChar(255)
+  group_id   Int
+  group_name String @db.VarChar(255)
+
+  @@id([user, group_id])
+  @@map("dt_group_view")
 }

@@ -7,7 +7,7 @@ import  {login, getTempToken, register } from '../controllers/login';
 router.post('/login',  login);
 
 //注册
-router.post('/register',register);
+// router.post('/register',register);
 
 //刷新token
 router.get('/getTempToken',getTempToken);

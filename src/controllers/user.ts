@@ -10,33 +10,37 @@ import moment from 'moment';
 
 async function userClass(req: Reqs, res: Response) {
     res.send({
-        code:200,
-        data:{
-            username:req.user?.username,
+        code: 200,
+        data: {
+            username: req.user?.username,
         }
     });
 }
 
-async function userIn(req: Reqs, res: Response) {    
+async function userIn(req: Reqs, res: Response) {
     let userId = req.user?.username;
-    if (!userId) userId = 'a';
-    let user = await userIns(userId)
-
-    res.send(user)
+    if (!userId) userId = process.env.Guest as string;
+    let user = await userIns(userId);
+    if (!user) {
+        res.send(  userIns(process.env.Guest!) )
+    }else{
+        res.send(user)
+    }
 }
 
 async function userImg(req: Reqs, res: Response) {
-    let name = req.query.name || 'guest';
-    let url = (await userImgUrl(name as string) as { touxian: string }).touxian;;
-    if(url == undefined){
+
+    let userId = req.query.userId?.toString() || process.env.Guest!;
+    let url = await userImgUrl(userId);
+    if (url == undefined) {
         return res.send({
-            code:400,
+            code: 400,
         })
     }
-    // url = path.join(__dirname,'../../public/userImg',url);
     url = getUrl('public', 'userImg', url);
 
-
+    console.log(url);
+    
     let data = fs.readFileSync(url);
     res.setHeader('Content-Type', 'image/png');
     res.send(data);
@@ -47,10 +51,10 @@ export async function setMood(req: Reqs, res: Response) {
     let mood = req.body.mood;
     const date = moment().format('YYYY-MM-DD HH:mm:ss');
 
-    if(!mood){
+    if (!mood) {
         return res.send({
-            code:400,
-            tf:0,
+            code: 400,
+            tf: 0,
         })
     }
 

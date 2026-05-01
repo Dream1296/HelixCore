@@ -19,6 +19,7 @@ import { ensureVideoIsh254 } from "@/controllers/dt";
  * @returns 
  */
 export async function dtList(user: string, loa: number) {
+
     //获取主列表
     let list: Lists[] = await dtLists(user, loa);
 
@@ -175,56 +176,103 @@ export async function getRedisListData(user: string, loa: Number, aes: Number) {
 
 //从数据库中获取动态主数据
 export async function dtLists(user: string, loa: number, findId?: number | string) {
-    let sqlend = 'dt.loa = 0';
+    let data1: {
+        id: number;
+        text: string;
+        name: string;
+        date: Date;
+        img_all_num: number;
+        user: string;
+        loa: number;
+        shows: boolean;
+        user_img: string | null;
+        img_show_num: number;
+        video_show_num: number;
+        video_num: number;
+        date_real: string;
+        idea: string;
+        pin_order: number;
+        bg_style: number;
+        save: boolean;
+    }[];
 
-    //如果请求loa=1且用户不是guest，则查询该用户的loa=1和所有loa=0的数据
-    if (loa == 1 && user != 'guest') {
-        sqlend = `((dt.loa = 1 AND dt.user = '${user}') OR dt.loa = 0) `;
-    }
-    //如果是管理员请求特殊数据(请求loa不等于1或0),则查询对应loa的数据
-    if (user == 'yw' && loa != 1 && loa != 0) {
-        sqlend = `dt.loa = ${loa}`;
-    }
-    //如果是游客只查询loa=0的数据
-    if (user == 'guest') {
-        sqlend = `dt.loa = 0`;
+    const isGuest = user == process.env.Guest!;
+    const groupIds = isGuest
+        ? []
+        : (await prisma.dt_group_view.findMany({
+            where: { user },
+            select: { group_id: true }
+        })).map(item => item.group_id);
+    
+    const visibleLoas = [0, ...groupIds];
+        console.log(visibleLoas);
+        
+    const where: any = {
+        shows: true,
+        ...(findId ? { id: Number(findId) } : {})
+    };
+
+    if (loa == 1 && !isGuest) {
+        where.OR = [
+            {
+                loa: {
+                    in: visibleLoas
+                }
+            },
+            {
+                loa: 1,
+                user
+            }
+        ];
+    } else {
+        where.loa = {
+            in: visibleLoas
+        };
     }
 
-    let findIdStr = findId ? `AND dt.id = ${findId}` : '';
-    let sqlStr = `
-        select
-            dt.id as id,
-            dt.user as user,
-            dt_name.name as name,
-            dt_name.touxian as touxian,
-            dt.text as text,
-            dt.img_show_num as imgShowAll,
-            dt.img_all_num as imgAllNum,
-            dt.video_num as videoNum,
-            dt.video_show_num as videoShowAll,
-            dt.date as date,
-            dt.idea as idea,
-            dt.bg_style as bgStyle,
-            dt.pin_order as po,
-            dt.loa as loa
-        from dt
-            join dt_name on dt.user = dt_name.user
-        where
-            ${sqlend}  AND dt.shows = 1 ${findIdStr}
-        order by dt.date desc;
-    `;
+    data1 = await prisma.dt_find.findMany({
+        where,
+        orderBy: {
+            date: 'desc'
+        }
+    });
 
-    let data = await dbSql<Lists[]>(sqlStr);
+
+
+
+    let data = data1.map(a => {
+        return {
+            id: a.id,
+            user: a.user,
+            name: a.name,
+            touxian: '',
+            touxianUrl: a.user_img || undefined,
+            text: a.text,
+            imgShowAll: a.img_show_num,
+            imgShowProportion: [],
+            imgAllNum: a.img_all_num,
+            videoShowAll: a.video_show_num,
+            videoNum: a.video_num,
+            date: moment(a.date).add(16, 'hours').format('YYYY-MM-DD HH:mm:ss'),
+            idea: a.idea,
+            po: a.pin_order,
+            bgStyle: a.bg_style,
+            longText: [],
+            loa: a.loa,
+            chatRoot: [],
+        } as Lists;
+    })
+
     for (let i = 0; i < data.length; i++) {
         //前缀为^AES^的内容且loa不为0或1的需要解密
-        if (data[i].text.startsWith("^AES^") && loa != 0 && loa != 1) {
+        if (data[i].text.startsWith("^AES^")) {
             let key = process.env.miKey
             data[i].text = mi.jie(data[i].text.slice(5), key);
         }
     }
     return data;
-}
 
+}
 
 
 // 获取长视频列表
@@ -455,7 +503,7 @@ export async function setUserss(user: string, dtid: string) {
 //从动态主表中查询图片权限信息
 export async function dtidS(dtid: string) {
     let sql = `SELECT user,loa,shows FROM dt where id = ?`;
-    let res = await dbSql<{ user: string, loa: number, shoes: number }[]>(sql, [dtid]);
+    let res = await dbSql<{ user: string, loa: number, shows: number }[]>(sql, [dtid]);
     return res;
 }
 
@@ -489,7 +537,7 @@ export async function serviceDate(year: number | string) {
     const end = new Date(Number(year) + 1, 0, 1); // 下一年1月1日
 
     const results = await prisma.dt_date.findMany({
-        select:{
+        select: {
             date: true,
         },
         where: {
@@ -499,7 +547,7 @@ export async function serviceDate(year: number | string) {
             },
         },
     });
-        let a = [];
+    let a = [];
     for (let i = 0; i < results.length; i++) {
         a[i] = JSON.stringify(results[i].date).split('T')[0].split('"')[1].split('-').join(',')
     }

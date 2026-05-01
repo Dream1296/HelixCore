@@ -1,8 +1,8 @@
 import { Request } from 'express';
 
-type user = {
-    username: string | 'guest',
-    dtid: string,
+export type user = {
+    username: string,
+    dtid: number,
     type: "ltk" | "rat",    //ltk为永久令牌  rat为临时令牌
 }
 
