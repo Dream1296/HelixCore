@@ -3,8 +3,8 @@ public/dtimg_modules
 node_modules
 public/
 assets/
-dist/
-distDev/
+dist/*
+distDev/*
 srcs/models/bookData
 *.mp4
 *.png

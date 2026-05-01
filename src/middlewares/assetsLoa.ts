@@ -20,12 +20,12 @@ export async function loas(req: Reqs, res: Response, next: NextFunction) {
         '/api/linkScreenControl',
         '/api/keepOcr',
 
-        // '/api/bookrdata',
-        // '/api/bookvdata',
-        // '/api/bookau',
-        // '/api/booklist',
-        // '/api/bookcover',
-        // '/api/bookjd',
+        '/api/bookrdata',
+        '/api/bookvdata',
+        '/api/bookau',
+        '/api/booklist',
+        '/api/bookcover',
+        '/api/bookjd',
 
     ]);
 
