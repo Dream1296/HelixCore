@@ -151,3 +151,15 @@ export type BadmintonData = {
 };
 
 
+export type setDtDataT = {
+    id:number,
+  user?: string,
+  date?: string,
+  imgShowAll?: number,
+  imgAllNum?: number,
+  videoShowAll?: number,
+  videoNum?: number,
+  text?: string,
+  loa?: number,
+  bgStyle?: number,
+}

@@ -16,7 +16,8 @@ import {
     linksc,
     linkScreenControl,
     dtimgCom,
-    getYear
+    getYear,
+    setdt
 }
     from '@/controllers/dt';
 import { PublishAfterExecution } from '@/services/upListData';
@@ -30,6 +31,9 @@ app.get('/getDtList', isRequest(t.Query), getDtList);
 
 //获取单个动态数据
 app.get('/getdt', getdt);
+
+//修改单个动态数据
+app.post('/setdt',setdt);
 
 //设置动态的标签
 app.post('/dtindex', dtindex);

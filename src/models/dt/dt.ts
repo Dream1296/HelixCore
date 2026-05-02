@@ -237,6 +237,18 @@ export async function dtLists(user: string, loa: number, findId?: number | strin
         }
     });
 
+    //查询该用户显示黑名单
+    let userBlacList = (await prisma.dt_user_blacklist.findMany({
+        where:{
+            user,
+            loa
+        },
+        select:{
+            blocked_user:true
+        }
+    })).map(e =>{
+        return e.blocked_user
+    });
 
 
 
@@ -261,6 +273,9 @@ export async function dtLists(user: string, loa: number, findId?: number | strin
             loa: a.loa,
             chatRoot: [],
         } as Lists;
+    }).filter( e =>{
+        //过滤掉黑名单中的用户
+        return !userBlacList.includes(e.user);
     })
 
     for (let i = 0; i < data.length; i++) {

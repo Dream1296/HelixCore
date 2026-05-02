@@ -22,9 +22,9 @@ async function userIn(req: Reqs, res: Response) {
     if (!userId) userId = process.env.Guest as string;
     let user = await userIns(userId);
     if (!user) {
-        res.send(  userIns(process.env.Guest!) )
+        res.send(  (await userIns(process.env.Guest!))![0] )
     }else{
-        res.send(user)
+        res.send(user![0])
     }
 }
 

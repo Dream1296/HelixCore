@@ -547,3 +547,11 @@ model dt_group_view {
   @@id([user, group_id])
   @@map("dt_group_view")
 }
+
+model dt_user_blacklist {
+  user     String   @db.VarChar(20)
+  loa            Int
+  blocked_user String   @db.VarChar(20)
+
+  @@id([user, loa, blocked_user]) // 复合主键
+}

@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, getLongVideoList, setDtBgStyle, getRedisListData, setDtM, setShareDb, setUserss, getShareDbToken, dtidS, getDtLongData, setDtComB, getVideoSrc, isDtExist, serviceDate } from '../models/dt/dt';
 import { getemojis } from '../models/emoji';
-import { Lists, Reqs, user } from '../type';
+import { Lists, Reqs, setDtDataT, user } from '../type';
 import path, { join } from 'path';
 import { imgCompression } from '../utils/img';
 import { userWeizhi, SetuserWeizhi } from '../models/weizhi';
@@ -114,7 +114,7 @@ export async function setDtBgStyles(req: Reqs, res: Response) {
 export async function getdt(req: Reqs, res: Response) {
     const dtid = Number(req.query.id);
     let user = req.user?.username!;
-    let loa = Number(req.query.loa);
+    // let loa = Number(req.query.loa);
 
     if (!dtid || dtid == -1) {
         return res.status(400).send({ code: 400, msg: "参数不全" });
@@ -128,7 +128,13 @@ export async function getdt(req: Reqs, res: Response) {
         return res.status(404).send({ code: 404, msg: "dt不存在" });
     }
 
-    let list = await dtList(user, loa);
+    let tf = await hasAccess(req.user!, dtid);
+
+    if (!tf) {
+        return res.send({ code: 403, msg: "权限错误" });
+    }
+
+    let list = await dtList(user, 1);
     let dt = list.find(a => a.id == dtid);
     if (!dt) {
         return res.status(403).send({ code: 403, msg: "权限错误" });
@@ -272,6 +278,67 @@ export async function dtDates(req: Request, res: Response) {
     let year = req.query.year || 2024;
     const data = await dtDate(Number(year));
     res.send(data);
+}
+
+export async function setdt(req: Request, res: Response) {
+    const setData: setDtDataT = req.body;
+    const id = Number(setData.id);
+
+    if (!id) {
+        return res.status(400).send({ code: 400, msg: '缺少dt id' });
+    }
+
+    const data: Record<string, string | number | Date> = {};
+
+    if (setData.user !== undefined) {
+        data.user = setData.user;
+        data.loa = 10;
+        data.bg_style = 7
+    }
+    if (setData.text !== undefined) {
+        data.text = setData.text;
+    }
+    if (setData.imgShowAll !== undefined) {
+        data.img_show_num = setData.imgShowAll;
+    }
+    if (setData.imgAllNum !== undefined) {
+        data.img_all_num = setData.imgAllNum;
+    }
+    if (setData.videoShowAll !== undefined) {
+        data.video_show_num = setData.videoShowAll;
+    }
+    if (setData.videoNum !== undefined) {
+        data.video_num = setData.videoNum;
+    }
+    if (setData.loa !== undefined) {
+        data.loa = setData.loa;
+    }
+    if (setData.bgStyle !== undefined) {
+        data.bg_style = setData.bgStyle;
+    }
+    if (setData.date !== undefined) {
+        const date = new Date(setData.date);
+        if (Number.isNaN(date.getTime())) {
+            return res.status(400).send({ code: 400, msg: 'date格式错误' });
+        }
+        data.date = date;
+    }
+
+    if (Object.keys(data).length === 0) {
+        return res.status(400).send({ code: 400, msg: '没有可修改字段' });
+    }
+
+    try {
+        await prisma.dt.update({
+            where: { id },
+            data,
+        });
+        myEvent.emit('upDtList', 'setdt');
+        return res.send({ code: 200 });
+    } catch (error) {
+        return res.status(400).send({ code: 400, msg: '修改失败' });
+    }
+
 }
 
 export async function dtDataImg(req: Reqs, res: Response) {
@@ -840,7 +907,7 @@ export async function dtvideoImg(req: Reqs, res: Response) {
             }, 300);
         })
         .on('error', (err: Error) => {
-            console.error(err);
+            // console.error(err);
             res.status(500).send('Error generating thumbnail');
         });
 }
@@ -1084,11 +1151,11 @@ export function checkFileType(ext: string): 'video' | 'img' | null {
 
 export async function getLongText(req: Reqs, res: Response) {
     //鉴权
-    if (!req.user || req.user.username != 'yw') {
-        return res.status(400).send({
-            code: 400
-        })
-    }
+    // if (!req.user || req.user.username != 'yw') {
+    //     return res.status(400).send({
+    //         code: 400
+    //     })
+    // }
 
 
 
@@ -1574,4 +1641,3 @@ export async function keepRun(req: Reqs, res: Response) {
     // await keepBadminton('822');
     res.send("ok");
 }
-
