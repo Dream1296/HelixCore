@@ -153,6 +153,7 @@ model dt_user {
   name    String  @db.VarChar(100) // 昵称
   user_img  String  @db.VarChar(100) // 头像
   passwd  String  @db.VarChar(32) // 密码
+  bg_img  String  @db.VarChar(10) // 首页背景图片
 
 }
 

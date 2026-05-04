@@ -2,7 +2,7 @@ import express, { Request, Response, Router } from 'express';
 const router = Router();
 
 
-import {userClass , userIn,userImg,setMood} from '../controllers/user';
+import {userClass , userIn,userImg,setMood,userBgImg} from '../controllers/user';
 
 //用户类型
 router.get('/userClass', userClass);
@@ -12,6 +12,9 @@ router.get('/userc',userIn);
 
 //用户头像
 router.get('/userImg',userImg);
+
+//用户首页背景
+router.get('/userBgImg',userBgImg);
 
 // 心情提交
 router.post('/setMood',setMood);

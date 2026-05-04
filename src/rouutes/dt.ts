@@ -18,8 +18,7 @@ import {
     dtimgCom,
     getYear,
     setdt
-}
-    from '@/controllers/dt';
+}  from '@/controllers/dt';
 import { PublishAfterExecution } from '@/services/upListData';
 
 import * as t from '../middlewares/routesType';
@@ -56,9 +55,6 @@ app.get('/dtimgCom', dtimgCom);
 //修改背景样式
 app.post('/setBgStyle', setDtBgStyles);
 
-//原图 已废弃
-// app.get("/dtimgs", dtimgs );
-
 //视频
 app.get('/dtvideo', dtvideo);
 
@@ -72,8 +68,6 @@ app.get('/dtvideoImg', dtvideoImg);
 app.post('/updt', uploadSingleFile, updt);
 
 app.post('/upvideo', uploadVideos, upvideo);
-
-
 
 //获取动态长文本数据
 app.get('/getLongText', getLongText);
@@ -134,9 +128,6 @@ app.get('/upDtData', upDtData);
 
 // 年份图片获取
 app.get('/getYear', getYear);
-
-
-
 
 
 //缓存相关

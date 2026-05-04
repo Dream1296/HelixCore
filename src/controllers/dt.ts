@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, getLongVideoList, setDtBgStyle, getRedisListData, setDtM, setShareDb, setUserss, getShareDbToken, dtidS, getDtLongData, setDtComB, getVideoSrc, isDtExist, serviceDate } from '../models/dt/dt';
 import { getemojis } from '../models/emoji';
-import { Lists, Reqs, setDtDataT, user } from '../type';
+import { Lists, MulterRequest, Reqs, setDtDataT, user } from '../type';
 import path, { join } from 'path';
 import { imgCompression } from '../utils/img';
 import { userWeizhi, SetuserWeizhi } from '../models/weizhi';
@@ -31,14 +31,14 @@ import { keepBadminton, keepRunOcr } from '@/services/keep';
 import { getlinkScreen } from '@/services/linkScreen';
 import { linkScreenRefresh } from '@/services/Aether';
 import { addDB, processImage } from '@/services/imgdataArr';
-import { fileIsDir, isImgTemp, isVideoTemp, mvImg, mvVideo } from './dtTool';
+import { fileIsDir, isImgTemp, isVideoTemp, mvImg, mvVideo } from '@/tool/filePath';
 import { formatString, mvFileName } from '@/utils/time';
 import { prisma } from '@/config/prisma';
 import { getThumbnail, setThumbnail } from '@/services/MyLRU';
-// import { getDtDataImg } from '@/services/dtDataT';
-// import { getlinkScreen, processImageForEInk } from '@/services/linkScreen';
-
-
+import { checkFileType } from '@/tool/checkFile';
+import { generateRandomString } from '@/tool/Text';
+import { hasAccessDtFileLoa, hasAccessDtloa } from '@/services/authorization';
+import { getnowDate } from '@/tool/Time';
 
 //获取列表信息和评论信息
 export async function getDtList(req: Reqs, res: Response) {
@@ -62,21 +62,7 @@ export async function getDtList(req: Reqs, res: Response) {
     }
 
 
-    // myEvent.emit('upDtList');
-
     let listData: Lists[] = await dtList(user, loa);;
-
-    // if (loa == 3) {
-    //     for (let a of [0, 1, 13, 12]) {
-    //         //从redis中获取主数据
-    //         listData.push(...await getRedisListData(user, a, aes));
-    //     }
-    //     listData.sort((a, b) => b.id - a.id);
-    // } else {
-
-    //     listData.push(...await getRedisListData(user, loa, aes));
-    // }
-
 
 
     // listData = await dtAdd(listData);
@@ -96,7 +82,6 @@ export async function getDtList(req: Reqs, res: Response) {
         data: datas,
     };
 
-
     return res.send(resData);
 
 }
@@ -111,6 +96,8 @@ export async function setDtBgStyles(req: Reqs, res: Response) {
         return res.send({ tf: 0 });
     }
 }
+
+
 export async function getdt(req: Reqs, res: Response) {
     const dtid = Number(req.query.id);
     let user = req.user?.username!;
@@ -128,7 +115,7 @@ export async function getdt(req: Reqs, res: Response) {
         return res.status(404).send({ code: 404, msg: "dt不存在" });
     }
 
-    let tf = await hasAccess(req.user!, dtid);
+    let tf = await hasAccessDtloa(req.user!, dtid);
 
     if (!tf) {
         return res.send({ code: 403, msg: "权限错误" });
@@ -162,8 +149,6 @@ export async function dtfinds(req: Reqs, res: Response) {
         num: number;
     }[];
 
-
-
     //搜索 返回排序后的id和质信度
     numArr = await dtFinds(bq as string, user, Number(loa));
 
@@ -172,7 +157,7 @@ export async function dtfinds(req: Reqs, res: Response) {
 
     let newList = [];
     for (let id of numArr) {
-        let dt = finds(id.id);
+        let dt = List.find(a => a.id == id.id);
 
         if (!dt) {
             continue;
@@ -186,14 +171,6 @@ export async function dtfinds(req: Reqs, res: Response) {
     let time = -(date - (+new Date()));
 
     return res.send({ code: 200, time, data: newList, });
-
-    function finds(id: number) {
-        for (let dt of List) {
-            if (dt.id == id) {
-                return dt
-            }
-        }
-    }
 }
 
 export async function dtindex(req: Reqs, res: Response) {
@@ -203,7 +180,6 @@ export async function dtindex(req: Reqs, res: Response) {
         return res.send({
             code: 400,
         })
-
     }
     if (req.user?.username != 'yw') {
         return res.send({
@@ -257,21 +233,7 @@ export async function postCom(req: Reqs, res: Response) {
         res.send({ tf: 1 });
     }
 }
-//获取当前时间
-function getnowDate() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0'); // 月份是从0开始的  
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
 
-    // 拼接成 MySQL DATETIME 格式  
-    const dateTimeString = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-
-    return dateTimeString;
-}
 
 //获取时间信息
 export async function dtDates(req: Request, res: Response) {
@@ -386,7 +348,7 @@ export async function dtimg(req: Reqs, res: Response) {
     }
 
 
-    let tf = await hasAccess(req.user!, dtid);
+    let tf = await hasAccessDtloa(req.user!, dtid);
 
     if (!tf) {
         return res.send({ code: 402 });
@@ -396,14 +358,12 @@ export async function dtimg(req: Reqs, res: Response) {
 
 
     let imgSrc = (await dbSql<{ img_src: string, img_name: string }[]>(sqlStr))[0];
-    // console.log(imgSrc);
 
     imgcl(imgSrc, dtid, index, req.user?.username);
     resImg(imgSrc, isImg, res);
 }
 
 export async function dtimgCom(req: Reqs, res: Response) {
-
     let Reqdtid = req.query.comid;
     let Reqindex = req.query.index;
     let size = req.query.size;
@@ -425,8 +385,6 @@ export async function dtimgCom(req: Reqs, res: Response) {
     let imgSrc = (await dbSql<{ img_src: string, img_name: string }[]>(sqlStr))[0];
 
     return resImg(imgSrc, size, res);
-
-
 }
 
 /**
@@ -437,8 +395,6 @@ export async function dtimgCom(req: Reqs, res: Response) {
  * @returns 
  */
 async function resImg(imgSrc: { img_src: string; img_name: string; }, isImg: any, res: Response) {
-    // console.log(1);
-
     if (!imgSrc) {
         let filePath = path.join(getUrl('assets'), './system/imgError.png');
         let ThumbnailData = getThumbnail(filePath);
@@ -534,67 +490,6 @@ async function resImg(imgSrc: { img_src: string; img_name: string; }, isImg: any
 }
 
 
-
-
-
-
-/**
- * 图片和视频鉴权
- * @param username 用户id
- * @param dtid 请求的动态id
- * @param userDtID 当前用户是否限制访问
- * @returns 是否运行访问
- */
-
-export async function hasAccess(User: user, dtid: number) {
-
-    let userT1 = await dtidS(dtid.toString());
-    let userT: {
-        user: string;
-        loa: number;
-        shows: number;
-    };
-    if (userT1.length != 1 && userT1[0]) {
-        console.log('-1-1-1');
-        return false
-    }
-    userT = userT1[0];
-    //如果访问的是已经删除的动态
-    if (userT.shows != 1) {
-        console.log('000');
-        return false;
-    }
-    //如果访问的公开动态
-    if (userT.loa != undefined && userT.loa == 0) {
-        console.log(111);
-
-        return true;
-    }
-    //如果访问者和动态作者一样
-    if (User.username == userT?.user && User.dtid == -1) {
-        console.log(222);
-
-        return true;
-    }
-    //如果是通过分享链接访问
-    if (User.username == userT?.user && User.dtid == dtid) {
-        console.log(333);
-        return true;
-    }
-
-    // 如果当前用户在所选组内
-    const groupIds = (await prisma.dt_group_view.findMany({
-        where: { user: User.username },
-        select: { group_id: true }
-    })).map(item => item.group_id);
-
-    if (userT.loa >= 10 && groupIds.includes(userT.loa)) {
-        return true;
-    }
-
-    return false;
-}
-
 //获取原图
 export async function dtimgs(req: Request, res: Response) {
     // let filename = req.query.name as string;
@@ -602,8 +497,6 @@ export async function dtimgs(req: Request, res: Response) {
     // let filePath = path.join(urls, filename);
     // res.sendFile(filePath);
 }
-
-
 
 
 // let videoArr:string[] = [];
@@ -625,7 +518,7 @@ export async function dtvideo(req: Reqs, res: Response) {
         return res.send({ code: 402 });
     }
 
-    let tf = await hasAccess(req.user!, dtid);
+    let tf = await hasAccessDtloa(req.user!, dtid);
     if (!tf) {
         return res.send({ code: 401 });
     }
@@ -698,60 +591,6 @@ export async function dtvideo(req: Reqs, res: Response) {
     }
 }
 
-
-//传入一个视频数组，判断视频是否为h254，如果不是在指定目录生成h254编码视频
-export async function ensureVideoIsh254(videoArr: string[]) {
-    let video_src = process.env.aNew as string;
-    let videoSrcOriginal = path.join(getUrl('assets'), 'a', video_src, 'video/original');
-    let videoSrcCompressed = path.join(getUrl('assets'), 'a', video_src, 'video/compressed');
-    for (let inputPath of videoArr) {
-        let videoUrl = path.join(videoSrcOriginal, inputPath);
-        // 用 ffprobe 检查视频编码
-        if (!fileIsDir(videoSrcOriginal, inputPath)) {
-            console.log('视频不存在');
-
-            continue;
-        }
-        const codecInfo = execSync(`ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of csv=p=0 ${videoUrl}`).toString().trim();
-        const audioInfo = execSync(`ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of csv=p=0 ${videoUrl}`).toString().trim();
-
-        let args;
-        if (codecInfo === 'h264' && audioInfo === 'aac') {
-            console.log('视频为h254格式');
-            continue;
-        }
-        let outputPath = path.join(videoSrcCompressed, inputPath);
-        let inputPathSrc = path.join(videoSrcOriginal, inputPath);
-        // 否则强制转码
-        args = ['-i', inputPathSrc, '-c:v', 'libx264', '-c:a', 'aac', '-y', outputPath];
-        await new Promise<void>((resolve, reject) => {
-            const ffmpeg = spawn('ffmpeg', args);
-
-            // 捕获 ffmpeg 的标准错误输出
-            ffmpeg.stderr.on('data', (data) => {
-                console.error('FFmpeg输出:', data.toString());
-            });
-
-            // ffmpeg 处理完成后的回调
-            ffmpeg.on('close', (code) => {
-                if (code === 0) {
-                    console.log(`视频转换成功: ${outputPath}`);
-                    resolve();
-                } else {
-                    console.log('转换失败');
-                    reject(new Error(`FFmpeg 进程退出，状态码: ${code}`)); // 转换失败
-                }
-            });
-
-            // 错误处理
-            ffmpeg.on('error', (err) => {
-                console.log("错误");
-                reject(err);
-            });
-        });
-    }
-
-}
 
 
 /**
@@ -860,7 +699,7 @@ export async function dtvideoImg(req: Reqs, res: Response) {
         return res.send({ code: 402 });
     }
 
-    let tf = await hasAccess(req.user!, dtid);
+    let tf = await hasAccessDtloa(req.user!, dtid);
     if (!tf) {
         return res.send({ code: 401 });
     }
@@ -886,8 +725,6 @@ export async function dtvideoImg(req: Reqs, res: Response) {
         // console.log('从缓存中拿视频封面图');
         return res.send(ThumbnailData);
     }
-
-
 
     if (fileIsDir(videoSrc, videoImg)) {
         return res.sendFile(path.join(videoSrc, videoImg));
@@ -955,20 +792,17 @@ export const uploadSingleFile = upload.single('file');
 //导出视频文件上传中间件
 export const uploadVideos = uploadVideo.single('file');
 //文件上传处理
-export async function updt(req: Request, res: Response) {
+export async function updt(req: MulterRequest, res: Response) {
     if (!req.file) {
         return res.status(400).send({ error: '文件上传失败' });
     }
     res.send({ tf: 1, fileName: req.file.filename });
 }
-export async function upvideo(req: Request, res: Response) {
+export async function upvideo(req: MulterRequest, res: Response) {
     if (!req.file) {
         return res.status(400).send({ error: '文件上传失败' });
     }
-    res.send({
-        tf: 1,
-        fileName: req.file.filename
-    });
+    res.send({ tf: 1, fileName: req.file.filename });
 }
 
 function stopTime(time: number) {
@@ -977,7 +811,7 @@ function stopTime(time: number) {
     })
 }
 
-export async function postdt(req: Request, res: Response) {
+export async function postdt(req: Reqs, res: Response) {
     let text = req.body.text as string;
     let img = req.body.img as string[];
     let img_show_num = req.body.imgShowNum as string;
@@ -990,6 +824,13 @@ export async function postdt(req: Request, res: Response) {
     if (img_show_num > img_all_num) {
         img_show_num = Number(img_all_num) > 6 ? '6' : img_all_num;
     }
+
+    if (!req.user?.username || req.user.username == process.env.Guest) {
+        res.send({
+            code: 403
+        });
+    }
+
 
     // 适当的延迟，保证正确写入。
     if (Number(img_all_num) > 0) {
@@ -1125,7 +966,7 @@ export async function postdt(req: Request, res: Response) {
 
     im = setImg(id, img, 'dtimg');
 
-    const dt = setDt(id.toString(), 'yw', text, img_show_num, img_all_num, videoNum, date, loa);
+    const dt = setDt(id.toString(), req.user!.username, text, img_show_num, img_all_num, videoNum, date, loa);
     Promise.all([im, vi, dt]).then((a) => {
         res.send({ tf: 1 });
     })
@@ -1133,40 +974,32 @@ export async function postdt(req: Request, res: Response) {
 }
 
 
-export function checkFileType(ext: string): 'video' | 'img' | null {
-    // 统一转为小写，并确保扩展名以 '.' 开头（如果传入的是 '.jpg' 或 'jpg' 都能处理）
-    const normalizedExt = ext.startsWith('.') ? ext.toLowerCase() : `.${ext.toLowerCase()}`;
 
-    const imgExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg', '.tiff', '.dng'];
-    const videoExtensions = ['.mp4', '.avi', '.mov', '.webm', '.mkv', '.flv'];
-
-    if (imgExtensions.includes(normalizedExt)) {
-        return 'img';
-    }
-    if (videoExtensions.includes(normalizedExt)) {
-        return 'video';
-    }
-    return null;
-}
 
 export async function getLongText(req: Reqs, res: Response) {
-    //鉴权
-    // if (!req.user || req.user.username != 'yw') {
-    //     return res.status(400).send({
-    //         code: 400
-    //     })
-    // }
-
-
-
-
 
     let dtid = req.query.dtid as string;
+
     if (!dtid) {
         return res.status(400).send({
             code: 400
         })
     }
+
+    const fileObj = await prisma.dt_text.findMany({
+        where: {
+            dtid: Number(dtid)
+        }
+    });
+
+    if (fileObj[0].loa != 0) {
+        let tf = await hasAccessDtFileLoa(req.user!, fileObj[0].dtid,fileObj[0].loa);
+        if (!tf) {
+            return res.send({ code: 403 });
+        }
+    }
+
+
     let data = await getDtLongData(dtid);
 
     res.send({
@@ -1551,10 +1384,6 @@ export async function getYear(req: Reqs, res: Response) {
     }
 
     return res.sendFile(path.join(file, '20xx.png'));
-
-
-
-
 }
 
 export async function dtFile(req: Reqs, res: Response) {
@@ -1573,18 +1402,23 @@ export async function dtFile(req: Reqs, res: Response) {
         }
     });
 
+
     if (!fileObj) {
         return res.send({
-            code: 401,
+            code: 404,
         })
     }
 
-    if (fileObj.loa !== 0 && req.user?.username !== 'yw') {
-        return res.status(403).send({
-            code: 403,
-            msg: "权限错误"
-        });
+    if (fileObj.loa != 0) {
+        let tf = await hasAccessDtFileLoa(req.user!, fileObj.dt_id,fileObj.loa);
+        if(!tf){
+            return res.send({
+                code: 403,
+            })
+
+        }
     }
+
 
     let fileSrc = getUrl('assets', 'file', fileObj.file_src, fileObj.file_name);
 
@@ -1598,40 +1432,28 @@ export async function dtFile(req: Reqs, res: Response) {
         // 设置下载的文件名（可选，你可以从 file_src 中提取或设置其他名称）
         // let expandName = fileObj.file_src.split('.')[fileObj.file_src.split('.').length -1 ];
         const fileName = path.basename(fileObj.name + "&&" + fileObj.file_src);
-        res.download(fileSrc, fileName, (err) => {
+        // 完善下err类型
+        res.download(fileSrc, fileName, (err?: NodeJS.ErrnoException) => {
             if (err) {
-                // 客户端主动中断下载时，响应通常已经开始，不能再写回错误响应。
-                const isClientAbort = err.code === 'ECONNABORTED' || err.code === 'ECONNRESET' || res.destroyed;
+                const isClientAbort =
+                    err.code === "ECONNABORTED" ||
+                    err.code === "ECONNRESET" ||
+                    res.destroyed;
+
                 if (isClientAbort) {
-                    console.warn('Download aborted by client:', fileId, fileName);
+                    console.warn("Download aborted by client:", fileId, fileName);
                     return;
                 }
 
-                console.error('Error downloading file:', err);
+                console.error("Error downloading file:", err);
 
                 if (!res.headersSent && !res.writableEnded) {
-                    return res.status(500).send('Error downloading file');
+                    res.status(500).send("Error downloading file");
                 }
-
                 return;
-            } else {
-                // 下载成功
-                console.log('File downloaded successfully');
             }
-        });
+        })
     })
-
-}
-
-function generateRandomString(length: number) {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
-    const charactersLength = characters.length;
-    for (let i = 0; i < length; i++) {
-        const randomIndex = Math.floor(Math.random() * charactersLength);
-        result += characters[randomIndex];
-    }
-    return result;
 }
 
 

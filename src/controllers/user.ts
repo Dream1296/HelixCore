@@ -72,4 +72,28 @@ export async function setMood(req: Reqs, res: Response) {
 
 }
 
+export async function userBgImg(req: Reqs, res: Response){
+    console.log(req.user);
+    
+    if(!req.user?.username || req.user.username == process.env.Guest){
+        return res.send('null');
+    }
+
+    let imgNmae = await prisma?.dt_user.findMany({
+        where:{
+            id:req.user.username
+        },
+        select:{
+            bg_img:true
+        }
+    })
+    if(imgNmae && imgNmae.length == 1){
+        // assets/system/user_bg_img
+        let pathImg = getUrl('assets','system/user_bg_img',imgNmae[0].bg_img);
+        return res.sendFile(pathImg);
+    }
+    return res.send('null');
+}
+
+
 export { userClass, userIn, userImg }

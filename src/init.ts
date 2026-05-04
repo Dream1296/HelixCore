@@ -11,11 +11,11 @@ export function systemInit() {
 
 
 
-    // 建立图片和视频封面缓存
-    setTimeout(() => {
-        // 缓存普通类似和特殊类似图片封面数量
-        ThumbnailInit(500, 500);
-    }, 1800 * 1000);
+    // // 建立图片和视频封面缓存
+    // setTimeout(() => {
+    //     // 缓存普通类似和特殊类似图片封面数量
+    //     ThumbnailInit(500, 500);
+    // }, 1800 * 1000);
 
     //触发动态缓存更新
     setTimeout(() => {

@@ -10,6 +10,11 @@ export interface Reqs extends Request {
     user?: user; // 注意这里的 ? 表示 user 属性是可选的  
 }
 
+// export interface MulterRequest extends Request {
+//     file: Express.Multer.File;
+// }
+export type MulterRequest = Request & { file?: {filename:string} }
+
 //主数据列表
 export interface Lists {
     id: number;
