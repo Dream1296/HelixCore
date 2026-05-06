@@ -32,15 +32,12 @@ export function getData(bookId: string) {
 
 export function bookRDatas(bookId: string) {
     return new Promise((resolve, rejects) => {
-        console.log(1);
 
         let paths = path.join(getUrl('assets'), `bookData/dataJson`);
         let filePath = path.join(getUrl('assets'), `bookData/dataJson/${bookId}.json.gz`);
         let jsonPath = path.join(getUrl('assets'), `bookData/dataJson/${bookId}.json`);
-        console.log();
 
         if (fileIsDir(paths, filePath)) {
-            console.log(2);
 
             resolve(filePath);
         }
@@ -78,8 +75,6 @@ export async function getAu(bookId: string, id: number | string) {
     let end = data.time_end;
 
 
-    console.log(start, end);
-
     if (start == -1 || end == -1) {
         let outPath = path.join(getUrl('assets'), 'bookData/audios');
         let fileName = `${bookId}-${id}.mp3`;
@@ -111,9 +106,6 @@ export async function getAu(bookId: string, id: number | string) {
     let outPath = path.join(getUrl('assets'), 'bookData/frap');
     let fileName = `${bookId}-${id}.mp3`;
     let pathFile: string;
-
-
-    console.log(outPath, fileName);
 
     if (fileIsDir(outPath, fileName)) {
         pathFile = path.join(outPath, fileName);

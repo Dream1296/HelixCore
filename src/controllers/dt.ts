@@ -66,13 +66,13 @@ export async function getDtList(req: Reqs, res: Response) {
 
 
     // listData = await dtAdd(listData);
-
-    // 暂时没有内容 不影响
+    // 对一些数据进行修改
     await dtAdd(listData, user, loa);
 
 
     //插入其他组件数据
-    let datas = await dtDataAdd(listData, loa);
+    let datas = await dtDataAdd(listData, req.user!,loa);
+
 
     let resData = {
         code: 200,
@@ -310,21 +310,19 @@ export async function dtDataImg(req: Reqs, res: Response) {
 
     let buffer: Buffer<any> = Buffer.alloc(0);
 
-    if (id == '2000') {
+    if (req.user?.username == 'dlhe') {
+        let title = '服务器重启记录';
+        const data = await serviceDate(Number(year));
+        const dateNow = new Date();
+        data.push(`${dateNow.getFullYear()},${dateNow.getMonth() + 1},${dateNow.getDate()}`);
+        buffer = getDtDataImg(title, data);
+    }else{
         let title = '动态提交历史';
         const data = await dtDate(Number(year));
         const dateNow = new Date();
         data.push(`${dateNow.getFullYear()},${dateNow.getMonth() + 1},${dateNow.getDate()}`);
         buffer = getDtDataImg(title, data);
     }
-    if (id == '2013') {
-        let title = '服务器重启记录';
-        const data = await serviceDate(Number(year));
-        const dateNow = new Date();
-        data.push(`${dateNow.getFullYear()},${dateNow.getMonth() + 1},${dateNow.getDate()}`);
-        buffer = getDtDataImg(title, data);
-    }
-
 
     res.setHeader('Content-Type', 'image/jpg');
     res.send(buffer);
@@ -960,7 +958,7 @@ export async function postdt(req: Reqs, res: Response) {
     const vi = setVideo(id, video);
 
     //loa不为0或1时，加密文本内容
-    if (loa != 0 && loa != 1) {
+    if ( req.user?.username == 'dlhe' ) {
         text = "^AES^" + jiamiString(text, process.env.loa13!);
     }
 
@@ -993,7 +991,7 @@ export async function getLongText(req: Reqs, res: Response) {
     });
 
     if (fileObj[0].loa != 0) {
-        let tf = await hasAccessDtFileLoa(req.user!, fileObj[0].dtid,fileObj[0].loa);
+        let tf = await hasAccessDtFileLoa(req.user!, fileObj[0].dtid, fileObj[0].loa);
         if (!tf) {
             return res.send({ code: 403 });
         }
@@ -1329,7 +1327,6 @@ export async function linksc(req: Reqs, res: Response) {
     let data = await processImage(buffer);
     if (data) {
         let a = await addDB(data.blackArr, data.redArr);
-        console.log(a);
     }
 
     res.setHeader('content-type', 'image/png');
@@ -1340,8 +1337,6 @@ export async function linksc(req: Reqs, res: Response) {
 
 export async function linkScreenControl(req: Reqs, res: Response) {
     let a = await linkScreenRefresh();
-    console.log(a);
-
     res.send(a.toString());
 }
 
@@ -1410,8 +1405,8 @@ export async function dtFile(req: Reqs, res: Response) {
     }
 
     if (fileObj.loa != 0) {
-        let tf = await hasAccessDtFileLoa(req.user!, fileObj.dt_id,fileObj.loa);
-        if(!tf){
+        let tf = await hasAccessDtFileLoa(req.user!, fileObj.dt_id, fileObj.loa);
+        if (!tf) {
             return res.send({
                 code: 403,
             })

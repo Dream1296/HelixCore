@@ -93,7 +93,6 @@ export async function generateMediaThumbnail(
             // 🎞 视频：取第 frameAt 秒生成缩略图
 
             await new Promise<void>((resolve, reject) => {
-                console.log('video');
 
                 ffmpeg(inputPath)
                     .screenshots({

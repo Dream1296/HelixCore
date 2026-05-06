@@ -4,7 +4,6 @@ import { Reqs } from "@/type";
 // 仅允许特定用户访问的中间件
 export function onlyUser(allowUsers: string[]) {
     return (req: Reqs, res: Response, next: NextFunction) => {
-        console.log(allowUsers);
         
         if (allowUsers.length == 0) {
             return next();

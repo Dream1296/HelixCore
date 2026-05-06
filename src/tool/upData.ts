@@ -15,7 +15,6 @@ async function main(){
             continue;
         }
         let sql = `INSERT INTO dt_date  (date) VALUES (?)`;
-        console.log(date);
         
         await dbSql(sql,[date]);
     }

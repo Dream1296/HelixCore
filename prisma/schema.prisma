@@ -97,7 +97,6 @@ model dt_comments {
   user        String   @db.VarChar(200)
   shoes       Int      @default(1)
   loa         Int
-  userInfo    dt_name  @relation(fields: [user], references: [user])
 }
 
 model dt_chat {
@@ -119,7 +118,6 @@ model dt_name {
   user        String        @unique @db.VarChar(10)
   name        String        @db.VarChar(20)
   touxian     String        @db.VarChar(50)
-  dt_comments dt_comments[]
 }
 
 model dt_comments_img {

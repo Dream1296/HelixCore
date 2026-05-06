@@ -49,7 +49,6 @@ const user = {
 const templatePath = getUrl('src','models/Template/dateStatistics.ejs');
 const template = fs.readFileSync(templatePath, 'utf-8');  // 确保 ejs 模板存在
 const html = ejs.render(template, user);  // 使用 ejs 渲染模板，传入数据
-console.log(html);
 
 // 将渲染后的 HTML 内容转换为图像
 renderHtmlToImage(html, "output.png")

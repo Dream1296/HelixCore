@@ -145,9 +145,9 @@ export function formatComment(dtComment: commentData) {
             date: a.date.toString(),
             content: a.content,
             imgAllNum: a.img_all_num,
-            name: a.userInfo.name,
+            name: a.user,
             loa: a.loa,
-            user: a.userInfo.user
+            user: a.user
         });
     }
     return comment;

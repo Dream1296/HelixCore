@@ -1,7 +1,6 @@
 import { getPasswd } from '../models/login'
 import express, { Request, Response } from 'express';
 import { Reqs } from '../type';
-import { getUser } from '../services/token';
 import { userIn as userIns, userImgUrl, setMoodM } from '../models/user';
 import path from 'path'
 import fs from 'fs';
@@ -38,8 +37,6 @@ async function userImg(req: Reqs, res: Response) {
         })
     }
     url = getUrl('public', 'userImg', url);
-
-    console.log(url);
     
     let data = fs.readFileSync(url);
     res.setHeader('Content-Type', 'image/png');
@@ -73,8 +70,6 @@ export async function setMood(req: Reqs, res: Response) {
 }
 
 export async function userBgImg(req: Reqs, res: Response){
-    console.log(req.user);
-    
     if(!req.user?.username || req.user.username == process.env.Guest){
         return res.send('null');
     }

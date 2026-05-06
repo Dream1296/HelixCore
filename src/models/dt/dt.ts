@@ -10,7 +10,7 @@ import { formatComment, fusionObj, iskeywords, jiamiConmit } from "./helpers";
 import path from "path";
 import { getUrl } from "@/pathUtils";
 import { convertRawToPngIfNeeded } from "@/tool/ramToPng";
-import { ensureVideoIsh254 } from "@/controllers/dt";
+import { ensureVideoIsh254 } from "@/tool/media";
 
 
 
@@ -205,7 +205,6 @@ export async function dtLists(user: string, loa: number, findId?: number | strin
         })).map(item => item.group_id);
     
     const visibleLoas = [0, ...groupIds];
-        console.log(visibleLoas);
         
     const where: any = {
         shows: true,

@@ -1,4 +1,4 @@
-import { dataImg, Lists, Listsc, Mood, Top, Year } from "@/type";
+import { dataImg, Lists, Listsc, Mood, Top, user, Year } from "@/type";
 
 import { dbSql } from "@/utils/dbSql";
 
@@ -20,8 +20,11 @@ async function getCom(type: 'dataImg' | 'mood' | 'top') {
 }
 
 //向动态数据中添加组件数据
-export async function dtDataAdd(datas: Lists[], loa?: number) {
+export async function dtDataAdd(datas: Lists[], User: user,loa?: number, ) {
     let data: (Listsc | dataImg | Top | Mood | Year)[] = [];
+
+
+
 
     for (let e of datas) {
         data.push({
@@ -31,20 +34,17 @@ export async function dtDataAdd(datas: Lists[], loa?: number) {
     }
 
 
-    if (loa == 0 || loa == 1) {
-        let dataImg = await getCom('dataImg');
-        // data.unshift(dataImg!);
-        dataImg!.id = '2000';
-        data.splice(0, 0, dataImg!);
+    let dataImg = await getCom('dataImg');
+    // data.unshift(dataImg!);
+    data.splice(0, 0, dataImg!);
+
+    if (User.username != 'dlhe') {
         let top = await getCom('top');
         data.splice(2, 0, top!);
     }
 
-    if (loa == 13) {
-        let dataImg = await getCom('dataImg');
-        dataImg!.id = '2013';
-        data.splice(1, 0, dataImg!);
-    }
+
+
 
 
     //向数组适当位置添加年份信息

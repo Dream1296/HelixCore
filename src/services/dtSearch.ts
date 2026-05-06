@@ -52,9 +52,6 @@ export async function dtFinds(word: string, user: string | undefined, loa: numbe
     } else {
         List = await dtList('yw', 0);
     }
-// console.log(List);
-    // console.log(List.filter(a => a.id == 1404));
-    
 
     //如果搜索词为以"#"开头的数字，则直接返回null
     if (word.startsWith('#') && Number(word.slice(1, word.length))) {

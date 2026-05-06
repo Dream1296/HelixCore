@@ -15,6 +15,7 @@ back
 *.zip
 *.rar
 .env
+log.md
 
 
 

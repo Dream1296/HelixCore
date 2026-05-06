@@ -10,7 +10,7 @@ export async function loas(req: Reqs, res: Response, next: NextFunction) {
         '/api/listPath',
         '/api/listImgT',
         '/api/listImg',
-        '/api/listVideo',
+        // '/api/listVideo',
         '/api/setBgStyle',
         '/api/updt',
         '/api/upvideo',
@@ -36,7 +36,6 @@ export async function loas(req: Reqs, res: Response, next: NextFunction) {
 
     const username = req.user?.username;
     const isLogin = !!username && username !== process.env.Guest;
-
     if (onlyYwPaths.has(req.path) && username == process.env.Guest) {
         return res.status(403).json({ code: 403, message: '未授权的访问1' });
     }

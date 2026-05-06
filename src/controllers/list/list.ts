@@ -86,8 +86,8 @@ export async function listVideo(req: Reqs, res: Response) {
         });
         return;
     }
+
     let filePath = req.query.path as string;
-    console.log(filePath);
 
     if (!filePath) {
         return res.status(400).send({ code: 400 });
@@ -165,4 +165,14 @@ export async function listVideo(req: Reqs, res: Response) {
     }
 
 
+}
+
+export async function listFile(req: Reqs, res: Response){
+    if(req.user?.username !== 'yw'){
+        res.status(400).send({
+            code: 400,
+        });
+    }
+    let filePath = req.query.path as string;
+    return res.sendFile(filePath);
 }

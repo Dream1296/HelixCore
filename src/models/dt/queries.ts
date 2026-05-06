@@ -77,9 +77,6 @@ export async function dtComment(findId?: number) {
             shoes: 1,
             dtId: findId
         },
-        include: {
-            userInfo: true,
-        },
         orderBy: {
             date: 'asc'
         }

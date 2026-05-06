@@ -3,6 +3,7 @@ import { Comtent, Lists } from "../type";
 import { weatherData } from "@/controllers/weather";
 import { WeatherResponse, getWeatherData } from "@/models/weather";
 import { getLoaDate, setLoaDate } from "./loaDate";
+import e from "express";
 
 let wywData: { name: string, touxian: string, content: string };
 let Weather: WeatherResponse;
@@ -63,10 +64,15 @@ export async function dtComPro(dtId: number, content: string) {
 }
 
 export async function dtAdd(dtData: Lists[], user: string, loa: number) {
-    if (loa == 13) {
-        await loa13(dtData);
-
+    let dtTime = dtData.find(e => e.id == 1010);
+    if (dtTime) {
+        let date = await getLoaDate();
+        let text = `此轮服务器已连续运行${date.d}天${date.h}小时`;
+        dtTime.text = text;
+        let dataCom = dtTime.com?.pop();
+        dtTime.com = dataCom ? [dataCom] : [];
     }
+    
 
 }
 
