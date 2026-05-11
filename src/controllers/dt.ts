@@ -648,6 +648,7 @@ export function ensureVideoIsMP4(inputPath: string): string {
     } else {
         // 否则强制转码
         args = ['-i', inputPath, '-c:v', 'libx264', '-c:a', 'aac', '-y', outputPath];
+        console.log('ensureVideoIsMP4函数进行强制转码');
     }
 
     const ffmpeg = spawn('ffmpeg', args);

@@ -176,3 +176,4 @@ export async function listFile(req: Reqs, res: Response){
     let filePath = req.query.path as string;
     return res.sendFile(filePath);
 }
+

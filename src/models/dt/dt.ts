@@ -10,7 +10,7 @@ import { formatComment, fusionObj, iskeywords, jiamiConmit } from "./helpers";
 import path from "path";
 import { getUrl } from "@/pathUtils";
 import { convertRawToPngIfNeeded } from "@/tool/ramToPng";
-import { ensureVideoIsh254 } from "@/tool/media";
+import { ensureVideoIsh254, ensureVideoToh254 } from "@/tool/media";
 
 
 
@@ -203,9 +203,9 @@ export async function dtLists(user: string, loa: number, findId?: number | strin
             where: { user },
             select: { group_id: true }
         })).map(item => item.group_id);
-    
+
     const visibleLoas = [0, ...groupIds];
-        
+
     const where: any = {
         shows: true,
         ...(findId ? { id: Number(findId) } : {})
@@ -238,14 +238,14 @@ export async function dtLists(user: string, loa: number, findId?: number | strin
 
     //查询该用户显示黑名单
     let userBlacList = (await prisma.dt_user_blacklist.findMany({
-        where:{
+        where: {
             user,
             loa
         },
-        select:{
-            blocked_user:true
+        select: {
+            blocked_user: true
         }
-    })).map(e =>{
+    })).map(e => {
         return e.blocked_user
     });
 
@@ -272,7 +272,7 @@ export async function dtLists(user: string, loa: number, findId?: number | strin
             loa: a.loa,
             chatRoot: [],
         } as Lists;
-    }).filter( e =>{
+    }).filter(e => {
         //过滤掉黑名单中的用户
         return !userBlacList.includes(e.user);
     })
@@ -351,9 +351,26 @@ export async function setVideo(id: number, videoArr: string[], headNum?: number)
             return false
         }
     }
+
+
+
+    let inPathArr: string[] = [];
+    let outPathArr: string[] = [];
+    let video_src = process.env.aNew as string;
+    let videoSrcOriginal = path.join(getUrl('assets'), 'a', video_src, 'video/original');
+    let videoSrcCompressed = path.join(getUrl('assets'), 'a', video_src, 'video/compressed');
+
+    for (let i = 0; i < videoArr.length; i++) {
+        let inPath = path.join(videoSrcOriginal, videoArr[i]);
+        let outPath = path.join(videoSrcCompressed, videoArr[i]);
+        inPathArr.push(inPath);
+        outPathArr.push(outPath);
+    }
+
     setTimeout(() => {
-        ensureVideoIsh254(videoArr);
+        ensureVideoToh254(inPathArr, outPathArr);
     }, 5000);
+
     return true;
 }
 
