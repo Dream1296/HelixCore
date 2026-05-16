@@ -26,11 +26,15 @@ export async function getLoaDate() {
 }
 
 //添加新时间
-export async function setLoaDate() {
+export async function setLoaDate(dtid?: number,text?: string) {
+    let text1 = text || "null";
+    let dtid1 = Number(dtid) || -1;
     let now = (new Date()).getTime() + 8 * 60 * 60 * 1000;
     await prisma.dt_date.create({
         data: {
             date: (new Date(now)).toISOString(),
+            dtid: dtid1,
+            text: text1
         }
     });
     fs.writeFileSync('/usr/games/ahda2.txt', Math.floor((new Date()).getTime() / 1000).toString() + "\n")

@@ -202,7 +202,7 @@ export async function postCom(req: Reqs, res: Response) {
         })
     }
     const user = req.user.username;
-    const content = req.body.content;
+    let content = req.body.content;
     const dtId = req.body.dtId as number;
     const imgNameArr = req.body.imgNameArr as string[];
     const imgNum = imgNameArr.length;
@@ -224,8 +224,12 @@ export async function postCom(req: Reqs, res: Response) {
         }
     }
 
-    await dtComPro(dtId, content);
+    content = await dtComPro(dtId, content);
 
+    if(req.user.username == 'dlhe'){
+        
+    }
+    
 
 
     const a: any = await setDtCom(date, content, dtId, user, imgNum);

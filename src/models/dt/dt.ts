@@ -10,7 +10,7 @@ import { formatComment, fusionObj, iskeywords, jiamiConmit } from "./helpers";
 import path from "path";
 import { getUrl } from "@/pathUtils";
 import { convertRawToPngIfNeeded } from "@/tool/ramToPng";
-import { ensureVideoIsh254, ensureVideoToh254 } from "@/tool/media";
+import {  ensureVideoToh254 } from "@/tool/media";
 
 
 
@@ -57,9 +57,12 @@ export async function dtList(user: string, loa: number) {
 
 
     //获取评论信息
-    let comment: Comtent[] = formatComment(await dtComment());
+    let comment: Comtent[] = formatComment((await dtComment()));
     //混淆非公开评论
     jiamiConmit(comment, loa);
+
+    // 对评论中特定格式的进行处理
+    Conmit13text(comment);
 
     //评论添加
     let addCommentCb = (b: Lists, a: any) => {
@@ -372,6 +375,20 @@ export async function setVideo(id: number, videoArr: string[], headNum?: number)
     }, 5000);
 
     return true;
+}
+
+// 对特点评论进行处理
+export function Conmit13text(comList : Comtent[]){
+    for(let i = 0; i < comList.length; i++){
+        if(comList[i].content.startsWith("^AES^")){
+
+        }
+        if(comList[i].content.startsWith("刷新#")){
+            let text = comList[i].content.slice(3).trim();
+            let time = moment((new Date(comList[i].date))).format('YY-MM-DD');
+            comList[i].content = `${time} ${text}`;
+        }
+    }
 }
 
 

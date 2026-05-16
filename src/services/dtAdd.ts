@@ -56,11 +56,17 @@ export async function imgcl(imgSrc: { img_src: string; img_name: string; }, dtid
 }
 
 //拦截评论
-export async function dtComPro(dtId: number, content: string) {
-    if (dtId == 1010 && content == "刷新") {
-        await setLoaDate();
+export async function dtComPro(dtId: number, content: string):Promise<string> {
+    if(content.startsWith('刷新#')){
+        let text = content.slice(3).trim();
+        if(dtId == 1010){
+            await setLoaDate(undefined,text);    
+        }else{
+            await setLoaDate(dtId,text);
+        }
     }
 
+    return content; 
 }
 
 export async function dtAdd(dtData: Lists[], user: string, loa: number) {
