@@ -17,7 +17,7 @@ import {
     linkScreenControl,
     dtimgCom,
     getYear,
-    setdt
+    setdt,userIndex
 }  from '@/controllers/dt';
 import { PublishAfterExecution } from '@/services/upListData';
 
@@ -39,6 +39,9 @@ app.post('/dtindex', dtindex);
 
 //查询动态 搜索动态
 app.get('/dtfind', dtfinds);
+
+//查询用户标签
+app.get('/userIndex',userIndex);
 
 //时间信息
 app.get('/dtDate', dtDates);
@@ -130,8 +133,11 @@ app.get('/upDtData', upDtData);
 app.get('/getYear', getYear);
 
 
+
 //缓存相关
 app.get('/getImgDB', getImgDB);
+
+
 
 
 

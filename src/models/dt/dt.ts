@@ -62,7 +62,7 @@ export async function dtList(user: string, loa: number) {
     jiamiConmit(comment, loa);
 
     // 对评论中特定格式的进行处理
-    Conmit13text(comment);
+    await Conmit13text(comment);
 
     //评论添加
     let addCommentCb = (b: Lists, a: any) => {
@@ -378,15 +378,47 @@ export async function setVideo(id: number, videoArr: string[], headNum?: number)
 }
 
 // 对特点评论进行处理
-export function Conmit13text(comList : Comtent[]){
+export async function Conmit13text(comList : Comtent[]){
     for(let i = 0; i < comList.length; i++){
         if(comList[i].content.startsWith("^AES^")){
 
         }
         if(comList[i].content.startsWith("刷新#")){
             let text = comList[i].content.slice(3).trim();
-            let time = moment((new Date(comList[i].date))).format('YY-MM-DD');
-            comList[i].content = `${time} ${text}`;
+            let dateId = Number(text.match(/#(\d+)$/) ? text.match(/#(\d+)$/)![1] : 2);
+            //查询数据表dt_date下的id为dateId和dateId-1的数据
+            let dateArr = await prisma.dt_date.findMany({
+                where: {
+                    OR: [
+                        {
+                            id: Number(dateId)
+                        },
+                        {
+                            id: Number(dateId - 1)
+                        }
+                    ]
+                }
+            });
+            //计算这2个时间的时间差，并将其转为多少x天x小时这种格式
+            let day = Math.floor(moment(dateArr[1].date).diff(moment(dateArr[0].date), 'days'));
+            let hour = Math.floor(moment(dateArr[1].date).diff(moment(dateArr[0].date), 'hours') % 24);
+            // let nextDate = await prisma.dt_date.findFirst({
+            //     where: {
+            //         id: Number(dateId - 1)
+            //     }
+            // });
+            // 
+            // let dateArr = await prisma.dt_date.findMany({
+            //     where: {
+            //         text: text,
+            //     }
+            // });
+
+
+           
+            
+            let time = moment((new Date(dateArr[0].date))).format('YY-MM-DD');
+            comList[i].content = `${time} ^${day}天${hour}小时^ ${text}`;
         }
     }
 }

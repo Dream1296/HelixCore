@@ -96,7 +96,7 @@ export async function getChatNode(req: Reqs, res: Response) {
         })
     }
     
-    if(!req.user || req.user.username != 'dlhe'){
+    if(!req.user || req.user.username != 'dlhe' && req.user.username != 'yw' ){
         return res.status(400).send({
             code: 400
         })

@@ -22,7 +22,7 @@
 import express, { Application, Request, Response } from 'express';
 import fs from 'fs';
 //读取环境变量
-import { envStart } from './utils/env';
+import { envStart } from '@/utils/env';
 envStart;
 
 const app = express();

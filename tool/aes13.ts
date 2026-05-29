@@ -1,11 +1,39 @@
-import * as crypto from 'crypto';
 // const db = require('./src/config/db/mysql');
+//读取环境变量
+import { envStart } from '@/utils/env';
+envStart;
 
-let key = "A8412640";
-let text1 = `末世下，可以自由的做自己想做的事，在学校里，程序化的走完最后的时间，有痛苦的，也有温柔的`
+import * as crypto from 'crypto';
+
+let key = process.env.loa13!;
+
+
+let text1 = 
+``
 
 let res = jiamiString(text1,key);
 console.log("^AES^" + res);
+
+
+
+
+
+
+
+function jiamiString(text: string, password: string): string {
+    // 使用密码生成密钥
+    const key: Buffer = crypto.createHash('sha256').update(password).digest();
+  
+    // 创建加密器，不使用IV
+    const cipher: crypto.Cipher = crypto.createCipheriv('aes-256-cbc', key, Buffer.alloc(16));
+  
+    // 加密文本
+    let encryptedString: string = cipher.update(text, 'utf8', 'hex');
+    encryptedString += cipher.final('hex');
+  
+    return encryptedString;
+  }
+  
 
 // sqlC<{id:number,text:string}[]>('SELECT id,text FROM dt WHERE loa = 13;')
 // .then( 
@@ -57,20 +85,7 @@ console.log("^AES^" + res);
 // }
 
 
-function jiamiString(text: string, password: string): string {
-    // 使用密码生成密钥
-    const key: Buffer = crypto.createHash('sha256').update(password).digest();
-  
-    // 创建加密器，不使用IV
-    const cipher: crypto.Cipher = crypto.createCipheriv('aes-256-cbc', key, Buffer.alloc(16));
-  
-    // 加密文本
-    let encryptedString: string = cipher.update(text, 'utf8', 'hex');
-    encryptedString += cipher.final('hex');
-  
-    return encryptedString;
-  }
-  
+
 
 
 

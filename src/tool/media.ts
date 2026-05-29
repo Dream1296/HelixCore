@@ -2,7 +2,7 @@ import { getUrl } from "@/pathUtils";
 import path from "path";
 import { fileIsDir } from "./filePath";
 import { execSync, spawn } from "child_process";
-import { getVideoCodec, transcodeToH264 } from "@/dev/ffmpeg/myFFmpeg";
+import { getVideoCodec, transcodeToH264 } from "@/lib/ffmpeg/myFFmpeg";
 
 
 

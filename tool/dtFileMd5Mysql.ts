@@ -1,8 +1,6 @@
 import fs from 'fs';
 import crypto from "crypto";
-//读取环境变量
-import { envStart } from '../src/utils/env';
-envStart;
+
 import { dbSql } from '../src/utils/dbSql';
 import { getUrl } from '../src/pathUtils';
 
@@ -64,5 +62,5 @@ async function main2() {
 
 
 
-// main();
-main2();
+main();
+// main2();

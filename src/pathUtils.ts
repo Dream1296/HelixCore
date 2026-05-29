@@ -1,9 +1,12 @@
 import path from 'path';
 
+
+
 // root开始地址
 let rootPath = process.env.rootPath as string;
 // let rootPath = "/dream/HelixCore";
 
+// console.log(rootPath);
 
 export function getUrl(root: 'src' | 'root' | 'assets' | 'public', ...paths: string[]) {
     

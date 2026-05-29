@@ -15,7 +15,8 @@
   },
   "include": [
     "src/**/*.ts",
-    "src/type/express111.d.ts"
+    "src/type/express111.d.ts",
+    "**/*.ts"
   ], /* Specify the files to include in the compilation. */
   "exclude": [
     "node_modules"

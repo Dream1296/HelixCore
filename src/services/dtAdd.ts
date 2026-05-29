@@ -55,18 +55,52 @@ export async function imgcl(imgSrc: { img_src: string; img_name: string; }, dtid
 
 }
 
-//拦截评论
-export async function dtComPro(dtId: number, content: string):Promise<string> {
-    if(content.startsWith('刷新#')){
+//拦截添加评论
+export async function dtComPro(dtId: number, content: string): Promise<string> {
+    if (content.startsWith('刷新#')) {
         let text = content.slice(3).trim();
-        if(dtId == 1010){
-            await setLoaDate(undefined,text);    
-        }else{
-            await setLoaDate(dtId,text);
+        if (dtId == 1010) {
+            await setLoaDate(undefined, text);
+        } else {
+            await setLoaDate(dtId, text);
         }
+
+        //查询dt_date表中的id最大值
+        let maxId = await prisma?.dt_date.findFirst({
+            select: {
+                id: true
+            },
+            orderBy: {
+                id: 'desc'
+            }
+        });
+        if (maxId) {
+            return content + "#" + maxId.id;
+        } else {
+            throw new Error('评论添加时无法查询到dt_date表');
+        }
+
+
+
+
+    }
+    if (content.startsWith('&')) {
+        let text = content.slice(1).trim().replace(/！/g, '!');
+        console.log(text);
+
+        await prisma?.dt_index.create({
+            data: {
+                keyword: text,
+                dt_id: Number(dtId),
+                isAi: false
+            }
+        })
+
+        return 'null';
+
     }
 
-    return content; 
+    return content;
 }
 
 export async function dtAdd(dtData: Lists[], user: string, loa: number) {
@@ -78,7 +112,7 @@ export async function dtAdd(dtData: Lists[], user: string, loa: number) {
         let dataCom = dtTime.com?.pop();
         dtTime.com = dataCom ? [dataCom] : [];
     }
-    
+
 
 }
 

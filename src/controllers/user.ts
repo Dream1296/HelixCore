@@ -82,7 +82,7 @@ export async function userBgImg(req: Reqs, res: Response){
             bg_img:true
         }
     })
-    if(imgNmae && imgNmae.length == 1){
+    if(imgNmae && imgNmae.length == 1 && imgNmae[0].bg_img != 'null'){
         // assets/system/user_bg_img
         let pathImg = getUrl('assets','system/user_bg_img',imgNmae[0].bg_img);
         return res.sendFile(pathImg);

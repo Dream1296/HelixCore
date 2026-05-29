@@ -25,6 +25,7 @@ export async function getLoaDate() {
     return { d, h }
 }
 
+
 //添加新时间
 export async function setLoaDate(dtid?: number,text?: string) {
     let text1 = text || "null";

@@ -15,7 +15,7 @@ import fsPromises from 'fs/promises';
 import { dtAdd, dtComPro, imgcl } from '../services/dtAdd';
 // import { dtAdd_ah } from '../services/dt_ah';
 import { dtFind, dtFinds } from '../services/dtSearch';
-import { jiamiString } from '../utils/cryptoUtils';
+import { jiamiString } from '@/utils/cryptoUtils';
 import { dbSql } from '@/utils/dbSql';
 import { getUrl } from '@/pathUtils';
 import { getDtDataImg } from '@/services/dtDataT';
@@ -71,7 +71,7 @@ export async function getDtList(req: Reqs, res: Response) {
 
 
     //插入其他组件数据
-    let datas = await dtDataAdd(listData, req.user!,loa);
+    let datas = await dtDataAdd(listData, req.user!, loa);
 
 
     let resData = {
@@ -225,11 +225,16 @@ export async function postCom(req: Reqs, res: Response) {
     }
 
     content = await dtComPro(dtId, content);
+    if (content == 'null') {
+        console.log('add');
 
-    if(req.user.username == 'dlhe'){
-        
+        return res.send({ tf: 1 });
     }
-    
+
+    if (req.user.username == 'dlhe') {
+
+    }
+
 
 
     const a: any = await setDtCom(date, content, dtId, user, imgNum);
@@ -320,7 +325,7 @@ export async function dtDataImg(req: Reqs, res: Response) {
         const dateNow = new Date();
         data.push(`${dateNow.getFullYear()},${dateNow.getMonth() + 1},${dateNow.getDate()}`);
         buffer = getDtDataImg(title, data);
-    }else{
+    } else {
         let title = '动态提交历史';
         const data = await dtDate(Number(year));
         const dateNow = new Date();
@@ -963,7 +968,7 @@ export async function postdt(req: Reqs, res: Response) {
     const vi = setVideo(id, video);
 
     //loa不为0或1时，加密文本内容
-    if ( req.user?.username == 'dlhe' ) {
+    if (req.user?.username == 'dlhe') {
         text = "^AES^" + jiamiString(text, process.env.loa13!);
     }
 
@@ -1379,7 +1384,7 @@ export async function getYear(req: Reqs, res: Response) {
         return res.sendFile(path.join(file, '20xx.png'));
     }
 
-    if (yearNum >= 2015 && yearNum <= 2025) {
+    if (yearNum >= 2015 && yearNum <= 2026) {
         return res.sendFile(path.join(file, yearNum + '.png'));
     }
 
@@ -1462,4 +1467,24 @@ export async function keepRun(req: Reqs, res: Response) {
     await keepRunOcr('824');
     // await keepBadminton('822');
     res.send("ok");
+}
+
+export async function userIndex(req: Reqs, res: Response) {
+    let user = req.user?.username!;
+    //查询所有为user的，使用idex排序
+    let index_arr = await prisma.dt_index_arr.findMany({
+        where: {
+            user: user,
+        },
+        orderBy: {
+            idx: 'asc'
+        }
+    });
+    let indexArr = index_arr.map(e => e.name);
+    indexArr.push("#!rest")
+    return res.send({
+        code:200,
+        index_arr:indexArr
+    })
+
 }

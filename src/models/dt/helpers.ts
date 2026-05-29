@@ -115,14 +115,7 @@ export function fusionObj(list: Lists[], obj: any[], name: string, dataName?: st
     }
 }
 
-type commentData = ({
-    userInfo: {
-        id: number;
-        name: string;
-        user: string;
-        touxian: string;
-    };
-} & {
+type commentData = ( {
     dtId: number;
     id: number;
     date: Date;
