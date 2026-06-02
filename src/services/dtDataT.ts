@@ -33,12 +33,6 @@ export function getDtDataImg(title:string, data:string[]) {
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, 1920, 660);
     return buffer;
-    // fs.writeFileSync('./drawing.png', buffer);  // 将图片保存到本地
-
-
-
-    // console.log('图像已保存为 drawing.png！');
-
 }
 
 

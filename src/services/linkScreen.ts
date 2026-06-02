@@ -4,8 +4,6 @@ import fs from 'fs';  // 导入文件系统模块
 import { string } from 'io-ts';
 import moment from 'moment';
 import path from 'path';
-// 使用Sharp库来处理图像
-import sharp from 'sharp';
 
 // const canvas = createCanvas(400, 300);
 // 1. 创建画布时关闭抗锯齿（核心）

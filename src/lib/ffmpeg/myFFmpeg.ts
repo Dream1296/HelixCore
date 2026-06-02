@@ -1,7 +1,7 @@
 import { spawn } from "child_process";
 import fs from "fs";
 
-const FFMPEG_PATH = "/dream/HelixCore/src/dev/ffmpeg/ffmpeg";
+const FFMPEG_PATH = "/dream/HelixCore/src/lib/ffmpeg/ffmpeg";
 
 /**
  * RK3588 硬件加速转 H264
