@@ -16,7 +16,7 @@ module.exports = {
     extensions: ['.ts', '.js', '.node'], // 支持的文件扩展名
     alias: {
       '@': path.resolve(__dirname, 'src'), // 设置路径别名
-    },
+    }
 
   },
   module: {

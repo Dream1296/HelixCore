@@ -17,7 +17,7 @@
     "src/**/*.ts",
     "src/type/express111.d.ts",
     "**/*.ts"
-  ], /* Specify the files to include in the compilation. */
+, "prisma.config.js"  ], /* Specify the files to include in the compilation. */
   "exclude": [
     "node_modules"
   ] /* Exclude node_modules from the compilation. */

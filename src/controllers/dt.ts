@@ -324,17 +324,23 @@ export async function dtDataImg(req: Reqs, res: Response) {
         const data = await serviceDate(Number(year));
         const dateNow = new Date();
         data.push(`${dateNow.getFullYear()},${dateNow.getMonth() + 1},${dateNow.getDate()}`);
-        buffer = getDtDataImg(title, data);
+        buffer = await getDtDataImg(title, data);
     } else {
         let title = '动态提交历史';
         const data = await dtDate(Number(year));
         const dateNow = new Date();
         data.push(`${dateNow.getFullYear()},${dateNow.getMonth() + 1},${dateNow.getDate()}`);
-        buffer = getDtDataImg(title, data);
+        buffer = await getDtDataImg(title, data);
     }
 
-    res.setHeader('Content-Type', 'image/jpg');
-    res.send(buffer);
+    // res.setHeader('Content-Type', 'image/png');
+
+    res.writeHead(200, {
+        'Content-Type': 'image/png',
+        'Content-Length': buffer.length
+    });
+
+    res.end(buffer);
 
 }
 
@@ -1483,8 +1489,8 @@ export async function userIndex(req: Reqs, res: Response) {
     let indexArr = index_arr.map(e => e.name);
     indexArr.push("#!rest")
     return res.send({
-        code:200,
-        index_arr:indexArr
+        code: 200,
+        index_arr: indexArr
     })
 
 }

@@ -1,15 +1,14 @@
 // socketRequest.ts
 import http from "http";
 
-let socketPath = process.env.socketPath!;
+let socketPath = process.env.socketPath! as string;
 
-export function socketRequest<T>(
-	path: string,
-	method: string = "GET",
-	body?: any
-): Promise<T> {
-    console.log(socketPath);
-    
+
+export function socketRequest<T>(path: string,
+	method?: "GET" | "POST" | "PUT" | "DELETE",
+	data?: any,         // 请求体
+	responseType?: "json" | "buffer", // 默认 json): Promise<T> {
+):Promise<T> {
 	return new Promise((resolve, reject) => {
 		const req = http.request(
 			{
@@ -21,17 +20,26 @@ export function socketRequest<T>(
 				},
 			},
 			(res) => {
-				let data = "";
+				const chunks: Buffer[] = [];
 
 				res.on("data", (chunk) => {
-					data += chunk;
+					chunks.push(chunk);
 				});
 
 				res.on("end", () => {
+					const buffer = Buffer.concat(chunks);
+
+					if (responseType === "buffer") {
+						resolve(buffer as T);
+						return;
+					}
+
+					// 默认尝试解析JSON
 					try {
-						resolve(JSON.parse(data));
-					} catch {
-						resolve(data as T);
+						resolve(JSON.parse(buffer.toString("utf-8")) as T);
+					} catch (err) {
+						// 如果解析失败，直接返回文本
+						resolve(buffer.toString("utf-8") as T);
 					}
 				});
 			}
@@ -39,10 +47,11 @@ export function socketRequest<T>(
 
 		req.on("error", reject);
 
-		if (body) {
-			req.write(JSON.stringify(body));
+		if (data) {
+			req.write(JSON.stringify(data));
 		}
 
 		req.end();
 	});
 }
+

@@ -1,57 +1,10 @@
-import { getUrl } from '@/pathUtils';
-import { createCanvas, loadImage, registerFont } from 'canvas';  // 导入 canvas 模块
-import fs from 'fs';  // 导入文件系统模块
-import { string } from 'io-ts';
-import moment from 'moment';
-import path from 'path';
-
-// const canvas = createCanvas(400, 300);
-// 1. 创建画布时关闭抗锯齿（核心）
-const canvas = createCanvas(400, 300); // 关键选项
+import { socketRequest } from '@/tool/socketReq';
 
 
 
-const ctx = canvas.getContext('2d');
-
-ctx.antialias = 'none'
-
-// 2. 强制禁用图像平滑（额外保险）
-ctx.imageSmoothingEnabled = false;
-ctx.patternQuality = 'fast'; // 低质量渲染模式
-ctx.textDrawingMode = 'path'; // 可选：强制用路径渲染文本（部分版本支持）
-
-ctx.fillStyle = 'white';
-ctx.fillRect(0, 0, 400, 300);
-
-const fontPath = getUrl('assets', 'system/font/WenQuanYiBitmapSong16px.ttf');
-// 字体面信息
-const fontFace = {
-    family: 'wenquan', // 字体家族名称，可以在绘图上下文中使用此名称来引用字体
-    weight: 'normal',           // 字体重量，可选参数，默认为 'normal'
-    style: 'normal'             // 字体样式，可选参数，默认为 'normal'，可以是 'italic' 或 'oblique'
-};
-registerFont(fontPath, fontFace);
 
 export async function getlinkScreen(id: number, name: string, content: string, date: string) {
-    setName(name);
-    text(content);
-
-    await touxian();
-
-    setId(id)
-
-    img(3);
-    date = moment(date).format("YYYY-MM-DD HH:mm");
-
-    dateFn(date);
-
-    // 进行旋转，注意旋转的角度需要转为弧度（Math.PI / 180）
-    ctx.translate(200, 150); // 移动原点到画布中心
-    ctx.rotate(-90 * Math.PI / 180); // 逆时针旋转90度
-
-    // 将绘制的图表保存为 PNG 图片
-    const buffer = canvas.toBuffer('image/png');  // 将画布内容转换为 PNG 图片格式的缓冲区
-    return buffer;
+   return socketRequest<Buffer>('/canvas/getlinkScreen','POST',{id,name,content,date},'buffer');
 }
 
 export function processImageForEInk(buffer: Buffer): number[] {
@@ -99,76 +52,4 @@ export function processImageForEInk(buffer: Buffer): number[] {
 
     // 转换为普通数组以便JSON序列化
     return Array.from(outputBuffer);
-}
-
-function setName(name: string) {
-    ctx.imageSmoothingEnabled = false;
-    ctx.fillStyle = 'black';
-    ctx.font = '22px wenquan';
-    ctx.fillText(name, 71, 50);
-}
-
-function setId(id: number) {
-    ctx.imageSmoothingEnabled = false;
-    ctx.fillStyle = 'red';
-    ctx.font = '42px wenquan';
-    ctx.fillText("#" + id, 300, 50);
-}
-
-async function touxian() {
-    // ctx.fillStyle = 'black';
-    // ctx.fillRect(16, 13, 50, 50);
-    // console.log(getUrl('root','public/userImg/yw03.png'));
-
-    const image = await loadImage(getUrl('public', 'userImg/yw03.png')); // 你的头像图片路径
-    ctx.drawImage(image, 16, 13, 50, 50); // 叠加绘制头像
-}
-
-function img(line: number) {
-
-    ctx.fillStyle = 'black';
-    let h = 155;
-    if (line == 1) {
-        h = 121;
-    }
-
-    ctx.fillRect(35, h, 100, 100);
-}
-
-function text(content: string) {
-    ctx.fillStyle = 'black';
-    ctx.font = '18px wenquan';
-    wrapTextByByte(content, 32, 85, 68, 25);
-
-}
-
-function dateFn(dateStr: string) {
-    ctx.fillStyle = 'black';
-    ctx.font = '16px wenquan';
-    ctx.fillText(dateStr, 269, 265);
-}
-
-
-
-function wrapTextByByte(text: string, x: number, y: number, maxByte: number, lineHeight: number) {
-    let line = '';
-    let currentByteLength = 0;
-
-    for (let i = 0; i < text.length; i++) {
-        const char = text.charAt(i);
-        const byteLength = Buffer.byteLength(char, 'utf8'); // 获取字符的字节长度
-
-        if (currentByteLength + byteLength > maxByte) {
-            // 如果当前行的字节数超过最大字节数，绘制当前行并换行
-            ctx.fillText(line, x, y);
-            line = char; // 新的一行从当前字符开始
-            y += lineHeight; // 换行
-            currentByteLength = byteLength; // 重置当前字节长度
-        } else {
-            line += char; // 添加字符到当前行
-            currentByteLength += byteLength; // 累加字节长度
-        }
-    }
-
-    ctx.fillText(line, x, y); // 绘制最后一行
 }
