@@ -7,7 +7,6 @@ import * as crypto from 'crypto';
 
 let key = process.env.loa13!;
 
-
 let text1 = 
 ``
 

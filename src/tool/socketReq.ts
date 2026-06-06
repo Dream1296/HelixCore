@@ -4,7 +4,8 @@ import http from "http";
 let socketPath = process.env.socketPath! as string;
 
 
-export function socketRequest<T>(path: string,
+export function socketRequest<T>(
+	path: string,
 	method?: "GET" | "POST" | "PUT" | "DELETE",
 	data?: any,         // 请求体
 	responseType?: "json" | "buffer", // 默认 json): Promise<T> {

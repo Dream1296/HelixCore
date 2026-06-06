@@ -3,7 +3,6 @@ import { Reqs } from '../type';
  
 
 export async function loas(req: Reqs, res: Response, next: NextFunction) {
-
     // 需要鉴权的接口
     const onlyYwPaths = new Set([
         '/api/getChatNode',

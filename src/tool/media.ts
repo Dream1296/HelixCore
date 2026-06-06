@@ -2,14 +2,15 @@ import { getUrl } from "@/pathUtils";
 import path from "path";
 import { fileIsDir } from "./filePath";
 import { execSync, spawn } from "child_process";
-import { getVideoCodec, transcodeToH264 } from "@/lib/ffmpeg/myFFmpeg";
+// import { getVideoCodec, transcodeToH264 } from "@/lib/ffmpeg/myFFmpeg";
+import { socketRequest } from "./socketReq";
 
 
 
 // 传入一个
-export async function ensureVideoToh254(inPathArr: string[],outPathArr:string[]){
-    
-    if(inPathArr.length != outPathArr.length){
+export async function ensureVideoToh254(inPathArr: string[], outPathArr: string[]) {
+
+    if (inPathArr.length != outPathArr.length) {
         throw new Error('/dream/HelixCore/src/tool/media.ts ensureVideoToh254  原文件数量和目标文件数量不一致 ');
     }
 
@@ -20,12 +21,35 @@ export async function ensureVideoToh254(inPathArr: string[],outPathArr:string[])
         if (!fileIsDir(path.dirname(inVideoPath), path.basename(inVideoPath))) {
             console.log('视频不存在');
             continue;
-        }        
+        }
         // 如果视频是h254格式,
-        if((await getVideoCodec(inVideoPath))== 'h264'){
+        if ((await getVideoCodec(inVideoPath)) == 'h264') {
             continue;
-        }        
+        }
         // 用 ffprobe 检查视频编码
-        await transcodeToH264(inVideoPath,outVideoPath);        
+        await transcodeToH264(inVideoPath, outVideoPath);
     }
+}
+
+
+async function transcodeToH264(
+    inputPath: string,
+    outputPath: string
+): Promise<void> {
+    await socketRequest('/ffmpeg/transcodeToH264', 'POST', {
+        inputPath: inputPath,
+        outputPath: outputPath,
+    })
+    console.log('转码完成');
+}
+
+
+
+async function getVideoCodec(
+    videoPath: string
+): Promise<"h264" | "h265"> {
+    let res = await socketRequest<{code:number,codec:"h264" | "h265"}>('/ffmpeg/getVideoCodec', 'POST', {
+        videoPath: videoPath,
+    })
+    return res.codec;
 }

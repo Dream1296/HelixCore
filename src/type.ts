@@ -37,6 +37,7 @@ export interface Lists {
     longVideo?: { id: number, name: string, src: string }[];
     keyword?: { keyword: string, isAi: number }[];
     File?: { name: string, fileId: string , loa: number}[];
+    map: {id:number,name:string,E:number,N:number}[];
     bgStyle: number;
     KeepRun?: KeepRunRecord;
     KeepBadminton?: BadmintonData;

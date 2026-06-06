@@ -10,7 +10,7 @@ import { formatComment, fusionObj, iskeywords, jiamiConmit } from "./helpers";
 import path from "path";
 import { getUrl } from "@/pathUtils";
 import { convertRawToPngIfNeeded } from "@/tool/ramToPng";
-import {  ensureVideoToh254 } from "@/tool/media";
+import { ensureVideoToh254 } from "@/tool/media";
 
 
 
@@ -132,6 +132,18 @@ export async function dtList(user: string, loa: number) {
         })
     }
 
+    // 位置数组
+    let mapList = await getDtMap();
+    for (let dt of list) {
+        dt.map = mapList.filter(e => e.dt_id == dt.id).map(e => {
+            return {
+                id: e.id,
+                name: e.name,
+                E: e.E,
+                N: e.N,
+            }
+        });
+    }
 
     //运动跑步
     let runList = await getKeepRunList();
@@ -274,6 +286,7 @@ export async function dtLists(user: string, loa: number, findId?: number | strin
             longText: [],
             loa: a.loa,
             chatRoot: [],
+            map: []
         } as Lists;
     }).filter(e => {
         //过滤掉黑名单中的用户
@@ -378,12 +391,12 @@ export async function setVideo(id: number, videoArr: string[], headNum?: number)
 }
 
 // 对特点评论进行处理
-export async function Conmit13text(comList : Comtent[]){
-    for(let i = 0; i < comList.length; i++){
-        if(comList[i].content.startsWith("^AES^")){
+export async function Conmit13text(comList: Comtent[]) {
+    for (let i = 0; i < comList.length; i++) {
+        if (comList[i].content.startsWith("^AES^")) {
 
         }
-        if(comList[i].content.startsWith("刷新#")){
+        if (comList[i].content.startsWith("刷新#")) {
             let text = comList[i].content.slice(3).trim();
             let dateId = Number(text.match(/#(\d+)$/) ? text.match(/#(\d+)$/)![1] : 2);
             //查询数据表dt_date下的id为dateId和dateId-1的数据
@@ -415,8 +428,8 @@ export async function Conmit13text(comList : Comtent[]){
             // });
 
 
-           
-            
+
+
             let time = moment((new Date(dateArr[0].date))).format('YY-MM-DD');
             comList[i].content = `${time} ^${day}天${hour}小时^ ${text}`;
         }
@@ -723,8 +736,17 @@ export async function isDtExist(dtid: number) {
 
 }
 
-
-
+// 查询位置数组
+export async function getDtMap(dtid?: number) {
+    if (!dtid) {
+        return prisma.dt_map.findMany({});
+    }
+    return prisma.dt_map.findMany({
+        where: {
+            dt_id: dtid
+        }
+    });
+}
 
 
 

@@ -50,6 +50,11 @@ app.use(vi);
 import book from './book';
 app.use(book);
 
+//视频音频转文本
+import video_au from './video_au';
+app.use(video_au);
+
+
 
 
 
