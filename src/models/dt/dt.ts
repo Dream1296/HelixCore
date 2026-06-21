@@ -205,7 +205,6 @@ export async function dtLists(user: string, loa: number, findId?: number | strin
         video_show_num: number;
         video_num: number;
         date_real: string;
-        idea: string;
         pin_order: number;
         bg_style: number;
         save: boolean;
@@ -244,6 +243,7 @@ export async function dtLists(user: string, loa: number, findId?: number | strin
         };
     }
 
+    
     data1 = await prisma.dt_find.findMany({
         where,
         orderBy: {
@@ -280,7 +280,6 @@ export async function dtLists(user: string, loa: number, findId?: number | strin
             videoShowAll: a.video_show_num,
             videoNum: a.video_num,
             date: moment(a.date).add(16, 'hours').format('YYYY-MM-DD HH:mm:ss'),
-            idea: a.idea,
             po: a.pin_order,
             bgStyle: a.bg_style,
             longText: [],
@@ -650,7 +649,7 @@ export async function serviceDate(year: number | string) {
 
 //添加主数据
 export async function setDt(id: string, user: string, text: string, img_show_num: string, img_all_num: string, video_num: string,
-    date: string, loa: number, idea?: string): Promise<boolean> {
+    date: string, loa: number): Promise<boolean> {
     let dateReal = moment().format('YYYY-MM-DD HH:mm');
     let sql = `INSERT INTO dt (id,user, text,img_show_num, img_all_num ,video_num, video_show_num,date, loa,date_real) VALUES 
                 (?,?, ?,  ?, ?, ?,?,?,? ,? );`;

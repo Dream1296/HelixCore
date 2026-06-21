@@ -1,7 +1,6 @@
 import { getImgT, getList } from '@/models/list/list';
 import express, { Request, Response } from 'express';
 import { access, mkdir, constants } from 'fs/promises';
-import ffmpeg from 'fluent-ffmpeg';
 import fs from 'fs';
 import { Reqs } from '@/type';
 

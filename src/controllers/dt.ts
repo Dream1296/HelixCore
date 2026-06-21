@@ -3,10 +3,8 @@ import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, s
 import { getemojis } from '../models/emoji';
 import { Lists, MulterRequest, Reqs, setDtDataT, user } from '../type';
 import path, { join } from 'path';
-import { imgCompression } from '../utils/img';
+import { imgCompression } from '../tool/media';
 import { userWeizhi, SetuserWeizhi } from '../models/weizhi';
-import ffmpeg from 'fluent-ffmpeg';
-import ffmpegStatic from 'ffmpeg-static';
 import axios from "axios";
 const multer = require('multer');
 const jiami = require('../utils/usErcrypto.js').jiami;
@@ -26,7 +24,6 @@ import { myEvent } from '@/services/evenTs';
 import { getShareToken } from '@/services/token';
 import { Query } from '../middlewares/routesType';
 import * as t from 'io-ts';
-import sharp from 'sharp';
 import { keepBadminton, keepRunOcr } from '@/services/keep';
 import { getlinkScreen } from '@/services/linkScreen';
 import { linkScreenRefresh } from '@/services/Aether';
@@ -39,6 +36,9 @@ import { checkFileType } from '@/tool/checkFile';
 import { generateRandomString } from '@/tool/Text';
 import { hasAccessDtFileLoa, hasAccessDtloa } from '@/services/authorization';
 import { getnowDate } from '@/tool/Time';
+import { socketRequest } from '@/tool/socketReq';
+import { getVideoCover } from '@/tool/media';
+import { getDtImgFs } from '@/fs';
 
 //获取列表信息和评论信息
 export async function getDtList(req: Reqs, res: Response) {
@@ -348,7 +348,7 @@ export async function dtDataImg(req: Reqs, res: Response) {
 export async function dtimg(req: Reqs, res: Response) {
     let Reqdtid = req.query.dtid;
     let Reqindex = req.query.index;
-    let isImg = req.query.size;
+    let size = Number(req.query.size) ?? 0;
 
     let dtid;
     let index;
@@ -366,14 +366,28 @@ export async function dtimg(req: Reqs, res: Response) {
     if (!tf) {
         return res.send({ code: 402 });
     }
+    
+    
+    // let sqlStr = `SELECT img_src,img_name FROM dt_img WHERE dt_id = ${dtid} AND img_index = ${index};`
 
-    let sqlStr = `SELECT img_src,img_name FROM dt_img WHERE dt_id = ${dtid} AND img_index = ${index};`
+
+    // let imgSrc = (await dbSql<{ img_src: string, img_name: string }[]>(sqlStr))[0];
+    
+    // imgcl(dtid, index, req.user?.username);
+
+    // resImg(imgSrc, isImg, res);
 
 
-    let imgSrc = (await dbSql<{ img_src: string, img_name: string }[]>(sqlStr))[0];
 
-    imgcl(imgSrc, dtid, index, req.user?.username);
-    resImg(imgSrc, isImg, res);
+    // return resImg(imgSrc, size, res);
+    console.log(dtid, index, Number(size), 'buffer');
+    
+    let buffer = await getDtImgFs(dtid, index, Number(size), 'buffer');
+    res.writeHead(200, {
+        'Content-Type': 'image/png',
+        'Content-Length': buffer!.length
+    });
+    res.end(buffer);
 }
 
 export async function dtimgCom(req: Reqs, res: Response) {
@@ -408,98 +422,8 @@ export async function dtimgCom(req: Reqs, res: Response) {
  * @returns 
  */
 async function resImg(imgSrc: { img_src: string; img_name: string; }, isImg: any, res: Response) {
-    if (!imgSrc) {
-        let filePath = path.join(getUrl('assets'), './system/imgError.png');
-        let ThumbnailData = getThumbnail(filePath);
-        res.setHeader('Content-Type', 'image/png');
-        if (ThumbnailData) {
-            console.log('从缓存中拿缩略图');
-            return res.send(ThumbnailData);
-        }
-        let errorImgData = await fsPromises.readFile(filePath);
-        setThumbnail(filePath, errorImgData);
-        return res.sendFile(filePath);
-    }
-
-    //资源路径
-    let urls = path.join(getUrl('assets'));
-    //文件名
-    let filename = imgSrc.img_name;
-    //文件路径
-    let fileurl = path.join(urls, 'a', imgSrc.img_src, 'img/original');
-
-    //文件全名
-    let filePath = path.join(fileurl, filename);
-
-    //缩略图缓存目录
-    let img_log = path.join(urls, 'a', imgSrc.img_src, 'img/compressed');
-
-    // 缩略图路径
-    let thumbPath = path.join(img_log, filename);
-
-    if (!fileIsDir(fileurl, filename)) {
-        filePath = path.join(urls, './system/imgError.png');
-        return res.sendFile(filePath);
-    }
-
-
-    if (isImg == 0 || !isImg) {
-
-
-        if (filename.endsWith('.gif')) {
-            let ThumbnailData = getThumbnail(filePath);
-            if (ThumbnailData) {
-                res.setHeader('Content-Type', 'image/gif');
-                console.log('从缓存中拿缩略图');
-                return res.send(ThumbnailData);
-            }
-            return res.sendFile(filePath, {
-                headers: {
-                    'Content-Type': 'image/gif' // 设置响应头为 GIF 格式
-                }
-            });
-        }
-        // console.log(2);
-
-        //判断是否缓存
-        let ThumbnailData = getThumbnail(thumbPath);
-        // console.log(ThumbnailData == false);
-        // console.log(thumbPath);
-
-        if (ThumbnailData) {
-            res.setHeader('Content-Type', 'image/png');
-            // console.log('从缓存中拿缩略图');
-            return res.send(ThumbnailData);
-        }
-
-        if (fileIsDir(img_log, filename)) {
-            // console.log('从io中拿图');
-
-            return res.sendFile(thumbPath);
-        }
-        try {
-            // 使用 sharp 来压缩图片
-            const data = await imgCompression(filePath, 460, 460, thumbPath);
-            console.log('压缩');
-
-            res.writeHead(200, {
-                'Content-Type': 'image/png',
-                'Content-Length': data.length
-            });
-            res.end(data);
-        } catch (e) {
-            console.log('压缩错误',);
-            // filePath = path.join(fileurl, filename);
-            // return res.sendFile(filePath);
-            filePath = path.join(urls, './system/imgError.png');
-
-            res.sendFile(filePath);
-        }
-    } else {
-
-
-        res.sendFile(filePath);
-    }
+    
+   
 }
 
 
@@ -576,8 +500,6 @@ export async function dtvideo(req: Reqs, res: Response) {
         const audioStream = fs.createReadStream(fileSrc, { start, end });
 
 
-
-
         const head = {
             'Content-Range': `bytes ${start}-${end}/${fileSize}`,
             'Accept-Ranges': 'bytes',
@@ -589,10 +511,6 @@ export async function dtvideo(req: Reqs, res: Response) {
         res.writeHead(206, head);
         audioStream.pipe(res);
         // res.end(buffer);
-
-
-
-
     } else {
         //    res.sendFile(fileSrc);
         const head = {
@@ -605,94 +523,6 @@ export async function dtvideo(req: Reqs, res: Response) {
 }
 
 
-
-/**
- * 如果转换后的MP4文件不存在，进行视频转换并返回转换后的视频路径
- * @param inputPath 原始视频文件路径
- * @returns 转换后的视频文件路径
- */
-
-let taskSet = new Set<string>();
-export function ensureVideoIsMP4(inputPath: string): string {
-    // 定义输出路径，通过替换 /dtimg/ 为 /dtimgs/ 来构造
-    const outputPath = inputPath.replace('/original/', '/compressed/');
-
-
-    // 检查转换后的文件是否已经存在
-    if (fs.existsSync(outputPath)) {
-        if (videoSet.has(inputPath)) {
-            return inputPath;
-        }
-        console.log(`转换后的文件已经存在: ${outputPath}`);
-        return outputPath;
-    }
-
-
-    if (taskSet.has(outputPath)) {
-        return inputPath;
-    }
-
-    taskSet.add(outputPath);
-
-
-
-
-
-    console.log(`正在转换视频: ${inputPath} -> ${outputPath}`);
-
-
-
-    if (videoSet.size >= 1) {
-        return inputPath;
-    }
-
-    if (fs.statSync(inputPath).size >= 10 * 1024 * 1024 * 1024) {
-        return inputPath;
-    }
-
-    videoSet.add(inputPath);
-
-    // 用 ffprobe 检查视频编码
-    const codecInfo = execSync(`ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of csv=p=0 ${inputPath}`).toString().trim();
-    const audioInfo = execSync(`ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of csv=p=0 ${inputPath}`).toString().trim();
-
-    let args;
-    if (codecInfo === 'h264' && audioInfo === 'aac') {
-        // 已经是 h264 + aac，直接 copy
-        args = ['-i', inputPath, '-c:v', 'copy', '-c:a', 'copy', '-y', outputPath];
-    } else {
-        // 否则强制转码
-        args = ['-i', inputPath, '-c:v', 'libx264', '-c:a', 'aac', '-y', outputPath];
-        console.log('ensureVideoIsMP4函数进行强制转码');
-    }
-
-    const ffmpeg = spawn('ffmpeg', args);
-
-    // 捕获 ffmpeg 的标准错误输出
-    ffmpeg.stderr.on('data', (data) => {
-        console.error('FFmpeg输出:', data.toString());
-    });
-
-    // ffmpeg 处理完成后的回调
-    ffmpeg.on('close', (code) => {
-        if (code === 0) {
-            console.log(`视频转换成功: ${outputPath}`);
-        } else {
-            // (new Error(`FFmpeg 进程退出，状态码: ${code}`)); // 转换失败
-            console.log('转换失败');
-
-        }
-        videoSet.delete(inputPath);
-    });
-
-    // 错误处理
-    ffmpeg.on('error', (err) => {
-        console.log("错误");
-        videoSet.delete(inputPath);
-    });
-
-    return inputPath;
-};
 
 
 //视频预览图
@@ -733,6 +563,7 @@ export async function dtvideoImg(req: Reqs, res: Response) {
 
     let videoSrc = path.join(videoUrl, 'cover');
 
+    // 缓存
     let ThumbnailData = getThumbnail(path.join(videoSrc, videoImg));
     if (ThumbnailData) {
         res.setHeader('Content-Type', 'image/png');
@@ -740,27 +571,16 @@ export async function dtvideoImg(req: Reqs, res: Response) {
         return res.send(ThumbnailData);
     }
 
+    // 检查封面图是否存在
     if (fileIsDir(videoSrc, videoImg)) {
         return res.sendFile(path.join(videoSrc, videoImg));
     }
-
-    // 使用 ffmpeg 生成第一帧作为封面
-    ffmpeg(videoFileSrc)
-        .screenshots({
-            timestamps: ['00:00:01'], // 第1秒
-            filename: videoImg, // 保存的文件名
-            folder: path.join(videoUrl, 'cover'), // 保存到的文件夹
-            size: '320x240' // 缩略图的尺寸
-        })
-        .on('end', () => {
-            setTimeout(() => {
-                return res.sendFile(path.join(videoUrl, 'cover', videoImg)); // 发送封面图片
-            }, 300);
-        })
-        .on('error', (err: Error) => {
-            // console.error(err);
-            res.status(500).send('Error generating thumbnail');
-        });
+    
+    let videoFileSrcBuffer = fs.readFileSync(videoFileSrc);
+    let outImgBuff = await getVideoCover(videoFileSrcBuffer,1000);
+    let outImgPath = path.join(videoUrl, 'cover',videoImg);
+    fs.writeFileSync(outImgPath, outImgBuff);
+    res.send(outImgBuff)
 }
 
 

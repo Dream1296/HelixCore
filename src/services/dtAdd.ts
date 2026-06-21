@@ -48,7 +48,7 @@ async function loa13(dtData: Lists[]) {
 }
 
 //拦截图片
-export async function imgcl(imgSrc: { img_src: string; img_name: string; }, dtid: number, index: number, user?: string) {
+export async function imgcl( dtid: number, index: number, user?: string) {
     if (dtid == 1009 && index == 0 && user && user == 'yw') {
         // imgSrc.img_name = dataImgArr[0].name;
     }

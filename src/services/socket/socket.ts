@@ -5,7 +5,6 @@ import { generateToken } from '../token';
 import { getVideoSrc } from '@/models/dt/dt';
 import { getUrl } from '@/pathUtils';
 import fs from 'fs';
-import { ensureVideoIsMP4 } from '@/controllers/dt';
 import path from 'path';
 const PORT = 5000;
 
@@ -51,7 +50,12 @@ async function setVideo(msg: ParsedMessage, socket: net.Socket) {
     let videoUrl = path.join(getUrl('assets'), 'a', file.video_src, 'video/');
 
     let fileSrc = path.join(videoUrl, 'original', file.video_name);
-    fileSrc = ensureVideoIsMP4(fileSrc);
+    //处理后的视频文件
+    let fileSrcCompressed = path.join(videoUrl, 'compressed', file.video_name);
+    //如果fileSrcCompressed存在，则fileSrc值为fileSrc，否则为fileSrcCompressed
+    if (fs.existsSync(fileSrcCompressed)) {
+        fileSrc = fileSrcCompressed;
+    }
 
     const stat = fs.statSync(fileSrc);
 

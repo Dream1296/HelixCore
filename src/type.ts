@@ -31,7 +31,6 @@ export interface Lists {
     videoNum: number;
     imgUrl?: string;
     date: string;
-    idea?: string;
     po: number;
     com?: Comtent[];
     longVideo?: { id: number, name: string, src: string }[];

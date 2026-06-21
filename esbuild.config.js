@@ -7,6 +7,6 @@ esbuild.build({
   outfile: 'distDev/index.js', // 输出文件
   platform: 'node', // 目标平台为 Node.js
   target: 'node22', // 针对 Node.js 版本
-  sourcemap: true, // 生成 source map，便于调试
-  external: ['canvas','i2c-bus'], // 排除 canvas 模块
+  sourcemap: false, // 生成 source map，便于调试
+  external: [], // 需要排除的模块
 }).catch(() => process.exit(1));

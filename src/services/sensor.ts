@@ -1,4 +1,3 @@
-import * as i2c from 'i2c-bus';
 import { exec } from 'child_process';
 
 import util from 'util';

@@ -74,24 +74,24 @@ export async function dtFinds(word: string, user: string | undefined, loa: numbe
     }
 
 
-    //查询图片匹配文本
-    let sql = `SELECT dt_id,text FROM dt_img`;
+    // //查询图片匹配文本
+    // let sql = `SELECT dt_id FROM dt_img`;
 
-    let imgText = await dbSql<{ dt_id: number, text: string }[]>(sql);
-    for (let a of imgText) {
-        if (mediaArr.has(a.dt_id)) {
-            mediaArr.get(a.dt_id)?.imgNameText.add(a.text);
-        } else {
-            mediaArrAdd(a.dt_id);
-            mediaArr.get(a.dt_id)?.imgNameText.add(a.text);
-        }
-    }
+    // let imgText = await dbSql<{ dt_id: number }[]>(sql);
+    // for (let a of imgText) {
+    //     if (mediaArr.has(a.dt_id)) {
+    //         mediaArr.get(a.dt_id)?.imgNameText.add(a.text);
+    //     } else {
+    //         mediaArrAdd(a.dt_id);
+    //         mediaArr.get(a.dt_id)?.imgNameText.add(a.text);
+    //     }
+    // }
 
     //查询视频名匹配文本
     let sql1 = `SELECT dt_id,video_name as text FROM dt_video`;
     let videoText = await dbSql<{ dt_id: number, text: string }[]>(sql1);
 
-    for (let a of imgText) {
+    for (let a of videoText) {
         if (mediaArr.has(a.dt_id)) {
             mediaArr.get(a.dt_id)?.videoName.add(a.text);
         } else {

@@ -77,7 +77,6 @@ export async function convertRawToPngIfNeeded(
     await sharp(tempTiff)
       .png({ compressionLevel: 0 })  // 尽量无损
       .toFile(outputPath);
-
     return outputFileName;
 
   } finally {

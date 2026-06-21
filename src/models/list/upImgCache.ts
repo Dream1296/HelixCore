@@ -1,9 +1,8 @@
 import path from "path";
 import { fastListDir, getFileHash, getFileType } from "./list";
 import fs from 'fs';
-import ffmpeg from 'fluent-ffmpeg';
 import { access, mkdir } from 'fs/promises';
-import { error } from "console";
+import { getVideoCover, imgCompression } from "@/tool/media";
 
 let imgCache = '/dream/HelixCore/assets/listCache';
 // let num = 0;
@@ -66,7 +65,7 @@ export async function ensureDir(
  * @param outputPath 缩略图输出完整路径（包含文件名）
  * @param options 可选参数：
  *    - maxSide: 缩略图最长边（默认 200）
- *    - frameAt: 视频取帧秒数（默认 1）
+ *    - frameAt: 视频取帧毫秒数（默认 1000）
  */
 export async function generateMediaThumbnail(
     inputPath: string,
@@ -85,34 +84,21 @@ export async function generateMediaThumbnail(
 
 
 
-    const vf = `scale='if(gt(iw,ih),${maxSide},-1)':'if(gt(iw,ih),-1,${maxSide})'`;
+    // const vf = `scale='if(gt(iw,ih),${maxSide},-1)':'if(gt(iw,ih),-1,${maxSide})'`;
 
     // ✅ 判断是否为视频（有 duration 或多帧）
     try {
         if (type == 'video') {
             // 🎞 视频：取第 frameAt 秒生成缩略图
-
-            await new Promise<void>((resolve, reject) => {
-
-                ffmpeg(inputPath)
-                    .screenshots({
-                        timestamps: [frameAt],
-                        filename: path.basename(outputPath),
-                        folder: outDir,
-                        size: `${maxSide}x?`,
-                    })
-                    .on('end', () => resolve())
-                    .on('error', (err) => reject(err));
-            });
+            let videoBuffer = fs.readFileSync(inputPath);
+            let videoCover = await getVideoCover(videoBuffer, frameAt);
+            let outfilePath = path.join(outDir, path.basename(outputPath));
+            fs.writeFileSync(outfilePath, videoCover);
         } else {
             // 🖼 图片：按比例缩放
-            await new Promise<void>((resolve, reject) => {
-                ffmpeg(inputPath)
-                    .videoFilters(vf)
-                    .on('end', () => resolve())
-                    .on('error', (err) => reject(err))
-                    .save(outputPath);
-            });
+            let imgBuffer = fs.readFileSync(inputPath);
+            let compressedImg = await imgCompression(imgBuffer, maxSide, maxSide);
+            fs.writeFileSync(outputPath, compressedImg);
         }
     }
     catch (err) {

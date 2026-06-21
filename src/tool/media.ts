@@ -1,13 +1,11 @@
 import { getUrl } from "@/pathUtils";
 import path from "path";
 import { fileIsDir } from "./filePath";
-import { execSync, spawn } from "child_process";
-// import { getVideoCodec, transcodeToH264 } from "@/lib/ffmpeg/myFFmpeg";
 import { socketRequest } from "./socketReq";
+import fs from 'fs';
 
 
-
-// 传入一个
+// 传入一个视频，返回视频的h264格式
 export async function ensureVideoToh254(inPathArr: string[], outPathArr: string[]) {
 
     if (inPathArr.length != outPathArr.length) {
@@ -31,25 +29,39 @@ export async function ensureVideoToh254(inPathArr: string[], outPathArr: string[
     }
 }
 
-
-async function transcodeToH264(
+// 获取视频转码
+export async function transcodeToH264(
     inputPath: string,
     outputPath: string
 ): Promise<void> {
-    await socketRequest('/ffmpeg/transcodeToH264', 'POST', {
-        inputPath: inputPath,
-        outputPath: outputPath,
-    })
+    // 读取文件
+    let inputBuffer = fs.readFileSync(inputPath);
+    // 转码
+    let outputBuffer = await socketRequest<Buffer>('/ffmpeg/transcodeToH264', 'POST', inputBuffer, 'buffer');
+    // 保存文件
+    fs.writeFileSync(outputPath, outputBuffer);
     console.log('转码完成');
 }
 
 
-
-async function getVideoCodec(
+// 视频格式计算
+export async function getVideoCodec(
     videoPath: string
 ): Promise<"h264" | "h265"> {
-    let res = await socketRequest<{code:number,codec:"h264" | "h265"}>('/ffmpeg/getVideoCodec', 'POST', {
-        videoPath: videoPath,
-    })
+    let videoBuffer = fs.readFileSync(videoPath);
+    let res = await socketRequest<{ code: number, codec: "h264" | "h265" }>('/ffmpeg/getVideoCodec', 'POST', videoBuffer);
     return res.codec;
 }
+
+//视频封面图获取
+export async function getVideoCover(videoFileBuffer: Buffer, time: number = 1000) {
+    return await socketRequest<Buffer>(`/ffmpeg/transcodeToCover?time=${time}`, 'POST', videoFileBuffer, 'buffer');
+}
+
+
+// 图片压缩
+export async function imgCompression(imgBuffer: Buffer, x: number, y: number) {
+    return await socketRequest<Buffer>('/sh/processImage?width='+x+'&height='+y,'POST',imgBuffer,'buffer');
+}
+
+
