@@ -4,7 +4,7 @@ import { socketRequest } from '@/tool/socketReq';
 
 
 export async function getlinkScreen(id: number, name: string, content: string, date: string) {
-   return socketRequest<Buffer>('/canvas/getlinkScreen','POST',{id,name,content,date},'buffer');
+   return socketRequest<Buffer>('lib','/canvas/getlinkScreen','POST',{id,name,content,date},'buffer');
 }
 
 export function processImageForEInk(buffer: Buffer): number[] {

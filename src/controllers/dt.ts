@@ -24,7 +24,6 @@ import { myEvent } from '@/services/evenTs';
 import { getShareToken } from '@/services/token';
 import { Query } from '../middlewares/routesType';
 import * as t from 'io-ts';
-import { keepBadminton, keepRunOcr } from '@/services/keep';
 import { getlinkScreen } from '@/services/linkScreen';
 import { linkScreenRefresh } from '@/services/Aether';
 import { addDB, processImage } from '@/services/imgdataArr';
@@ -36,9 +35,7 @@ import { checkFileType } from '@/tool/checkFile';
 import { generateRandomString } from '@/tool/Text';
 import { hasAccessDtFileLoa, hasAccessDtloa } from '@/services/authorization';
 import { getnowDate } from '@/tool/Time';
-import { socketRequest } from '@/tool/socketReq';
-import { getVideoCover } from '@/tool/media';
-import { getDtImgFs } from '@/fs';
+import { getDtImgFs, getDtvideoCoverFs, getDtvideoFs } from '@/fs';
 
 //获取列表信息和评论信息
 export async function getDtList(req: Reqs, res: Response) {
@@ -366,28 +363,15 @@ export async function dtimg(req: Reqs, res: Response) {
     if (!tf) {
         return res.send({ code: 402 });
     }
-    
-    
-    // let sqlStr = `SELECT img_src,img_name FROM dt_img WHERE dt_id = ${dtid} AND img_index = ${index};`
 
-
-    // let imgSrc = (await dbSql<{ img_src: string, img_name: string }[]>(sqlStr))[0];
-    
-    // imgcl(dtid, index, req.user?.username);
-
-    // resImg(imgSrc, isImg, res);
-
-
-
-    // return resImg(imgSrc, size, res);
-    console.log(dtid, index, Number(size), 'buffer');
-    
     let buffer = await getDtImgFs(dtid, index, Number(size), 'buffer');
+    console.log(buffer);
+    
     res.writeHead(200, {
-        'Content-Type': 'image/png',
-        'Content-Length': buffer!.length
+        'Content-Type': buffer.ContentType,
+        'Content-Length': buffer.data.length
     });
-    res.end(buffer);
+    res.end(buffer.data);
 }
 
 export async function dtimgCom(req: Reqs, res: Response) {
@@ -411,20 +395,10 @@ export async function dtimgCom(req: Reqs, res: Response) {
 
     let imgSrc = (await dbSql<{ img_src: string, img_name: string }[]>(sqlStr))[0];
 
-    return resImg(imgSrc, size, res);
+    // return resImg(imgSrc, size, res);
 }
 
-/**
- * 
- * @param imgSrc 图片路径对象
- * @param isImg 是否为原图(0为压缩图)
- * @param res 响应对象
- * @returns 
- */
-async function resImg(imgSrc: { img_src: string; img_name: string; }, isImg: any, res: Response) {
-    
-   
-}
+
 
 
 //获取原图
@@ -461,64 +435,36 @@ export async function dtvideo(req: Reqs, res: Response) {
     }
 
 
-    let file = await getVideoSrc(dtid, index);
-    if (!file) {
-        return res.send({ code: 402 });
-    }
-
-    let videoUrl = path.join(getUrl('assets'), 'a', file.video_src, 'video/');
-
-    //原视频文件
-    let fileSrc = path.join(videoUrl, 'original', file.video_name);
-    //处理后的视频文件
-    let fileSrcCompressed = path.join(videoUrl, 'compressed', file.video_name);
-    //如果fileSrcCompressed存在，则fileSrc值为fileSrc，否则为fileSrcCompressed
-    if (fs.existsSync(fileSrcCompressed)) {
-        fileSrc = fileSrcCompressed;
-    }
-
-    //如果fileSrc不存在，则返回错误
-    if (!fileIsDir(path.dirname(fileSrc), path.basename(fileSrc))) {
-        return res.send({ code: 402 });
-    }
-
-    const stat = fs.statSync(fileSrc);
-    const fileSize = stat.size;
-
     const range = req.headers.range;
     if (range) {
         const parts = range.replace(/bytes=/, "").split("-");
         const start = parseInt(parts[0], 10);
         const maxChunkSize = 1024 * 1024;
-
-        // const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
-        const end = parts[1]
-            ? parseInt(parts[1], 10)
-            : Math.min(start + maxChunkSize - 1, fileSize - 1);
-
-        const chunksize = (end - start) + 1;
-        const audioStream = fs.createReadStream(fileSrc, { start, end });
-
-
+     
+        const end = Number(parts[1]) > 0 ? parts[1] : '0';
+        
+        let buffer = await getDtvideoFs(dtid, index, start, Number(end), maxChunkSize, 'buffer');
+        
+        console.log(buffer.chunksize);
+        
         const head = {
-            'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+            'Content-Range': `bytes ${buffer.start}-${buffer.end}/${buffer.fileSize}`,
             'Accept-Ranges': 'bytes',
-            'Content-Length': chunksize,
+            'Content-Length': buffer.chunksize,
             'Content-Type': 'video/mp4',
         };
 
-
         res.writeHead(206, head);
-        audioStream.pipe(res);
-        // res.end(buffer);
+        buffer.data.pipe(res);
     } else {
-        //    res.sendFile(fileSrc);
+        let buffer = await getDtvideoFs(dtid, index, -1, -1, 0, 'buffer');
+        console.log(buffer.fileSize);
         const head = {
-            'Content-Length': fileSize,
+            'Content-Length': buffer.fileSize,
             'Content-Type': 'video/mp4',
         };
         res.writeHead(200, head);
-        fs.createReadStream(fileSrc).pipe(res);
+        buffer.data.pipe(res);
     }
 }
 
@@ -527,11 +473,10 @@ export async function dtvideo(req: Reqs, res: Response) {
 
 //视频预览图
 export async function dtvideoImg(req: Reqs, res: Response) {
-
-
     let Reqdtid = req.query.dtid;
     let Reqindex = req.query.index;
     let token = req.query.token;
+    
 
     let dtid;
     let index;
@@ -543,46 +488,19 @@ export async function dtvideoImg(req: Reqs, res: Response) {
         return res.send({ code: 402 });
     }
 
+        console.log(dtid);
+        
     let tf = await hasAccessDtloa(req.user!, dtid);
     if (!tf) {
         return res.send({ code: 401 });
     }
-
-
-    let file = await getVideoSrc(dtid, index);
-    if (!file) {
-        return res.send({ code: 402 });
-    }
-
-    let videoUrl = path.join(getUrl('assets'), 'a', file.video_src, 'video/');
-
-    let videoFileSrc = path.join(videoUrl, 'original', file.video_name);
-
-    //视频预览图名字
-    let videoImg = file.video_name.slice(0, -4) + '.png';
-
-    let videoSrc = path.join(videoUrl, 'cover');
-
-    // 缓存
-    let ThumbnailData = getThumbnail(path.join(videoSrc, videoImg));
-    if (ThumbnailData) {
-        res.setHeader('Content-Type', 'image/png');
-        // console.log('从缓存中拿视频封面图');
-        return res.send(ThumbnailData);
-    }
-
-    // 检查封面图是否存在
-    if (fileIsDir(videoSrc, videoImg)) {
-        return res.sendFile(path.join(videoSrc, videoImg));
-    }
     
-    let videoFileSrcBuffer = fs.readFileSync(videoFileSrc);
-    let outImgBuff = await getVideoCover(videoFileSrcBuffer,1000);
-    let outImgPath = path.join(videoUrl, 'cover',videoImg);
-    fs.writeFileSync(outImgPath, outImgBuff);
-    res.send(outImgBuff)
+    
+    let buffer = await getDtvideoCoverFs(dtid, index, 1000, 'buffer');
+        
+    res.setHeader('Content-Type', buffer.ContentType);
+    res.end(buffer.data);
 }
-
 
 
 
@@ -1290,7 +1208,7 @@ export async function dtFile(req: Reqs, res: Response) {
 
 export async function keepRun(req: Reqs, res: Response) {
 
-    await keepRunOcr('824');
+    // await keepRunOcr('824');
     // await keepBadminton('822');
     res.send("ok");
 }

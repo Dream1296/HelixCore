@@ -1,27 +1,34 @@
 // socketRequest.ts
 import http from "http";
 
-let socketPath = process.env.socketPath! as string;
+let socketPathLib = process.env.socketPathLib! as string;
+let socketPathFs = process.env.socketPathFs! as string;
 
 export type SocketRequestMethod = "GET" | "POST" | "PUT" | "DELETE";
 export type SocketResponseType = "json" | "buffer" | "text";
 
 export function socketRequest<T>(
+    socket: 'lib' | 'fs' = 'lib',
     path: string,
     method: SocketRequestMethod = "GET",
     data?: any,
-    responseType: SocketResponseType = "json"
-): Promise<T> {
+    responseType: SocketResponseType = "json",
+): Promise<{ data: T, header: any }> {
     return new Promise((resolve, reject) => {
+
+        const canSendBody = method !== "GET" && method !== "DELETE" && data !== undefined && data !== null;
         // 判断是否是文件上传
-        const isFileUpload = method === "POST" && data instanceof Buffer;
+        const isFileUpload = canSendBody && data instanceof Buffer;
 
         const headers: Record<string, string> = {};
         if (isFileUpload) {
             headers["Content-Type"] = "application/octet-stream";
-        } else if (data) {
+        } else if (canSendBody) {
             headers["Content-Type"] = "application/json";
         }
+
+        let socketPath = socket === 'fs' ? socketPathFs : socketPathLib;
+
 
         const req = http.request(
             {
@@ -32,7 +39,7 @@ export function socketRequest<T>(
             },
             (res) => {
                 const chunks: Buffer[] = [];
-
+                let head = res.headers;
                 res.on("data", (chunk) => {
                     chunks.push(chunk);
                 });
@@ -41,21 +48,41 @@ export function socketRequest<T>(
                     const buffer = Buffer.concat(chunks);
 
                     if (responseType === "buffer") {
-                        resolve(buffer as T);
+                        resolve(
+                            {
+                                data: buffer as T,
+                                header: head
+                            }
+                        );
                         return;
                     }
 
                     if (responseType === "text") {
-                        resolve(buffer.toString("utf-8") as T);
+                        resolve(
+                            {
+                                data: buffer.toString("utf-8") as T,
+                                header: head
+                            }
+                        );
                         return;
                     }
 
                     // 默认尝试解析JSON
                     try {
-                        resolve(JSON.parse(buffer.toString("utf-8")) as T);
+                        resolve(
+                            {
+                                data: JSON.parse(buffer.toString("utf-8")) as T,
+                                header: head
+                            }
+                        );
                     } catch (err) {
                         // 如果解析失败，直接返回文本
-                        resolve(buffer.toString("utf-8") as T);
+                        resolve(
+                            {
+                                data: buffer.toString("utf-8") as T,
+                                header: head
+                            }
+                        );
                     }
                 });
             }
@@ -63,7 +90,7 @@ export function socketRequest<T>(
 
         req.on("error", reject);
 
-        if (data) {
+        if (canSendBody) {
             if (isFileUpload) {
                 req.write(data); // 直接写入 Buffer
             } else {

@@ -54,10 +54,10 @@ export async function getVideoAu(req: Request, res: Response) {
     console.log(videoUrl);
 
     // 视频转音频
-    await socketRequest('/ffmpeg/transcodeToAudio', 'POST', {
+    await socketRequest('lib', '/ffmpeg/transcodeToAudio', 'POST', {
         inputPath: videoUrl,
-        outputPath: videoAuPath
-    }, 'json');
+        outputPath: videoAuPath,
+    }, 'buffer');
 
     return res.send({
         code: 200,
@@ -92,6 +92,6 @@ export async function upVideoText(req: Request, res: Response) {
         })
     }
     console.log(`${id}转换成功`);
-    
+
     res.send('200');
 }

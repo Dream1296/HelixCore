@@ -37,9 +37,9 @@ export async function transcodeToH264(
     // 读取文件
     let inputBuffer = fs.readFileSync(inputPath);
     // 转码
-    let outputBuffer = await socketRequest<Buffer>('/ffmpeg/transcodeToH264', 'POST', inputBuffer, 'buffer');
+    let outputBuffer = await socketRequest<Buffer>('lib','/ffmpeg/transcodeToH264', 'POST', inputBuffer, 'buffer');
     // 保存文件
-    fs.writeFileSync(outputPath, outputBuffer);
+    fs.writeFileSync(outputPath, outputBuffer.data);
     console.log('转码完成');
 }
 
@@ -49,19 +49,19 @@ export async function getVideoCodec(
     videoPath: string
 ): Promise<"h264" | "h265"> {
     let videoBuffer = fs.readFileSync(videoPath);
-    let res = await socketRequest<{ code: number, codec: "h264" | "h265" }>('/ffmpeg/getVideoCodec', 'POST', videoBuffer);
-    return res.codec;
+    let res = await socketRequest<{ code: number, codec: "h264" | "h265" }>('lib','/ffmpeg/getVideoCodec', 'POST', videoBuffer);
+    return res.data.codec;
 }
 
 //视频封面图获取
 export async function getVideoCover(videoFileBuffer: Buffer, time: number = 1000) {
-    return await socketRequest<Buffer>(`/ffmpeg/transcodeToCover?time=${time}`, 'POST', videoFileBuffer, 'buffer');
+    return (await socketRequest<Buffer>('lib',`/ffmpeg/transcodeToCover?time=${time}`, 'POST', videoFileBuffer, 'buffer')).data;
 }
 
 
 // 图片压缩
 export async function imgCompression(imgBuffer: Buffer, x: number, y: number) {
-    return await socketRequest<Buffer>('/sh/processImage?width='+x+'&height='+y,'POST',imgBuffer,'buffer');
+    return (await socketRequest<Buffer>('lib','/sh/processImage?width='+x+'&height='+y,'POST',imgBuffer,'buffer')).data;
 }
 
 
