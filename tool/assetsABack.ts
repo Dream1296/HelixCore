@@ -15,9 +15,9 @@ import { execSync } from "child_process";
 /* =========================
    配置区（直接修改这里）
 ========================= */
-const SOURCE_DIR = "/dream/HelixCore/assets/a/2025"; // 要备份的目录
+const SOURCE_DIR = "/haven/img/img_2025.10-2026.5"; // 要备份的目录
 const SPLIT_COUNT = 4; // 分成几个包
-const PASSWORD = "xxx"; // 压缩密码
+const PASSWORD = "2Bya9#ojg~IM9dC5vx3iQi8@s0N+A6./bq7"; // 压缩密码
 const PARITY_PERCENT = 10; // 冗余比例
 const WAIT_SECONDS = 120; // 每个压缩包生成之间等待时间
 /* ========================= */

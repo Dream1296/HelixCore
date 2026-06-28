@@ -11,6 +11,7 @@ import path from "path";
 import { getUrl } from "@/pathUtils";
 import { convertRawToPngIfNeeded } from "@/tool/ramToPng";
 import { ensureVideoToh254 } from "@/tool/media";
+import { List } from "microsoft-cognitiveservices-speech-sdk/distrib/lib/src/common/List";
 
 
 
@@ -353,6 +354,18 @@ export async function setImg(id: number, imgArr: string[], imgSrc: string, headN
     }
     return true;
 }
+
+// 修改dt内容
+export async function setDtData(dtid: number, newDtData:any) {
+    let a = await prisma.dt.update({
+        where: { id:dtid },
+        data: { 
+            ...newDtData
+        }
+    });
+    return newDtData;
+}
+
 
 //添加视频
 export async function setVideo(id: number, videoArr: string[], headNum?: number) {

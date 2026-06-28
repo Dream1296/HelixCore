@@ -54,7 +54,7 @@ export async function getVideoCodec(
 }
 
 //视频封面图获取
-export async function getVideoCover(videoFileBuffer: Buffer, time: number = 1000) {
+export async function getVideoCover(videoFileBuffer: Buffer, time: number = 1) {
     return (await socketRequest<Buffer>('lib',`/ffmpeg/transcodeToCover?time=${time}`, 'POST', videoFileBuffer, 'buffer')).data;
 }
 

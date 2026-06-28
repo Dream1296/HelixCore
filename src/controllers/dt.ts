@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, getLongVideoList, setDtBgStyle, getRedisListData, setDtM, setShareDb, setUserss, getShareDbToken, dtidS, getDtLongData, setDtComB, getVideoSrc, isDtExist, serviceDate } from '../models/dt/dt';
+import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, getLongVideoList, setDtBgStyle, getRedisListData, setDtM, setShareDb, setUserss, getShareDbToken, dtidS, getDtLongData, setDtComB, getVideoSrc, isDtExist, serviceDate, setDtData } from '../models/dt/dt';
 import { getemojis } from '../models/emoji';
 import { Lists, MulterRequest, Reqs, setDtDataT, user } from '../type';
 import path, { join } from 'path';
@@ -366,7 +366,7 @@ export async function dtimg(req: Reqs, res: Response) {
 
     let buffer = await getDtImgFs(dtid, index, Number(size), 'buffer');
     console.log(buffer);
-    
+
     res.writeHead(200, {
         'Content-Type': buffer.ContentType,
         'Content-Length': buffer.data.length
@@ -440,13 +440,13 @@ export async function dtvideo(req: Reqs, res: Response) {
         const parts = range.replace(/bytes=/, "").split("-");
         const start = parseInt(parts[0], 10);
         const maxChunkSize = 1024 * 1024;
-     
+
         const end = Number(parts[1]) > 0 ? parts[1] : '0';
-        
+
         let buffer = await getDtvideoFs(dtid, index, start, Number(end), maxChunkSize, 'buffer');
-        
+
         console.log(buffer.chunksize);
-        
+
         const head = {
             'Content-Range': `bytes ${buffer.start}-${buffer.end}/${buffer.fileSize}`,
             'Accept-Ranges': 'bytes',
@@ -476,7 +476,7 @@ export async function dtvideoImg(req: Reqs, res: Response) {
     let Reqdtid = req.query.dtid;
     let Reqindex = req.query.index;
     let token = req.query.token;
-    
+
 
     let dtid;
     let index;
@@ -488,16 +488,16 @@ export async function dtvideoImg(req: Reqs, res: Response) {
         return res.send({ code: 402 });
     }
 
-        console.log(dtid);
-        
+    console.log(dtid);
+
     let tf = await hasAccessDtloa(req.user!, dtid);
     if (!tf) {
         return res.send({ code: 401 });
     }
-    
-    
+
+
     let buffer = await getDtvideoCoverFs(dtid, index, 1000, 'buffer');
-        
+
     res.setHeader('Content-Type', buffer.ContentType);
     res.end(buffer.data);
 }
@@ -708,7 +708,39 @@ export async function postdt(req: Reqs, res: Response) {
 
     img_all_num = img.length.toString();
     videoNum = video.length.toString();
-    let im;
+
+    // 仅内容上传模式. 上传#123
+    if (text.startsWith('上传')) {
+        let dtid = Number(text.split('#')[1]);
+        let dtData = await getdts(req.user!.username, dtid, 1);
+        if (!dtData) {
+            return res.send({ code: 400 });
+        }
+
+        let imgHeadNum = dtData.imgAllNum;
+        let videoHeadNum = dtData.videoNum;
+        for (let i = 0; i < imgHeadNum; i++) {
+            img.unshift('null');
+        }
+        for(let i = 0; i < videoHeadNum; i++){
+            video.unshift('null');
+        }
+
+        const vi = await setVideo(dtid, video, videoHeadNum);
+        const im = await setImg(dtid, img, 'dtimg', imgHeadNum);
+
+        await setDtData(dtid, {
+            img_show_num:  img.length > 6 ? 6 : img.length,
+            img_all_num:  img.length,
+            video_show_num: video.length > 6 ? 6 : video.length,
+            video_num: video.length
+        })
+        return res.send({ tf: 1 });
+    }
+
+
+
+
     const vi = setVideo(id, video);
 
     //loa不为0或1时，加密文本内容
@@ -716,7 +748,7 @@ export async function postdt(req: Reqs, res: Response) {
         text = "^AES^" + jiamiString(text, process.env.loa13!);
     }
 
-    im = setImg(id, img, 'dtimg');
+    let im = setImg(id, img, 'dtimg');
 
     const dt = setDt(id.toString(), req.user!.username, text, img_show_num, img_all_num, videoNum, date, loa);
     Promise.all([im, vi, dt]).then((a) => {
