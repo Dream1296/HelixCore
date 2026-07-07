@@ -299,6 +299,9 @@ export async function dtLists(user: string, loa: number, findId?: number | strin
             let key = process.env.miKey
             data[i].text = mi.jie(data[i].text.slice(5), key);
         }
+        if(data[i].text.startsWith('^base64^')){
+            data[i].text = Buffer.from(data[i].text.slice(8), 'base64').toString();
+        }
     }
     return data;
 

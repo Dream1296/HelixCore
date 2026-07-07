@@ -96,7 +96,7 @@ export async function getDtImgFsService(dtid: number, index: number, size: numbe
             let imgBuffer = fs.readFileSync(filePath);
             // 压缩图片
             const data = await imgCompression(imgBuffer, 460, 460);
-            console.log('压缩');
+            console.log('压缩1');
 
             // res.writeHead(200, {
             //     'Content-Type': 'image/png',
@@ -127,56 +127,9 @@ export async function getDtImgFsService(dtid: number, index: number, size: numbe
 }
 
 
-export async function getDtvideoFsService(dtid: number, index: number, start: number, end: number, maxChunkSize: number, type: 'buffer') {
-    let file = (await getDtVideoFile(dtid, index))[0];
-    let videoUrl = path.join(getUrl('assets'), 'a', file.video_src, 'video/');
 
-    //原视频文件
-    let fileSrc = path.join(videoUrl, 'original', file.video_name);
-    //处理后的视频文件
-    let fileSrcCompressed = path.join(videoUrl, 'compressed', file.video_name);
-    //如果fileSrcCompressed存在，则fileSrc值为fileSrc，否则为fileSrcCompressed
-    if (fs.existsSync(fileSrcCompressed)) {
-        fileSrc = fileSrcCompressed;
-    }
 
-    // //如果fileSrc不存在，则返回错误
-    // if (!fileIsDir(path.dirname(fileSrc), path.basename(fileSrc))) {
-    //     return res.send({ code: 402 });
-    // }
-
-    const stat = fs.statSync(fileSrc);
-    const fileSize = stat.size;
-
-    if (start == -1) {
-        const audioStream = fs.createReadStream(fileSrc);
-        return {
-            data: audioStream,
-            fileSize: fileSize,
-            start,
-            end,
-        }
-    }
-
-    end = end != 0
-        ? parseInt(end.toString(), 10)
-        : Math.min(start + maxChunkSize - 1, fileSize - 1);
-    console.log(`${start} == ${end}`);
-
-    const chunksize = (end - start) + 1;
-
-    const audioStream = fs.createReadStream(fileSrc, { start, end });
-
-    return {
-        data: audioStream,
-        fileSize: fileSize,
-        chunksize,
-        start,
-        end,
-    }
-}
-
-export async function getDtvideoCoverFsService(dtid: number, index: number, size: number, type: 'buffer') {
+export async function getDtvideoCoverFsService(dtid: number, index: number,size:number, type: 'buffer') {
     let file = (await getDtVideoFile(dtid, index))[0];
 
     let videoUrl = path.join(getUrl('assets'), 'a', file.video_src, 'video/');
@@ -197,12 +150,9 @@ export async function getDtvideoCoverFsService(dtid: number, index: number, size
             ContentType: 'image/png',
         }
     }
-    console.log(videoSrc,videoImg);
     
     // 检查封面图是否存在
     if (fileIsDir(videoSrc, videoImg)) {  
-        console.log(1);
-        
         return {
             data: sendFile(path.join(videoSrc, videoImg), type) as Buffer,
             ContentType: 'image/png',
@@ -212,8 +162,6 @@ export async function getDtvideoCoverFsService(dtid: number, index: number, size
     
 
     let videoFileSrcBuffer = fs.readFileSync(videoFileSrc);
-    console.log('请求');
-    
     let outImgBuff = await getVideoCover(videoFileSrcBuffer, 1);
     let outImgPath = path.join(videoUrl, 'cover', videoImg);
     fs.writeFileSync(outImgPath, outImgBuff);

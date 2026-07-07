@@ -224,7 +224,6 @@ export async function postCom(req: Reqs, res: Response) {
     content = await dtComPro(dtId, content);
     if (content == 'null') {
         console.log('add');
-
         return res.send({ tf: 1 });
     }
 
@@ -365,7 +364,6 @@ export async function dtimg(req: Reqs, res: Response) {
     }
 
     let buffer = await getDtImgFs(dtid, index, Number(size), 'buffer');
-    console.log(buffer);
 
     res.writeHead(200, {
         'Content-Type': buffer.ContentType,
@@ -436,35 +434,37 @@ export async function dtvideo(req: Reqs, res: Response) {
 
 
     const range = req.headers.range;
+    const maxChunkSize = 1 * 1024 * 1024;
+
     if (range) {
         const parts = range.replace(/bytes=/, "").split("-");
         const start = parseInt(parts[0], 10);
-        const maxChunkSize = 1024 * 1024;
-
+        
         const end = Number(parts[1]) > 0 ? parts[1] : '0';
 
         let buffer = await getDtvideoFs(dtid, index, start, Number(end), maxChunkSize, 'buffer');
-
-        console.log(buffer.chunksize);
 
         const head = {
             'Content-Range': `bytes ${buffer.start}-${buffer.end}/${buffer.fileSize}`,
             'Accept-Ranges': 'bytes',
             'Content-Length': buffer.chunksize,
-            'Content-Type': 'video/mp4',
+            'Content-Type': buffer.ContentType,
         };
 
         res.writeHead(206, head);
-        buffer.data.pipe(res);
+        res.end(buffer.data)
     } else {
-        let buffer = await getDtvideoFs(dtid, index, -1, -1, 0, 'buffer');
-        console.log(buffer.fileSize);
+        // let buffer = await getDtvideoFs(dtid, index, -1, -1, 0, 'buffer');
+        let buffer = await getDtvideoFs(dtid, index, 0, 0, maxChunkSize, 'buffer');
         const head = {
+            'Content-Range': `bytes ${buffer.start}-${buffer.end}/${buffer.fileSize}`,
+            'Accept-Ranges': 'bytes',
             'Content-Length': buffer.fileSize,
             'Content-Type': 'video/mp4',
         };
-        res.writeHead(200, head);
-        buffer.data.pipe(res);
+        res.writeHead(206, head);
+        res.end(buffer.data)
+        // buffer.data.pipe(res);
     }
 }
 
@@ -488,17 +488,18 @@ export async function dtvideoImg(req: Reqs, res: Response) {
         return res.send({ code: 402 });
     }
 
-    console.log(dtid);
 
     let tf = await hasAccessDtloa(req.user!, dtid);
     if (!tf) {
         return res.send({ code: 401 });
     }
-
-
-    let buffer = await getDtvideoCoverFs(dtid, index, 1000, 'buffer');
-
-    res.setHeader('Content-Type', buffer.ContentType);
+    
+    let buffer = await getDtvideoCoverFs(dtid, index, 1, 'buffer');
+    
+    res.writeHead(200, {
+        'Content-Type': buffer.ContentType,
+        'Content-Length': buffer.data.length
+    });
     res.end(buffer.data);
 }
 
@@ -743,9 +744,12 @@ export async function postdt(req: Reqs, res: Response) {
 
     const vi = setVideo(id, video);
 
+    let textBase64User = ['dlhe','new','now'];
+
+
     //loa不为0或1时，加密文本内容
-    if (req.user?.username == 'dlhe') {
-        text = "^AES^" + jiamiString(text, process.env.loa13!);
+    if (textBase64User.includes(req.user!.username)) {
+        text = "^base64^" + Buffer.from(text).toString('base64');
     }
 
     let im = setImg(id, img, 'dtimg');
@@ -1110,7 +1114,7 @@ export async function linksc(req: Reqs, res: Response) {
     }
 
     let buffer = await getlinkScreen(resc!.id, resc!.name, resc!.text, resc!.date);
-    let data = await processImage(buffer);
+    let data = await processImage(buffer.data);
     if (data) {
         let a = await addDB(data.blackArr, data.redArr);
     }

@@ -36,7 +36,8 @@ async function userImg(req: Reqs, res: Response) {
             code: 400,
         })
     }
-    url = getUrl('public', 'userImg', url);
+    // url = getUrl('public', 'userImg', url);
+    url = getUrl('assets', 'system/userImg', url);
     
     let data = fs.readFileSync(url);
     res.setHeader('Content-Type', 'image/png');

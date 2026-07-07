@@ -7,7 +7,7 @@ const md5 = require('@/utils/md5.min.js');
  * 待加密对象的类型定义
  */
 interface ObjectToEncrypt {
-  [key: string]: any;
+    [key: string]: any;
 }
 
 /**
@@ -17,13 +17,13 @@ interface ObjectToEncrypt {
  * @returns 加密后的十六进制字符串
  */
 export function jiami(objToEncrypt: ObjectToEncrypt, password: string): string {
-  const jsonString: string = JSON.stringify(objToEncrypt);
-  const key: Buffer = crypto.createHash('sha256').update(password).digest();
-  const cipher: crypto.Cipher = crypto.createCipheriv('aes-256-cbc', key, Buffer.alloc(16));
-  let encryptedString: string = cipher.update(jsonString, 'utf8', 'hex');
-  encryptedString += cipher.final('hex');
+    const jsonString: string = JSON.stringify(objToEncrypt);
+    const key: Buffer = crypto.createHash('sha256').update(password).digest();
+    const cipher: crypto.Cipher = crypto.createCipheriv('aes-256-cbc', key, Buffer.alloc(16));
+    let encryptedString: string = cipher.update(jsonString, 'utf8', 'hex');
+    encryptedString += cipher.final('hex');
 
-  return encryptedString;
+    return encryptedString;
 }
 
 /**
@@ -33,17 +33,17 @@ export function jiami(objToEncrypt: ObjectToEncrypt, password: string): string {
  * @returns 加密后的十六进制字符串
  */
 export function jiamiString(text: string, password: string): string {
-  // 使用密码生成密钥
-  const key: Buffer = crypto.createHash('sha256').update(password).digest();
+    // 使用密码生成密钥
+    const key: Buffer = crypto.createHash('sha256').update(password).digest();
 
-  // 创建加密器，不使用IV
-  const cipher: crypto.Cipher = crypto.createCipheriv('aes-256-cbc', key, Buffer.alloc(16));
+    // 创建加密器，不使用IV
+    const cipher: crypto.Cipher = crypto.createCipheriv('aes-256-cbc', key, Buffer.alloc(16));
 
-  // 加密文本
-  let encryptedString: string = cipher.update(text, 'utf8', 'hex');
-  encryptedString += cipher.final('hex');
+    // 加密文本
+    let encryptedString: string = cipher.update(text, 'utf8', 'hex');
+    encryptedString += cipher.final('hex');
 
-  return encryptedString;
+    return encryptedString;
 }
 
 /**
@@ -53,19 +53,19 @@ export function jiamiString(text: string, password: string): string {
  * @returns 解密后的字符串，若解密失败则返回默认对象的JSON字符串
  */
 export function jie(encryptedString: string, password: string): string {
-  try {
-    const key: Buffer = crypto.createHash('sha256').update(password).digest();
-    const decipher: crypto.Decipher = crypto.createDecipheriv('aes-256-cbc', key, Buffer.alloc(16));
-    let decryptedString: string = decipher.update(encryptedString, 'hex', 'utf8');
-    decryptedString += decipher.final('utf8');
-    return decryptedString;
-  } catch (error) {
-    const a = {
-      username: 'guest',
-      dates: "0",
-    };
-    return JSON.stringify(a);
-  }
+    try {
+        const key: Buffer = crypto.createHash('sha256').update(password).digest();
+        const decipher: crypto.Decipher = crypto.createDecipheriv('aes-256-cbc', key, Buffer.alloc(16));
+        let decryptedString: string = decipher.update(encryptedString, 'hex', 'utf8');
+        decryptedString += decipher.final('utf8');
+        return decryptedString;
+    } catch (error) {
+        const a = {
+            username: 'guest',
+            dates: "0",
+        };
+        return JSON.stringify(a);
+    }
 }
 
 
@@ -75,10 +75,10 @@ export function jie(encryptedString: string, password: string): string {
  * @param secretKey - 用于解密的密码
  * @returns 签名的后的字符串
  */
-export function createSignature(data: string, secretKey: string): string {  
-  return crypto.createHmac('sha256', secretKey)  
-      .update(data)  
-      .digest('hex');  
+export function createSignature(data: string, secretKey: string): string {
+    return crypto.createHmac('sha256', secretKey)
+        .update(data)
+        .digest('hex');
 }
 
 /**
@@ -89,17 +89,21 @@ export function createSignature(data: string, secretKey: string): string {
  * @returns 签名是否正确
  */
 
-export function verifySignature(data: string, signature: string, secretKey: string): boolean {  
-  const generatedSignature = createSignature(data, secretKey);  
-  return generatedSignature === signature;  
+export function verifySignature(data: string, signature: string, secretKey: string): boolean {
+    const generatedSignature = createSignature(data, secretKey);
+    return generatedSignature === signature;
 }
 
 /**
  * 
  */
-export function md5Text(text:string){
-  return md5(text);
+export function md5Text(text: string) {
+    return md5(text);
 
 }
+
+
+
+
 
 
