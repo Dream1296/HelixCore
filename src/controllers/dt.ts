@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, getLongVideoList, setDtBgStyle, getRedisListData, setDtM, setShareDb, setUserss, getShareDbToken, dtidS, getDtLongData, setDtComB, getVideoSrc, isDtExist, serviceDate, setDtData } from '../models/dt/dt';
+import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, getLongVideoList, setDtBgStyle, getRedisListData, setDtM, setShareDb, setUserss, getShareDbToken, dtidS, getDtLongData, setDtComB, getVideoSrc, isDtExist, serviceDate, setDtData, uploadData, setDtDate } from '../models/dt/dt';
 import { getemojis } from '../models/emoji';
 import { Lists, MulterRequest, Reqs, setDtDataT, user } from '../type';
 import path, { join } from 'path';
@@ -35,8 +35,9 @@ import { checkFileType } from '@/tool/checkFile';
 import { generateRandomString } from '@/tool/Text';
 import { hasAccessDtFileLoa, hasAccessDtloa } from '@/services/authorization';
 import { getnowDate } from '@/tool/Time';
-import { getDtImgFs, getDtvideoCoverFs, getDtvideoFs } from '@/services/fs';
+import { getDtComImgFs, getDtImgFs, getDtvideoCoverFs, getDtvideoFs, getFileFsStream, upImgFs, upVideoFs } from '@/services/fs';
 import { imgErrorIco } from '@/assets/imgArr';
+import { getBufferMd5 } from '@/cryptoTool';
 
 //获取列表信息和评论信息
 export async function getDtList(req: Reqs, res: Response) {
@@ -318,7 +319,7 @@ export async function dtDataImg(req: Reqs, res: Response) {
 
     if (req.user?.username == 'dlhe') {
         console.log(111);
-        
+
         let title = '服务器重启记录';
         const data = await serviceDate(Number(year));
         const dateNow = new Date();
@@ -372,7 +373,7 @@ export async function dtimg(req: Reqs, res: Response) {
         buffer = await getDtImgFs(dtid, index, Number(size), 'buffer');
     } catch (error) {
         console.error('图片获取失败，主服务请求失败');
-        
+
         buffer = {
             data: Buffer.from(imgErrorIco),
             ContentType: 'image/png',
@@ -400,13 +401,12 @@ export async function dtimgCom(req: Reqs, res: Response) {
     } else {
         return res.send({ code: 402, msg: "参数不全" });
     }
-
-    let sqlStr = `SELECT img_src,img_name FROM dt_comments_img WHERE comment_id = ${dtid} AND img_index = ${index};`
-
-
-    let imgSrc = (await dbSql<{ img_src: string, img_name: string }[]>(sqlStr))[0];
-
-    // return resImg(imgSrc, size, res);
+    getDtComImgFs(dtid, index, Number(size), 'buffer').then((data) => {
+        res.setHeader('Content-Type', data.ContentType);
+        res.setHeader('X-Image-Type', data.ContentType);
+        res.setHeader('Content-Length', data.data.length);
+        res.end(data.data);
+    })
 }
 
 
@@ -506,7 +506,7 @@ export async function dtvideoImg(req: Reqs, res: Response) {
         return res.send({ code: 401 });
     }
     let buffer
-    try{
+    try {
         buffer = await getDtvideoCoverFs(dtid, index, 1, 'buffer');
     } catch (error) {
         console.error('视频预览图获取失败，无法访问fs服务');
@@ -515,7 +515,7 @@ export async function dtvideoImg(req: Reqs, res: Response) {
             ContentType: 'image/png',
         }
     }
-    
+
     res.writeHead(200, {
         'Content-Type': buffer.ContentType,
         'Content-Length': buffer.data.length
@@ -527,8 +527,8 @@ export async function dtvideoImg(req: Reqs, res: Response) {
 
 // 预上传
 export async function getDtId(req: Reqs, res: Response) {
-
-    
+    const dtId = await uploadData();
+    res.send({ dtId });
 }
 
 
@@ -577,12 +577,72 @@ export async function updt(req: MulterRequest, res: Response) {
     }
     res.send({ tf: 1, fileName: req.file.filename });
 }
-export async function upvideo(req: MulterRequest, res: Response) {
-    if (!req.file) {
-        return res.status(400).send({ error: '文件上传失败' });
+// export async function upvideo(req: MulterRequest, res: Response) {
+//     if (!req.file) {
+//         return res.status(400).send({ error: '文件上传失败' });
+//     }
+//     res.send({ tf: 1, fileName: req.file.filename });
+// }
+
+
+
+export async function upImg(req: Reqs, res: Response) {
+    let fileName = req.headers['x-file-name'] as string ?? '';
+    let fileMd5 = req.headers['x-file-md5'] as string ?? '';
+    let dtId = req.headers['x-dt-id'] as string ?? '';
+    let dtIndex = req.headers['x-dt-index'] as string ?? '';
+
+    if (!fileName || !fileMd5) {
+        return res.send({ code: 401 });
     }
-    res.send({ tf: 1, fileName: req.file.filename });
+    let fileBuffer = req.body as Buffer;
+
+    if (!fileBuffer) {
+        return res.status(401).send({ code: 401, msg: "文件为空" });
+    }
+
+    let md5 = getBufferMd5(fileBuffer);
+    if (md5 !== fileMd5) {
+        return res.status(401).send({ code: 402, msg: "md5不一致" });
+    }
+
+    // 写入文件
+    let fsRes = await upImgFs(Number(dtId), Number(dtIndex), fileName, fileMd5, fileBuffer);
+    if (fsRes.code !== 200) {
+        return res.status(401).send({ code: 403 });
+    }
+    return res.send({ code: 200 });
 }
+
+export async function upvideo(req: MulterRequest, res: Response) {
+    let fileName = req.headers['x-file-name'] as string ?? '';
+    let fileMd5 = req.headers['x-file-md5'] as string ?? '';
+    let dtId = req.headers['x-dt-id'] as string ?? '';
+    let dtIndex = req.headers['x-dt-index'] as string ?? '';
+
+    if (!fileName || !fileMd5) {
+        return res.send({ code: 401 });
+    }
+    let fileBuffer = req.body as Buffer;
+
+    if (!fileBuffer) {
+        return res.status(401).send({ code: 401, msg: "文件为空" });
+    }
+
+    let md5 = getBufferMd5(fileBuffer);
+    if (md5 !== fileMd5) {
+        return res.status(401).send({ code: 402, msg: "md5不一致" });
+    }
+
+    // 写入文件
+    let fsRes = await upVideoFs(Number(dtId), Number(dtIndex), fileName, fileMd5, fileBuffer);
+    if (fsRes.code !== 200) {
+        return res.status(401).send({ code: 403 });
+    }
+    return res.send({ code: 200 });
+}
+
+
 
 function stopTime(time: number) {
     return new Promise((resolve, reject) => {
@@ -591,17 +651,19 @@ function stopTime(time: number) {
 }
 
 export async function postdt(req: Reqs, res: Response) {
+    let dtId = req.body.dtId as number;
     let text = req.body.text as string;
-    let img = req.body.img as string[];
-    let img_show_num = req.body.imgShowNum as string;
-    let img_all_num = img.length.toString();
-    const date = req.body.date;
-    const imgDir = req.body.imgDir as string | undefined;
+    let img_show_num = req.body.imgShowNum as number;
+    let img_all_num = req.body.imgNum as number;
+    let videoNum = req.body.videoNum as number;
+
+    const date = req.body.date as string;
+
+    // const imgDir = req.body.imgDir as string | undefined;
     let loa: number = isNaN(Number(req.body.loa)) ? 0 : Number(req.body.loa);
-    let video = req.body.video as string[];
-    let videoNum = video.length.toString();
+
     if (img_show_num > img_all_num) {
-        img_show_num = Number(img_all_num) > 6 ? '6' : img_all_num;
+        img_show_num = Number(img_all_num) > 6 ? 6 : img_all_num;
     }
 
     if (!req.user?.username || req.user.username == process.env.Guest) {
@@ -613,162 +675,121 @@ export async function postdt(req: Reqs, res: Response) {
 
     // 适当的延迟，保证正确写入。
     if (Number(img_all_num) > 0) {
-        await stopTime(1000);
+        await stopTime(500);
     }
 
 
-    //图片处理
-    if (img) {
-        let imgArr: string[] = img;
-
-        //判断图片是已上传到临时目录
-        if (!isImgTemp(imgArr)) {
-            return res.send({
-                code: 400,
-                error: 1
-            })
-        }
-
-        if (!mvImg(imgArr)) {
-            return res.send({
-                code: 400,
-                error: 2
-            })
-        }
-    }
-
-    if (video.length != 0) {
-        //判断视频是否存在
-        if (!isVideoTemp(video)) {
-            return res.send({
-                code: 400,
-            })
-        }
-
-        if (!mvVideo(video)) {
-            return res.send({
-                code: 400,
-                error: 3
-            })
-        }
-    }
 
     //处理图片文件夹
-    if (imgDir) {
-        //待上传图片存储目录
-        let urls = getUrl('assets', 'dtimgUpTemp');
+    // if (imgDir) {
+    //     //待上传图片存储目录
+    //     let urls = getUrl('assets', 'dtimgUpTemp');
 
-        //判断文件夹是否存在
-        let falg = fs.existsSync(urls);
-        if (!falg) {
-            return res.send({
-                code: 400,
-                error: 2
-            })
-        }
-        //读取文件夹内文件
-        const files = fs.readdirSync(urls);
-        for (const fileName of files) {
-            //文件完整路径
-            const filePath = path.join(urls, fileName);
+    //     //判断文件夹是否存在
+    //     let falg = fs.existsSync(urls);
+    //     if (!falg) {
+    //         return res.send({
+    //             code: 400,
+    //             error: 2
+    //         })
+    //     }
+    //     //读取文件夹内文件
+    //     const files = fs.readdirSync(urls);
+    //     for (const fileName of files) {
+    //         //文件完整路径
+    //         const filePath = path.join(urls, fileName);
 
-            const fileStats = fs.statSync(filePath);
-            // 只处理文件，忽略目录  
-            if (!fileStats.isFile()) {
-                continue;
-            }
-            const ext = path.extname(fileName); // 获取文件扩展名
+    //         const fileStats = fs.statSync(filePath);
+    //         // 只处理文件，忽略目录  
+    //         if (!fileStats.isFile()) {
+    //             continue;
+    //         }
+    //         const ext = path.extname(fileName); // 获取文件扩展名
 
-            function fn(fileName: string, type: 'img' | 'video') {
-                let newName = mvFileName(fileName)
-                let newFilePath = path.join(urls, newName);
-                let newPath = '';
-                if (type == 'img') {
-                    newPath = path.join(getUrl('assets', 'a/', process.env.aNew!, "img/original"), newName);
-                }
-                if (type == 'video') {
-                    newPath = path.join(getUrl('assets', 'a/', process.env.aNew!, "video/original"), newName);
-                }
-                // 移动文件到目标目录  
-                try {
-                    //重命名
-                    fs.renameSync(filePath, newFilePath);
-                    //移动
-                    fs.renameSync(newFilePath, newPath);
-                } catch (err) {
-                    return false
-                }
-                return newName;
-            }
+    //         function fn(fileName: string, type: 'img' | 'video') {
+    //             let newName = mvFileName(fileName)
+    //             let newFilePath = path.join(urls, newName);
+    //             let newPath = '';
+    //             if (type == 'img') {
+    //                 newPath = path.join(getUrl('assets', 'a/', process.env.aNew!, "img/original"), newName);
+    //             }
+    //             if (type == 'video') {
+    //                 newPath = path.join(getUrl('assets', 'a/', process.env.aNew!, "video/original"), newName);
+    //             }
+    //             // 移动文件到目标目录  
+    //             try {
+    //                 //重命名
+    //                 fs.renameSync(filePath, newFilePath);
+    //                 //移动
+    //                 fs.renameSync(newFilePath, newPath);
+    //             } catch (err) {
+    //                 return false
+    //             }
+    //             return newName;
+    //         }
 
-            if (checkFileType(ext) == 'img') {
-                let falg = fn(fileName, 'img')
-                if (!falg) {
-                    return res.send({
-                        code: 400,
-                        error: 4
-                    })
-                }
-                img.push(falg);
-                img_all_num = img.length.toString();
-            }
+    //         if (checkFileType(ext) == 'img') {
+    //             let falg = fn(fileName, 'img')
+    //             if (!falg) {
+    //                 return res.send({
+    //                     code: 400,
+    //                     error: 4
+    //                 })
+    //             }
+    //             img.push(falg);
+    //             img_all_num = img.length.toString();
+    //         }
 
-            if (checkFileType(ext) == 'video') {
-                let falg = fn(fileName, 'video')
-                if (!falg) {
-                    return res.send({
-                        code: 400,
-                        error: 4
-                    })
-                }
-                video.push(falg);
-                videoNum = video.length.toString();
-            }
-        }
-    }
-
-
-    //查询当前dt表中id的最大值
-    let id = Number(await getIdMax()) + 1;
+    //         if (checkFileType(ext) == 'video') {
+    //             let falg = fn(fileName, 'video')
+    //             if (!falg) {
+    //                 return res.send({
+    //                     code: 400,
+    //                     error: 4
+    //                 })
+    //             }
+    //             video.push(falg);
+    //             videoNum = video.length.toString();
+    //         }
+    //     }
+    // }
 
 
 
-    img_all_num = img.length.toString();
-    videoNum = video.length.toString();
 
     // 仅内容上传模式. 上传#123
-    if (text.startsWith('上传')) {
-        let dtid = Number(text.split('#')[1]);
-        let dtData = await getdts(req.user!.username, dtid, 1);
-        if (!dtData) {
-            return res.send({ code: 400 });
-        }
+    // if (text.startsWith('上传')) {
+    //     let dtid = Number(text.split('#')[1]);
+    //     let dtData = await getdts(req.user!.username, dtid, 1);
+    //     if (!dtData) {
+    //         return res.send({ code: 400 });
+    //     }
 
-        let imgHeadNum = dtData.imgAllNum;
-        let videoHeadNum = dtData.videoNum;
-        for (let i = 0; i < imgHeadNum; i++) {
-            img.unshift('null');
-        }
-        for (let i = 0; i < videoHeadNum; i++) {
-            video.unshift('null');
-        }
+    //     let imgHeadNum = dtData.imgAllNum;
+    //     let videoHeadNum = dtData.videoNum;
+    //     for (let i = 0; i < imgHeadNum; i++) {
+    //         img.unshift('null');
+    //     }
+    //     for (let i = 0; i < videoHeadNum; i++) {
+    //         video.unshift('null');
+    //     }
 
-        const vi = await setVideo(dtid, video, videoHeadNum);
-        const im = await setImg(dtid, img, 'dtimg', imgHeadNum);
+    //     const vi = await setVideo(dtid, video, videoHeadNum);
+    //     const im = await setImg(dtid, img, 'dtimg', imgHeadNum);
 
-        await setDtData(dtid, {
-            img_show_num: img.length > 6 ? 6 : img.length,
-            img_all_num: img.length,
-            video_show_num: video.length > 6 ? 6 : video.length,
-            video_num: video.length
-        })
-        return res.send({ tf: 1 });
-    }
-
-
+    //     await setDtData(dtid, {
+    //         img_show_num: img.length > 6 ? 6 : img.length,
+    //         img_all_num: img.length,
+    //         video_show_num: video.length > 6 ? 6 : video.length,
+    //         video_num: video.length
+    //     })
+    //     return res.send({ tf: 1 });
+    // }
 
 
-    const vi = setVideo(id, video);
+
+
+    // const vi = setVideo(id, video);
 
     let textBase64User = ['dlhe', 'new', 'now'];
 
@@ -782,22 +803,24 @@ export async function postdt(req: Reqs, res: Response) {
     // 默认为1的
     let loa1Arr = ['dlhe', 'yw', 'new'];
     // 默认为10的
-    let loa10Arr = ['code','dy'];
-    if(loa == 0){
-        if(loa1Arr.includes(req.user!.username)){
+    let loa10Arr = ['code', 'dy'];
+    if (loa == 0) {
+        if (loa1Arr.includes(req.user!.username)) {
             loa = 1;
         }
-        if(loa10Arr.includes(req.user!.username)){
+        if (loa10Arr.includes(req.user!.username)) {
             loa = 10;
         }
     }
 
-    let im = setImg(id, img, 'dtimg');
+    // let im = setImg(id, img, 'dtimg');
 
-    const dt = setDt(id.toString(), req.user!.username, text, img_show_num, img_all_num, videoNum, date, loa);
-    Promise.all([im, vi, dt]).then((a) => {
-        res.send({ tf: 1 });
-    })
+    let dateObj = new Date(new Date(date.replace(' ', 'T')).getTime() + 8 * 60 * 60 * 1000);
+
+    setDtDate(dtId.toString(), req.user!.username, text, img_show_num.toString(), img_all_num.toString(), videoNum.toString(), dateObj, loa)
+        .then((e) => {
+            res.send({ tf: 1 });
+        })
 
 }
 
@@ -941,8 +964,8 @@ export async function getemoji(req: Request, res: Response) {
 
 export async function getemojilist(req: Request, res: Response) {
     let emojiList = await prisma.emojiList.findMany({
-        select:{
-            name:true,
+        select: {
+            name: true,
         },
     })
     res.send(emojiList.map(a => a.name));
@@ -1220,71 +1243,43 @@ export async function getYear(req: Reqs, res: Response) {
 export async function dtFile(req: Reqs, res: Response) {
     const rawFileId = req.query.fileId ?? req.query.dtid;
     const fileId = Number(rawFileId);
+    let userName = req.user?.username ?? 'guest';
 
     if (!rawFileId || Number.isNaN(fileId)) {
         return res.send({
             code: 401,
         })
     }
-
-    const fileObj = await prisma.dt_file.findUnique({
+    let file_obj = await prisma.dt_file.findUnique({
+        select: {
+            dt_id: true,
+            loa: true,
+        },
         where: {
             id: fileId,
-        }
+        },
     });
-
-
-    if (!fileObj) {
+    if(file_obj == null){
         return res.send({
-            code: 404,
+            code: 402,
         })
     }
-
-    if (fileObj.loa != 0) {
-        let tf = await hasAccessDtFileLoa(req.user!, fileObj.dt_id, fileObj.loa);
+    if (file_obj.loa != 0) {
+        let tf = await hasAccessDtFileLoa(req.user!, file_obj.dt_id, file_obj.loa);
         if (!tf) {
-            return res.send({
-                code: 403,
-            })
-
+            return res.send({ code: 403 });
         }
     }
 
+    let fileData = await getFileFsStream(fileId);
+    res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${fileData.fileName}"`
+    );
+    res.setHeader("Content-Length", fileData.size.toString());
 
-    let fileSrc = getUrl('assets', 'file', fileObj.file_src, fileObj.file_name);
-
-    // 检查文件是否存在
-    fs.access(fileSrc, fs.constants.F_OK, (err) => {
-        if (err) {
-            // 文件不存在，返回 404 错误
-            return res.status(404).send('File not found');
-        }
-
-        // 设置下载的文件名（可选，你可以从 file_src 中提取或设置其他名称）
-        // let expandName = fileObj.file_src.split('.')[fileObj.file_src.split('.').length -1 ];
-        const fileName = path.basename(fileObj.name + "&&" + fileObj.file_src);
-        // 完善下err类型
-        res.download(fileSrc, fileName, (err?: NodeJS.ErrnoException) => {
-            if (err) {
-                const isClientAbort =
-                    err.code === "ECONNABORTED" ||
-                    err.code === "ECONNRESET" ||
-                    res.destroyed;
-
-                if (isClientAbort) {
-                    console.warn("Download aborted by client:", fileId, fileName);
-                    return;
-                }
-
-                console.error("Error downloading file:", err);
-
-                if (!res.headersSent && !res.writableEnded) {
-                    res.status(500).send("Error downloading file");
-                }
-                return;
-            }
-        })
-    })
+    const stream = fileData.stream;
+    stream.pipe(res);
 }
 
 

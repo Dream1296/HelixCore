@@ -18,7 +18,8 @@ import {
     dtimgCom,
     getYear,
     setdt,userIndex,
-    getDtId
+    getDtId,
+    upImg
 }  from '@/controllers/dt';
 import { PublishAfterExecution } from '@/services/upListData';
 
@@ -56,10 +57,11 @@ app.get('/dtvideoImg', dtvideoImg);
 // 预上传，拿到dt_id
 app.get('/preUpDt', getDtId);
 
+// 新的图片上传接口
+app.post('/upImg', upImg);
 
-app.post('/updt', uploadSingleFile, updt);
-
-app.post('/upvideo', uploadVideos, upvideo);
+// 新的视频上传接口
+app.post('/upVideo', upvideo);
 
 //提交动态
 app.post("/postdt", postdt);

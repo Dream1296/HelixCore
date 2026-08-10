@@ -12,7 +12,7 @@ export async function loas(req: Reqs, res: Response, next: NextFunction) {
         // '/api/listVideo',
         '/api/setBgStyle',
         '/api/updt',
-        '/api/upvideo',
+        // '/api/upvideo',
         '/api/postdt',
         '/api/setDt',
         '/api/dtvideoImg',

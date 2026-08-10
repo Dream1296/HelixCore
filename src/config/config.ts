@@ -17,6 +17,12 @@ configs.use(cors());
 // 使用 body-parser 中间件来解析 JSON 数据
 configs.use(bodyParser.json());
 
+// 用于解析二进制数据
+configs.use(express.raw({
+    type: "application/octet-stream",
+    limit: "4080mb"
+}));
+
 // // 读取 SSL 证书文件
 // const privateKey = fs.readFileSync(path.join( getUrl('root','ssl') , 'private.key'), 'utf8');
 // const certificate = fs.readFileSync( path.join(getUrl('root','ssl') , 'certificate.crt'), 'utf8');

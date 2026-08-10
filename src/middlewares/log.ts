@@ -20,7 +20,10 @@ export function setLog(req: Request, res: Response, next: NextFunction) {
 
     // 请求的详细内容
     const requestHeaders = JSON.stringify(headers);
-    const requestBody = JSON.stringify(body);
+    let requestBody = JSON.stringify(body);
+    if(requestBody.length > 10000){
+        requestBody = requestBody.substring(0, 10000) + '...';
+    }
     const requestQuery = JSON.stringify(query);
     let resBody = "null";
     let file = "null";

@@ -1,8 +1,8 @@
 // socketRequest.ts
 import http from "http";
 
-let socketPathLib = process.env.socketPathLib! as string;
-let socketPathFs = process.env.socketPathFs! as string;
+export let socketPathLib = process.env.socketPathLib! as string;
+export let socketPathFs = process.env.socketPathFs! as string;
 
 export type SocketRequestMethod = "GET" | "POST" | "PUT" | "DELETE";
 export type SocketResponseType = "json" | "buffer" | "text";
@@ -13,6 +13,7 @@ export function socketRequest<T>(
     method: SocketRequestMethod = "GET",
     data?: any,
     responseType: SocketResponseType = "json",
+    headers?: Record<string, string>
 ): Promise<{ data: T, header: any }> {
     return new Promise((resolve, reject) => {
 
@@ -20,11 +21,11 @@ export function socketRequest<T>(
         // 判断是否是文件上传
         const isFileUpload = canSendBody && data instanceof Buffer;
 
-        const headers: Record<string, string> = {};
+        const finalHeaders: Record<string, string> = { ...headers };
         if (isFileUpload) {
-            headers["Content-Type"] = "application/octet-stream";
+            finalHeaders["Content-Type"] = "application/octet-stream";
         } else if (canSendBody) {
-            headers["Content-Type"] = "application/json";
+            finalHeaders["Content-Type"] = "application/json";
         }
 
         let socketPath = socket === 'fs' ? socketPathFs : socketPathLib;
@@ -35,7 +36,7 @@ export function socketRequest<T>(
                 socketPath,
                 path,
                 method,
-                headers,
+                headers: finalHeaders,
             },
             (res) => {
                 const chunks: Buffer[] = [];
@@ -101,3 +102,6 @@ export function socketRequest<T>(
         req.end();
     });
 }
+
+
+

@@ -244,7 +244,7 @@ export async function dtLists(user: string, loa: number, findId?: number | strin
         };
     }
 
-    
+
     data1 = await prisma.dt_find.findMany({
         where,
         orderBy: {
@@ -299,7 +299,7 @@ export async function dtLists(user: string, loa: number, findId?: number | strin
             let key = process.env.miKey
             data[i].text = mi.jie(data[i].text.slice(5), key);
         }
-        if(data[i].text.startsWith('^base64^')){
+        if (data[i].text.startsWith('^base64^')) {
             data[i].text = Buffer.from(data[i].text.slice(8), 'base64').toString();
         }
     }
@@ -320,6 +320,27 @@ export async function getLongVideoList(id?: number) {
     return lvList
 }
 
+// 
+export async function uploadData() {
+    let a = await prisma.dt.create({
+        data: {
+            user: 'upload',
+            text: '等待上传中',
+            img_show_num: 0,
+            img_all_num: 0,
+            video_show_num: 0,
+            video_num: 0,
+            date: new Date(),
+            pin_order: 0,
+            bg_style: 0,
+            loa: 0,
+            shows: false,
+            save: false,
+            date_real: new Date().toISOString()
+        }
+    })
+    return a.id;
+}
 
 
 
@@ -359,10 +380,10 @@ export async function setImg(id: number, imgArr: string[], imgSrc: string, headN
 }
 
 // 修改dt内容
-export async function setDtData(dtid: number, newDtData:any) {
+export async function setDtData(dtid: number, newDtData: any) {
     let a = await prisma.dt.update({
-        where: { id:dtid },
-        data: { 
+        where: { id: dtid },
+        data: {
             ...newDtData
         }
     });
@@ -409,9 +430,9 @@ export async function setVideo(id: number, videoArr: string[], headNum?: number)
 export async function Conmit13text(comList: Comtent[]) {
     for (let i = 0; i < comList.length; i++) {
         if (comList[i].content.startsWith("^AES^")) {
-            
+
         }
-        if(comList[i].content.startsWith("^base64^")) {
+        if (comList[i].content.startsWith("^base64^")) {
             comList[i].content = Buffer.from(comList[i].content.slice(8), 'base64').toString();
         }
         if (comList[i].content.startsWith("刷新#")) {
@@ -678,7 +699,28 @@ export async function setDt(id: string, user: string, text: string, img_show_num
         return true
     }
     return false
+}
 
+// 修改主数据
+export async function setDtDate(id: string, user: string, text: string, img_show_num: string, img_all_num: string, video_num: string,
+    date: Date, loa: number): Promise<boolean> {
+    let dateReal = moment().format('YYYY-MM-DD HH:mm');
+    await prisma.dt.update({
+        where: { id: Number(id) },
+        data: {
+            user,
+            text,
+            img_show_num: Number(img_show_num),
+            img_all_num: Number(img_all_num),
+            video_num: Number(video_num),
+            video_show_num: Number(video_num),
+            date: date,
+            loa,
+            date_real: dateReal,
+            shows: true,
+        }
+    })
+    return true;
 }
 
 
