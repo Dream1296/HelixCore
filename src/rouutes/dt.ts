@@ -17,7 +17,8 @@ import {
     linkScreenControl,
     dtimgCom,
     getYear,
-    setdt,userIndex
+    setdt,userIndex,
+    getDtId
 }  from '@/controllers/dt';
 import { PublishAfterExecution } from '@/services/upListData';
 
@@ -25,11 +26,43 @@ import * as t from '../middlewares/routesType';
 import { isRequest } from '../middlewares/types';
 import { getImgDB } from '@/models/dt/dthc';
 
+
+/**
+ * --------------------------------------
+ * 获取动态内容
+ */ 
+
 //获取动态数据
 app.get('/getDtList', isRequest(t.Query), getDtList);
 
 //获取单个动态数据
 app.get('/getdt', getdt);
+
+//查询动态 搜索动态
+app.get('/dtfind', dtfinds);
+
+//视频
+app.get('/dtvideo', dtvideo);
+
+//视频缩略图
+app.get('/dtvideoImg', dtvideoImg);
+
+
+/**
+ * --------------------------------------
+ * 上传和修改动态内容
+ */ 
+
+// 预上传，拿到dt_id
+app.get('/preUpDt', getDtId);
+
+
+app.post('/updt', uploadSingleFile, updt);
+
+app.post('/upvideo', uploadVideos, upvideo);
+
+//提交动态
+app.post("/postdt", postdt);
 
 //修改单个动态数据
 app.post('/setdt',setdt);
@@ -37,8 +70,16 @@ app.post('/setdt',setdt);
 //设置动态的标签
 app.post('/dtindex', dtindex);
 
-//查询动态 搜索动态
-app.get('/dtfind', dtfinds);
+//删除动态
+app.post('/delDt', delDts)
+
+
+
+
+/**
+ * --------------------------------------
+ * 查询动态相关的内容
+ */ 
 
 //查询用户标签
 app.get('/userIndex',userIndex);
@@ -55,38 +96,54 @@ app.get("/dtimg", dtimg);
 //评论图
 app.get('/dtimgCom', dtimgCom);
 
-//修改背景样式
-app.post('/setBgStyle', setDtBgStyles);
-
-//视频
-app.get('/dtvideo', dtvideo);
-
-//视频缩略图
-app.get('/dtvideoImg', dtvideoImg);
-
-//上传图片
-// 路由：处理文件上传
-app.post('/updt', uploadSingleFile, updt);
-
-app.post('/upvideo', uploadVideos, upvideo);
-
 //获取动态长文本数据
 app.get('/getLongText', getLongText);
 
-//提交动态
-app.post("/postdt", postdt);
-
-//提交动态评论
-app.post('/postCom', postCom);
-
-//删除动态
-app.post('/delDt', delDts)
+//小表情列表
+app.get('/emojilist', getemojilist);
 
 //小表情
 app.get('/emoji', getemoji);
 
-//小表情列表
-app.get('/emojilist', getemojilist);
+
+
+/**
+ * --------------------------------------
+ * 修改动态相关内容
+ */ 
+
+//修改背景样式
+app.post('/setBgStyle', setDtBgStyles);
+
+//提交动态评论
+app.post('/postCom', postCom);
+
+//修改动态数据
+app.post('/setDt', setDts);
+
+//分享动态
+app.get('/getShare', getShare);
+
+//设置分享
+app.post('/setShare', setShare);
+
+//文件链接
+app.get('/dtFile', dtFile);
+
+
+/**
+ * --------------------------------------
+ * 其他
+ */ 
+
+//墨水屏图片生成
+app.get('/linksc', linksc)
+
+//墨水屏图片数据请求
+app.get('/linkScreenShow', linkScreenShow);
+
+//墨水屏刷新控制
+app.get('/linkScreenControl', linkScreenControl);
 
 //获取用户位置
 app.get('/gps', getweizhi);
@@ -100,27 +157,6 @@ app.get('/lvi', lvi);
 //视频信息
 app.get('/lviobj', lviobj);
 
-//修改动态数据
-app.post('/setDt', setDts);
-
-//分享动态
-app.get('/getShare', getShare);
-
-//设置分享
-app.post('/setShare', setShare);
-
-//墨水屏图片生成
-app.get('/linksc', linksc)
-
-//墨水屏图片数据请求
-app.get('/linkScreenShow', linkScreenShow);
-
-//墨水屏刷新控制
-app.get('/linkScreenControl', linkScreenControl);
-
-//文件链接
-app.get('/dtFile', dtFile);
-
 //测试
 app.get("/keepOcr", keepRun);
 
@@ -129,8 +165,6 @@ app.get('/upDtData', upDtData);
 
 // 年份图片获取
 app.get('/getYear', getYear);
-
-
 
 //缓存相关
 app.get('/getImgDB', getImgDB);

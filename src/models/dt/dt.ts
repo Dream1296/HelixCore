@@ -280,7 +280,7 @@ export async function dtLists(user: string, loa: number, findId?: number | strin
             imgAllNum: a.img_all_num,
             videoShowAll: a.video_show_num,
             videoNum: a.video_num,
-            date: moment(a.date).add(16, 'hours').format('YYYY-MM-DD HH:mm:ss'),
+            date: moment(a.date).add(-8, 'hours').format('YYYY-MM-DD HH:mm:ss'),
             po: a.pin_order,
             bgStyle: a.bg_style,
             longText: [],
@@ -409,7 +409,10 @@ export async function setVideo(id: number, videoArr: string[], headNum?: number)
 export async function Conmit13text(comList: Comtent[]) {
     for (let i = 0; i < comList.length; i++) {
         if (comList[i].content.startsWith("^AES^")) {
-
+            
+        }
+        if(comList[i].content.startsWith("^base64^")) {
+            comList[i].content = Buffer.from(comList[i].content.slice(8), 'base64').toString();
         }
         if (comList[i].content.startsWith("刷新#")) {
             let text = comList[i].content.slice(3).trim();

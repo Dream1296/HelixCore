@@ -428,8 +428,8 @@ async function mian5(){
 
 
 
-socketRequest('/')
-    .then(e=>{
-        console.log(e);
-    })
+// socketRequest('/')
+//     .then(e=>{
+//         console.log(e);
+//     })
 

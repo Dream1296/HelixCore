@@ -35,7 +35,8 @@ import { checkFileType } from '@/tool/checkFile';
 import { generateRandomString } from '@/tool/Text';
 import { hasAccessDtFileLoa, hasAccessDtloa } from '@/services/authorization';
 import { getnowDate } from '@/tool/Time';
-import { getDtImgFs, getDtvideoCoverFs, getDtvideoFs } from '@/fs';
+import { getDtImgFs, getDtvideoCoverFs, getDtvideoFs } from '@/services/fs';
+import { imgErrorIco } from '@/assets/imgArr';
 
 //获取列表信息和评论信息
 export async function getDtList(req: Reqs, res: Response) {
@@ -228,7 +229,7 @@ export async function postCom(req: Reqs, res: Response) {
     }
 
     if (req.user.username == 'dlhe') {
-
+        content = "^base64^" + Buffer.from(content).toString('base64');
     }
 
 
@@ -316,6 +317,8 @@ export async function dtDataImg(req: Reqs, res: Response) {
     let buffer: Buffer<any> = Buffer.alloc(0);
 
     if (req.user?.username == 'dlhe') {
+        console.log(111);
+        
         let title = '服务器重启记录';
         const data = await serviceDate(Number(year));
         const dateNow = new Date();
@@ -356,15 +359,25 @@ export async function dtimg(req: Reqs, res: Response) {
         return res.send({ code: 402, msg: "参数不全" });
     }
 
-
     let tf = await hasAccessDtloa(req.user!, dtid);
 
     if (!tf) {
         return res.send({ code: 402 });
     }
-
-    let buffer = await getDtImgFs(dtid, index, Number(size), 'buffer');
-
+    let buffer: {
+        data: Buffer<ArrayBufferLike>;
+        ContentType: any;
+    };
+    try {
+        buffer = await getDtImgFs(dtid, index, Number(size), 'buffer');
+    } catch (error) {
+        console.error('图片获取失败，主服务请求失败');
+        
+        buffer = {
+            data: Buffer.from(imgErrorIco),
+            ContentType: 'image/png',
+        }
+    }
     res.writeHead(200, {
         'Content-Type': buffer.ContentType,
         'Content-Length': buffer.data.length
@@ -439,7 +452,7 @@ export async function dtvideo(req: Reqs, res: Response) {
     if (range) {
         const parts = range.replace(/bytes=/, "").split("-");
         const start = parseInt(parts[0], 10);
-        
+
         const end = Number(parts[1]) > 0 ? parts[1] : '0';
 
         let buffer = await getDtvideoFs(dtid, index, start, Number(end), maxChunkSize, 'buffer');
@@ -450,7 +463,6 @@ export async function dtvideo(req: Reqs, res: Response) {
             'Content-Length': buffer.chunksize,
             'Content-Type': buffer.ContentType,
         };
-
         res.writeHead(206, head);
         res.end(buffer.data)
     } else {
@@ -493,8 +505,16 @@ export async function dtvideoImg(req: Reqs, res: Response) {
     if (!tf) {
         return res.send({ code: 401 });
     }
-    
-    let buffer = await getDtvideoCoverFs(dtid, index, 1, 'buffer');
+    let buffer
+    try{
+        buffer = await getDtvideoCoverFs(dtid, index, 1, 'buffer');
+    } catch (error) {
+        console.error('视频预览图获取失败，无法访问fs服务');
+        buffer = {
+            data: Buffer.from(imgErrorIco),
+            ContentType: 'image/png',
+        }
+    }
     
     res.writeHead(200, {
         'Content-Type': buffer.ContentType,
@@ -504,6 +524,12 @@ export async function dtvideoImg(req: Reqs, res: Response) {
 }
 
 
+
+// 预上传
+export async function getDtId(req: Reqs, res: Response) {
+
+    
+}
 
 
 
@@ -571,7 +597,7 @@ export async function postdt(req: Reqs, res: Response) {
     let img_all_num = img.length.toString();
     const date = req.body.date;
     const imgDir = req.body.imgDir as string | undefined;
-    const loa: number = isNaN(Number(req.body.loa)) ? 0 : Number(req.body.loa);
+    let loa: number = isNaN(Number(req.body.loa)) ? 0 : Number(req.body.loa);
     let video = req.body.video as string[];
     let videoNum = video.length.toString();
     if (img_show_num > img_all_num) {
@@ -723,7 +749,7 @@ export async function postdt(req: Reqs, res: Response) {
         for (let i = 0; i < imgHeadNum; i++) {
             img.unshift('null');
         }
-        for(let i = 0; i < videoHeadNum; i++){
+        for (let i = 0; i < videoHeadNum; i++) {
             video.unshift('null');
         }
 
@@ -731,8 +757,8 @@ export async function postdt(req: Reqs, res: Response) {
         const im = await setImg(dtid, img, 'dtimg', imgHeadNum);
 
         await setDtData(dtid, {
-            img_show_num:  img.length > 6 ? 6 : img.length,
-            img_all_num:  img.length,
+            img_show_num: img.length > 6 ? 6 : img.length,
+            img_all_num: img.length,
             video_show_num: video.length > 6 ? 6 : video.length,
             video_num: video.length
         })
@@ -744,12 +770,26 @@ export async function postdt(req: Reqs, res: Response) {
 
     const vi = setVideo(id, video);
 
-    let textBase64User = ['dlhe','new','now'];
+    let textBase64User = ['dlhe', 'new', 'now'];
 
 
     //loa不为0或1时，加密文本内容
     if (textBase64User.includes(req.user!.username)) {
         text = "^base64^" + Buffer.from(text).toString('base64');
+    }
+
+    // 设置loa的默认值
+    // 默认为1的
+    let loa1Arr = ['dlhe', 'yw', 'new'];
+    // 默认为10的
+    let loa10Arr = ['code','dy'];
+    if(loa == 0){
+        if(loa1Arr.includes(req.user!.username)){
+            loa = 1;
+        }
+        if(loa10Arr.includes(req.user!.username)){
+            loa = 10;
+        }
     }
 
     let im = setImg(id, img, 'dtimg');
@@ -886,20 +926,26 @@ export async function delDts(req: Reqs, res: Response) {
     }
 }
 
-export function getemoji(req: Request, res: Response) {
+export async function getemoji(req: Request, res: Response) {
     const lei = req.query.lei as string;
     // const name = req.query.name as string;
     if (!lei) {
         res.setHeader('Content-Type', 'png/image');
-        // res.send(getemojis('weixin', '微信.png'))
         res.status(400).send({ code: 400 });
     }
     res.setHeader('Content-Type', 'png/image');
-    res.send(getemojis(lei));
+    // res.send(getemojis(lei));
+    let emojiBuffer = await getemojis(lei);
+    res.send(emojiBuffer)
 }
 
-export function getemojilist(req: Request, res: Response) {
-    res.sendFile(getUrl('public', 'emoji/list.json'));
+export async function getemojilist(req: Request, res: Response) {
+    let emojiList = await prisma.emojiList.findMany({
+        select:{
+            name:true,
+        },
+    })
+    res.send(emojiList.map(a => a.name));
 }
 
 export async function getweizhi(req: Request, res: Response) {

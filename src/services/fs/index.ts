@@ -42,3 +42,13 @@ export async function getDtvideoCoverFs(dtid: number, index: number, size: numbe
         ContentType: data.header!['x-image-type'],
     };
 }
+
+// 表情包下载
+export async function getEmoji(id:string,type:'buffer'){
+    let url = '/emoji/emoji?id=' + id + '&type=' + type;
+    let data = await socketRequest<Buffer>('fs', url, 'GET', null, 'buffer');
+    return {
+        data: data.data,
+        ContentType: data.header!['x-image-type'],
+    };
+}

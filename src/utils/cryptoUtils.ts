@@ -60,6 +60,8 @@ export function jie(encryptedString: string, password: string): string {
         decryptedString += decipher.final('utf8');
         return decryptedString;
     } catch (error) {
+        console.log('解密失败');
+        
         const a = {
             username: 'guest',
             dates: "0",

@@ -6,7 +6,7 @@ import { socketRequest } from "./tool/socketReq";
 
 
 
-socketRequest('/')
-    .then(e=>{
-        console.log(e);
-    })
+// socketRequest('/')
+//     .then(e=>{
+//         console.log(e);
+//     })

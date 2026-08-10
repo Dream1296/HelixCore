@@ -44,15 +44,16 @@ async function getNodeList(id: string) {
 };
 
 async function getXinxi(id: string) {
-    let sql = `SELECT * FROM list where root_node = ? ORDER BY id ASC;`;
+    let sql = `SELECT * FROM list where root_node = ? OR id = ? ORDER BY id ASC;`;
     type T = {
         title: string;
         create_time: string;
         update_time: string;
         account: string;
         tag: string;
+        root_node:string
     }
-    let data = await dbSql<T[]>(sql, [id], undefined, 'chat');
+    let data = await dbSql<T[]>(sql, [id, id], undefined, 'chat');
     if (data.length > 0) {
         return data[0];
     } else {
@@ -62,27 +63,10 @@ async function getXinxi(id: string) {
             update_time: '2024-08-13 21:52:05',
             account: 'null',
             tag: 'null',
+            root_node: 'null',
         }
     }
 };
-
-
-async function getCom(nodeSet: Set<string>) {
-    // 把 Set 转换为数组
-    const nodeArray = Array.from(nodeSet)
-
-    // 查询符合条件的 chat_com 记录
-    const results = await prisma.chat_com.findMany({
-        where: {
-            node: {
-                in: nodeArray
-            }
-        }
-    })
-
-    return results
-}
-
 
 
 
@@ -103,6 +87,7 @@ export async function getChatNode(req: Reqs, res: Response) {
     }
 
     let xinxi = await getXinxi(id);
+    id = xinxi.root_node;
 
     nodeList.length = 0;
 
@@ -117,9 +102,9 @@ export async function getChatNode(req: Reqs, res: Response) {
 
     let nodeIdList = new Set<string>();
     for (let a of nodeList) {
-        nodeIdList.add(a.id);
+        nodeIdList.add(a?.id);
     }
-    let comList = await getCom(nodeIdList);
+    // let comList = await getCom(nodeIdList);
 
 
 
@@ -127,8 +112,9 @@ export async function getChatNode(req: Reqs, res: Response) {
         code: 200,
         data: {
             ...xinxi,
+            rootId: id,
             nodeList: nodeList,
-            comList: comList
+            // comList: comList
         }
     })
 

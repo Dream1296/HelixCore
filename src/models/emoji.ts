@@ -1,17 +1,16 @@
 import path from "path"
 import fs from 'fs';
 import { getUrl } from "@/pathUtils";
-const emojiPath = getUrl('public','emoji');
+import { getEmoji } from "@/services/fs";
+import { emojiErrorIco } from "@/assets/emoji";
+const emojiPath = getUrl('public', 'emoji');
 
 
-export function getemojis(lei:string){    
-    lei = lei + '.png';
-    
-    let paths = path.join(emojiPath,lei);
-    if(fileIsDir(emojiPath,lei)){
-        return fs.readFileSync(paths);
-    }else{
-        return fs.readFileSync(path.join(emojiPath,'weixin/微笑.png'));
+export async function getemojis(lei: string) {
+    try {
+        return (await getEmoji(lei, 'buffer')).data;
+    } catch (err) {
+        return Buffer.from(emojiErrorIco);
     }
 }
 
