@@ -688,24 +688,30 @@ export async function serviceDate(year: number | string) {
 
 
 //添加主数据
-export async function setDt(id: string, user: string, text: string, img_show_num: string, img_all_num: string, video_num: string,
-    date: string, loa: number): Promise<boolean> {
+export async function setDt( user: string, text: string, img_show_num: string, img_all_num: string, video_num: string,
+    date: Date, loa: number) {
     let dateReal = moment().format('YYYY-MM-DD HH:mm');
-    let sql = `INSERT INTO dt (id,user, text,img_show_num, img_all_num ,video_num, video_show_num,date, loa,date_real) VALUES 
-                (?,?, ?,  ?, ?, ?,?,?,? ,? );`;
-    let canshuArr = [id, user, text, img_show_num, img_all_num, video_num, video_num, date, loa, dateReal];
-    let a = await dbSql<number>(sql, canshuArr, true);
-    if (a == 1) {
-        return true
-    }
-    return false
+    return await prisma.dt.create({
+        data: {
+            user,
+            text,
+            img_show_num: Number(img_show_num),
+            img_all_num: Number(img_all_num),
+            video_num: Number(video_num),
+            video_show_num: Number(video_num),
+            date: new Date(date),
+            loa,
+            date_real: dateReal,
+            shows: true,
+        }
+    })
 }
 
 // 修改主数据
 export async function setDtDate(id: string, user: string, text: string, img_show_num: string, img_all_num: string, video_num: string,
-    date: Date, loa: number): Promise<boolean> {
+    date: Date, loa: number){
     let dateReal = moment().format('YYYY-MM-DD HH:mm');
-    await prisma.dt.update({
+    return await prisma.dt.update({
         where: { id: Number(id) },
         data: {
             user,
@@ -720,7 +726,6 @@ export async function setDtDate(id: string, user: string, text: string, img_show
             shows: true,
         }
     })
-    return true;
 }
 
 

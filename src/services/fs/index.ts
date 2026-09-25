@@ -3,6 +3,7 @@
 import { getVideoSrc } from "@/models/dt/dt";
 import { socketPathFs, socketRequest } from "@/tool/socketReq";
 import http from "http";
+import { Stream } from "nodemailer/lib/xoauth2";
 
 //图片获取
 export async function getDtImgFs(dtid: number, index: number, size: number, type: 'buffer') {
@@ -64,8 +65,11 @@ export async function getEmoji(id: string, type: 'buffer') {
 }
 
 // 图片上传
-export async function upImgFs(dtid: number, index: number, fileName: string, fileMd5: string, fileBuffer: Buffer) {
+export async function upImgFs(dtid: number, index: number, fileName: string, fileMd5: string, fileBuffer: Buffer | Stream, nullFile  = '0') {
     let url = '/fileUp/upImg';
+    if(nullFile && nullFile === '1') {
+        url += '?nullFile=1';
+    }
     let headers = {
         'x-file-name': fileName,
         'x-file-md5': fileMd5,
@@ -77,8 +81,11 @@ export async function upImgFs(dtid: number, index: number, fileName: string, fil
 }
 
 // 视频上传
-export async function upVideoFs(dtid: number, index: number, fileName: string, fileMd5: string, fileBuffer: Buffer) {
+export async function upVideoFs(dtid: number, index: number, fileName: string, fileMd5: string, fileBuffer: Buffer | Stream, nullFile = '0') {
     let url = '/fileUp/upVideo';
+    if(nullFile && nullFile === '1') {
+        url += '?nullFile=1';
+    }
     let headers = {
         'x-file-name': fileName,
         'x-file-md5': fileMd5,

@@ -9,13 +9,13 @@ const router = Router();
 //token验证中间件
 router.use(setToken);
 //鉴权
-router.use(loas);
+// router.use(loas);
 
 // 判断是否刷新redis
 router.use(upDtList);
 
 //日志记录
-router.use(setLog);
+// router.use(setLog);
 
 
 

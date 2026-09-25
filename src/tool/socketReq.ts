@@ -1,8 +1,11 @@
 // socketRequest.ts
 import http from "http";
+import { Buffer } from "node:buffer";
 
 export let socketPathLib = process.env.socketPathLib! as string;
 export let socketPathFs = process.env.socketPathFs! as string;
+
+console.log(socketPathFs);
 
 export type SocketRequestMethod = "GET" | "POST" | "PUT" | "DELETE";
 export type SocketResponseType = "json" | "buffer" | "text";
@@ -19,7 +22,16 @@ export function socketRequest<T>(
 
         const canSendBody = method !== "GET" && method !== "DELETE" && data !== undefined && data !== null;
         // 判断是否是文件上传
-        const isFileUpload = canSendBody && data instanceof Buffer;
+        // const isFileUpload = canSendBody && data instanceof Buffer;
+
+        // const isFileUpload = canSendBody && typeof data != 'string';
+        const isResRequest =
+            data !== null &&
+            typeof data === "object" &&
+            typeof (data as any).pipe === "function" &&
+            typeof (data as any).on === "function";
+
+        const isFileUpload = (canSendBody && Buffer.isBuffer(data)) || isResRequest;
 
         const finalHeaders: Record<string, string> = { ...headers };
         if (isFileUpload) {
@@ -92,14 +104,20 @@ export function socketRequest<T>(
         req.on("error", reject);
 
         if (canSendBody) {
-            if (isFileUpload) {
+            if (isResRequest) {
+                data.pipe(req); // 流入数据流
+            } else if (isFileUpload) {
                 req.write(data); // 直接写入 Buffer
+                req.end();
             } else {
                 req.write(JSON.stringify(data));
+                req.end();
             }
+        } else {
+            req.end();
         }
 
-        req.end();
+
     });
 }
 

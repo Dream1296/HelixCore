@@ -19,7 +19,9 @@ import {
     getYear,
     setdt,userIndex,
     getDtId,
-    upImg
+    upImg,
+    upImgVideoNum,
+    upDtImgTemp
 }  from '@/controllers/dt';
 import { PublishAfterExecution } from '@/services/upListData';
 
@@ -34,7 +36,7 @@ import { getImgDB } from '@/models/dt/dthc';
  */ 
 
 //获取动态数据
-app.get('/getDtList', isRequest(t.Query), getDtList);
+app.get('/getDtList', getDtList);
 
 //获取单个动态数据
 app.get('/getdt', getdt);
@@ -57,11 +59,20 @@ app.get('/dtvideoImg', dtvideoImg);
 // 预上传，拿到dt_id
 app.get('/preUpDt', getDtId);
 
+// 内容上传
+app.post('/upDt', updt);
+
 // 新的图片上传接口
 app.post('/upImg', upImg);
 
 // 新的视频上传接口
 app.post('/upVideo', upvideo);
+
+// 更新图片视频数量
+app.post('/upImgVideoNum', upImgVideoNum);
+
+// 更新临时存储目录内容记录
+app.get('/upDtImgTemp', upDtImgTemp);
 
 //提交动态
 app.post("/postdt", postdt);

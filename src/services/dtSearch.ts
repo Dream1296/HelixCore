@@ -34,6 +34,7 @@ export async function dtFind(word: string) {
 type MArr = {
     imgNameText: Set<string>;
     videoName: Set<string>;
+    videoText: Set<string>;
 }
 
 /**
@@ -56,7 +57,7 @@ export async function dtFinds(word: string, user: string | undefined, loa: numbe
     //如果搜索词为以"#"开头的数字，则直接返回null
     if (word.startsWith('#') && Number(word.slice(1, word.length))) {
         let id = Number(word.slice(1, word.length));
-        if(List.some(dt => dt.id == id)){
+        if (List.some(dt => dt.id == id)) {
             idArr.push({ id, num: 1000 });
         }
     }
@@ -70,6 +71,7 @@ export async function dtFinds(word: string, user: string | undefined, loa: numbe
         mediaArr.set(dt_id, {
             imgNameText: new Set(),
             videoName: new Set(),
+            videoText: new Set(),
         })
     }
 
@@ -99,6 +101,20 @@ export async function dtFinds(word: string, user: string | undefined, loa: numbe
             mediaArr.get(a.dt_id)?.videoName.add(a.text);
         }
     }
+
+    // 查询视频字幕匹配文本
+    let sql2 = `SELECT DISTINCT dt_id FROM dt_video_text WHERE text LIKE CONCAT('%', ?, '%');`;
+    let videoSubtitles = await dbSql<{ dt_id: number }[]>(sql2, [word], undefined, 'ai');
+
+    for(let a of videoSubtitles) {
+        if (mediaArr.has(a.dt_id)) {
+            mediaArr.get(a.dt_id)?.videoText.add(word);
+        } else {
+            mediaArrAdd(a.dt_id);
+            mediaArr.get(a.dt_id)?.videoText.add(word);
+        }
+    }
+
 
     if (word.includes('&&')) {
 
@@ -167,6 +183,12 @@ function listFind(List: Lists[], mediaArr: Map<number, MArr>, word: string) {
             for (let a of obj.videoName) {
                 if (a && a.includes(word)) {
                     num += 100;
+                }
+            }
+            //视频字幕
+            for (let a of obj.videoText) {
+                if (a && a.includes(word)) {
+                    num += 50;
                 }
             }
         }

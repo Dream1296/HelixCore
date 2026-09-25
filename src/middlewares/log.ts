@@ -29,6 +29,12 @@ export function setLog(req: Request, res: Response, next: NextFunction) {
     let file = "null";
     let ip = "127.0.0.1";
 
+    // 如果请求类型是文件上传，跳过该请求
+    if( 'application/octet-stream' === headers['content-type'] || 'multipart/form-data' === headers['content-type']){
+        next();
+        return;
+    }
+
     // 判断 headers 中是否有 x-real-ip 参数，并确保它是一个字符串
     if ('x-real-ip' in headers) {
         const realIp = headers['x-real-ip'];

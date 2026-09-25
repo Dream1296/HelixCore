@@ -38,13 +38,14 @@ import { getnowDate } from '@/tool/Time';
 import { getDtComImgFs, getDtImgFs, getDtvideoCoverFs, getDtvideoFs, getFileFsStream, upImgFs, upVideoFs } from '@/services/fs';
 import { imgErrorIco } from '@/assets/imgArr';
 import { getBufferMd5 } from '@/cryptoTool';
+import { socketPathFs, socketRequest } from '@/tool/socketReq';
 
 //获取列表信息和评论信息
 export async function getDtList(req: Reqs, res: Response) {
     const clientIp = req.headers['x-real-ip'] || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     console.log(clientIp);
 
-    let a = req.query as t.TypeOf<typeof Query>;
+    // let a = req.query as t.TypeOf<typeof Query>;
     let loa = Number(req.query.loa);
     let aes = Number(req.query.aes);
     if (isNaN(loa)) {
@@ -53,6 +54,7 @@ export async function getDtList(req: Reqs, res: Response) {
     if (isNaN(aes)) {
         aes = 0;
     }
+
 
     let user = (req.user?.username) ? req.user.username : "guest";
 
@@ -386,6 +388,18 @@ export async function dtimg(req: Reqs, res: Response) {
     res.end(buffer.data);
 }
 
+export async function upDtImgTemp(req: Reqs, res: Response) {
+    let t = req.query.t;
+    if (req.user?.username !== 'dlhe' && req.user?.username !== 'yw') {
+        console.log(req.user?.username);
+        
+        return res.send({ code: 403, msg: "无权限" });
+    }
+    let url = `/fileUp/upDtImgTemp?t=${t}`;
+    let code = await socketRequest('fs', url, undefined);
+    res.send({ code: 200, msg: `111` });
+}
+
 export async function dtimgCom(req: Reqs, res: Response) {
     let Reqdtid = req.query.comid;
     let Reqindex = req.query.index;
@@ -571,12 +585,12 @@ export const uploadSingleFile = upload.single('file');
 //导出视频文件上传中间件
 export const uploadVideos = uploadVideo.single('file');
 //文件上传处理
-export async function updt(req: MulterRequest, res: Response) {
-    if (!req.file) {
-        return res.status(400).send({ error: '文件上传失败' });
-    }
-    res.send({ tf: 1, fileName: req.file.filename });
-}
+// export async function updt(req: MulterRequest, res: Response) {
+//     if (!req.file) {
+//         return res.status(400).send({ error: '文件上传失败' });
+//     }
+//     res.send({ tf: 1, fileName: req.file.filename });
+// }
 // export async function upvideo(req: MulterRequest, res: Response) {
 //     if (!req.file) {
 //         return res.status(400).send({ error: '文件上传失败' });
@@ -586,31 +600,50 @@ export async function updt(req: MulterRequest, res: Response) {
 
 
 
+
+
 export async function upImg(req: Reqs, res: Response) {
     let fileName = req.headers['x-file-name'] as string ?? '';
     let fileMd5 = req.headers['x-file-md5'] as string ?? '';
     let dtId = req.headers['x-dt-id'] as string ?? '';
     let dtIndex = req.headers['x-dt-index'] as string ?? '';
 
+    let nullFile = req.query.nullFile as string ?? '0';
+
     if (!fileName || !fileMd5) {
         return res.send({ code: 401 });
     }
-    let fileBuffer = req.body as Buffer;
-
-    if (!fileBuffer) {
-        return res.status(401).send({ code: 401, msg: "文件为空" });
+    let fileBuffer: Buffer = Buffer.alloc(0);
+    let fsRes;
+    // 发送空数据，文件在数据库中用md5占位，以后再上传实际文件
+    if (nullFile && nullFile === '1') {
+        let fsRes = await upImgFs(Number(dtId), Number(dtIndex), fileName, fileMd5, fileBuffer, '1');
+        if (fsRes.code == 200) {
+            return res.status(200).send({ code: 200 });
+        } else {
+            return res.status(200).send({ code: 400 });
+        }
     }
 
-    let md5 = getBufferMd5(fileBuffer);
-    if (md5 !== fileMd5) {
-        return res.status(401).send({ code: 402, msg: "md5不一致" });
+    // 将空数据和文件md5发送给文件服务器，文件服务器根据md5找到文件并链接，如果不存在，则返回400，成功返回200
+    fsRes = await upImgFs(Number(dtId), Number(dtIndex), fileName, fileMd5, fileBuffer);
+
+    if (fsRes.code == 200) {
+        console.log('直接成功');
+        // 如果成功，直接响应200
+        res.status(200).send({ code: 200 });
+        return
     }
 
-    // 写入文件
-    let fsRes = await upImgFs(Number(dtId), Number(dtIndex), fileName, fileMd5, fileBuffer);
+    console.log('需要上传文件');
+    // 如果没成功，流式传输文件数据
+    fsRes = await upImgFs(Number(dtId), Number(dtIndex), fileName, fileMd5, req);
+
+    // 异常情况
     if (fsRes.code !== 200) {
-        return res.status(401).send({ code: 403 });
+        return res.status(200).send({ code: 400 });
     }
+    // 正常返回
     return res.send({ code: 200 });
 }
 
@@ -619,26 +652,39 @@ export async function upvideo(req: MulterRequest, res: Response) {
     let fileMd5 = req.headers['x-file-md5'] as string ?? '';
     let dtId = req.headers['x-dt-id'] as string ?? '';
     let dtIndex = req.headers['x-dt-index'] as string ?? '';
+    let nullFile = req.query.nullFile as string ?? '0';
 
     if (!fileName || !fileMd5) {
         return res.send({ code: 401 });
     }
-    let fileBuffer = req.body as Buffer;
-
-    if (!fileBuffer) {
-        return res.status(401).send({ code: 401, msg: "文件为空" });
+    // 空文件
+    let fileBuffer: Buffer = Buffer.alloc(0);
+    let fsRes;
+    if(nullFile && nullFile === '1') {
+        fsRes = await upVideoFs(Number(dtId), Number(dtIndex), fileName, fileMd5, fileBuffer, '1');
+        if (fsRes.code == 200) {
+            return res.status(200).send({ code: 200 });
+        } else {
+            return res.status(200).send({ code: 400 });
+        }
     }
 
-    let md5 = getBufferMd5(fileBuffer);
-    if (md5 !== fileMd5) {
-        return res.status(401).send({ code: 402, msg: "md5不一致" });
+    // 写入空文件，文件服务会先验证文件md5进行之前文件匹配的，成功后直接链接
+    fsRes = await upVideoFs(Number(dtId), Number(dtIndex), fileName, fileMd5, fileBuffer);
+    if (fsRes.code == 200) {
+        // 如果成功，直接响应200
+        res.status(200).send({ code: 200 });
+        console.log('跳过上传');
+        return
     }
 
-    // 写入文件
-    let fsRes = await upVideoFs(Number(dtId), Number(dtIndex), fileName, fileMd5, fileBuffer);
+    fsRes = await upVideoFs(Number(dtId), Number(dtIndex), fileName, fileMd5, req);
+
+    // 异常情况
     if (fsRes.code !== 200) {
-        return res.status(401).send({ code: 403 });
+        return res.status(200).send({ code: 400 });
     }
+    // 正常返回
     return res.send({ code: 200 });
 }
 
@@ -648,6 +694,128 @@ function stopTime(time: number) {
     return new Promise((resolve, reject) => {
         setTimeout(resolve, time);
     })
+}
+
+export async function updt(req: Reqs, res: Response) {
+    let text = req.body.text as string;
+    let img_show_num = Number(req.body.imgShowNum as number);
+    let img_all_num = 0;
+    let videoNum = 0;
+
+    const date = req.body.date as string;
+
+    // const imgDir = req.body.imgDir as string | undefined;
+    let loa: number = isNaN(Number(req.body.loa)) ? 0 : Number(req.body.loa);
+
+    if (!req.user?.username || req.user.username == process.env.Guest) {
+        res.send({
+            code: 403
+        });
+    }
+
+    // 当正文以"上传#123"的格式，以上传开始，后面的数字为dtId
+    if (text && text.startsWith('上传')) {
+        let dtId = Number(text.split('#')[1]);
+        if (!isNaN(dtId)) {
+            let dt = await prisma.dt.findUnique({
+                where: { id: dtId },
+                select: { img_all_num: true, video_num: true }
+            });
+            return res.send({
+                tf: 1,
+                dtId: dtId,
+                imgNum: dt?.img_all_num ?? 0,
+                videoNum: dt?.video_num ?? 0
+            });
+        }
+    }
+
+
+
+
+    let textBase64User = ['dlhe', 'new', 'now'];
+
+
+    //loa不为0或1时，加密文本内容
+    if (textBase64User.includes(req.user!.username)) {
+        text = "^base64^" + Buffer.from(text).toString('base64');
+    }
+
+    // 设置loa的默认值
+    // 默认为1的
+    let loa1Arr = ['dlhe', 'yw', 'new'];
+    // 默认为10的
+    let loa10Arr = ['code', 'dy'];
+    if (loa == 0) {
+        if (loa1Arr.includes(req.user!.username)) {
+            loa = 1;
+        }
+        if (loa10Arr.includes(req.user!.username)) {
+            loa = 10;
+        }
+    }
+
+    // let im = setImg(id, img, 'dtimg');
+
+    let dateObj = new Date(new Date(date.replace(' ', 'T')).getTime() + 8 * 60 * 60 * 1000);
+
+    setDt(req.user!.username, text, img_show_num.toString(), img_all_num.toString(), videoNum.toString(), dateObj, loa)
+        .then((e) => {
+            res.send({
+                tf: 1,
+                dtId: e.id,
+                imgNum: img_all_num,
+                videoNum: videoNum
+            });
+        })
+        .catch((err) => {
+            res.status(500).send({ code: 500, error: err.message });
+        });
+}
+
+export async function upImgVideoNum(req: Reqs, res: Response) {
+    let dtId = req.body.dtId as number;
+
+    // 获取图片数量
+    let imgNum = await prisma.dt_img.count({
+        where: {
+            dt_id: dtId,
+        },
+    });
+    // 获取视频数量
+    let videoNum = await prisma.dt_video.count({
+        where: {
+            dt_id: dtId,
+        },
+    });
+
+    // 获取dt表中的img_show_num和video_show_num
+    let dtRecord = await prisma.dt.findUnique({
+        where: { id: dtId },
+        select: {
+            img_show_num: true,
+            video_show_num: true,
+        },
+    });
+
+    let img_show_num = dtRecord?.img_show_num == 0 ? Math.min(imgNum, 6) : dtRecord?.img_show_num;
+    let video_show_num = dtRecord?.video_show_num == 0 ? Math.min(videoNum, 6) : dtRecord?.video_show_num;
+    // 更新到dt表
+    await prisma.dt.update({
+        where: { id: dtId },
+        data: {
+            img_all_num: imgNum,
+            video_num: videoNum,
+            img_show_num: img_show_num,
+            video_show_num: video_show_num,
+        },
+    });
+
+    res.send({
+        code: 200,
+        imgNum,
+        videoNum
+    });
 }
 
 export async function postdt(req: Reqs, res: Response) {
@@ -1259,7 +1427,7 @@ export async function dtFile(req: Reqs, res: Response) {
             id: fileId,
         },
     });
-    if(file_obj == null){
+    if (file_obj == null) {
         return res.send({
             code: 402,
         })
