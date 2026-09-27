@@ -3,8 +3,12 @@ import util from "util";
 import fs from 'fs';
 import path from 'path';
 import { md5Text } from "@/utils/cryptoUtils";
-import { ensureDir, upImgCacheDir } from "./upImgCache";
+// import { ensureDir, upImgCacheDir } from "./upImgCache";
+import { getImgTFs } from "./fsList";
 import { access, mkdir, constants } from 'fs/promises';
+import { FileInfo, getDirList, upFstListDir } from "./fsList";
+import { getBufferMd5 } from "@/cryptoTool";
+import { logger } from "@/utils/logger";
 
 // type 0为文件夹，1为图片, 2为视频， 其他为3
 type listFile = {
@@ -13,14 +17,11 @@ type listFile = {
     hash: string,
 }
 
-//所有路径均为实际的绝对路径
-let imgCache = '/dream/HelixCore/assets/listCache';
-
 export async function getList(pathStr: string): Promise<listFile[]> {
     let fileArr: listFile[] = [];
     try {
-        // const files = await fs.promises.readdir(pathStr, { withFileTypes: true }); // 读取目录
-        const files = await fastListDir(pathStr);
+        const files = await getDirList(pathStr);
+        
         for (let file of files) {
             if (file.type == 'directory') {
                 fileArr.push({
@@ -30,12 +31,13 @@ export async function getList(pathStr: string): Promise<listFile[]> {
                 })
                 continue;
             }
+            
             let type = getFileType(file.name);
             if (type == 1 || type == 2) {
                 fileArr.push({
                     name: file.name,
                     type,
-                    hash: getFileHash(file),
+                    hash: getFileNameMd5(file),
                 })
                 continue;
             }
@@ -46,30 +48,20 @@ export async function getList(pathStr: string): Promise<listFile[]> {
                 hash: '',
             })
         }
+        upFstListDir(pathStr);
 
-        upImgCacheDir(pathStr);
+        // upImgCacheDir(pathStr);
 
         return fileArr;
     } catch (err) {
-        console.error('Error reading directory:', err);
+        logger.err('文件列表获取失败 /src/models/list/list.ts')
         return fileArr;
     }
-
 }
 
 
-export async function getImgT(dir: string, hash: string) {
-    let a = hash.slice(0, 2);
-    let b = hash.slice(2, 4);
-    let filePath = path.join(imgCache, a, b, (hash + '.png'));
-    try {
-        await access(filePath, constants.F_OK);
-        return filePath;
-    } catch {
-        return '-1';
-    }
-
-
+export async function getImgT( hash: string) {
+    return (await getImgTFs(hash)).data;
 }
 
 
@@ -100,75 +92,14 @@ export function getFileType(filename: string): 1 | 2 | 3 {
 
 const execPromise = util.promisify(exec);
 
-export interface FileInfo {
-    name: string;        // 文件名
-    size: number;        // 文件大小（字节）
-    permissions: string; // 权限字符串，如 "-rw-r--r--"
-    owner: string;       // 文件所有者
-    group: string;       // 所属组
-    date: string;        // 修改日期
-    type: "file" | "directory" | "symlink" | "block" | "char" | "socket" | "pipe" | "unknown";
-    fullPath: string;    // 完整路径
-    // inode: number;       // 文件的 inode 号
-    // devId: number;        // 文件的设备 ID
-}
-
-/**
- * 使用系统 `ls` 命令快速读取目录下文件信息
- * @param dir 目标目录路径
- */
-export async function fastListDir(dir: string): Promise<FileInfo[]> {
-    // 注意：加上 --time-style 以避免月份解析麻烦
-    const cmd = `ls -lA --time-style=+%Y-%m-%d_%H:%M:%S ${path.resolve(dir)}`;
-    const { stdout } = await execPromise(cmd);
-
-    const lines = stdout.split("\n").filter(line => line && !line.startsWith("total"));
-    const result: FileInfo[] = [];
-
-    for (const line of lines) {
-        // 示例：
-        // drwxr-xr-x  2 root root     4096 2024-02-24_00:00:00 photos
-        // -rw-r--r--  1 root root  1907866 2024-02-24_00:00:00 IMG_20231216_204846.jpg
-        const parts = line.trim().split(/\s+/);
-        if (parts.length < 7) continue;
-
-        const permissions = parts[0];
-        const owner = parts[2];
-        const group = parts[3];
-        const size = parseInt(parts[4], 10);
-        const date = parts[5];
-        const name = parts.slice(6).join(" ");
-
-        // 从权限首字符判断文件类型
-        const typeChar = permissions[0];
-        let type: FileInfo["type"] = "unknown";
-        switch (typeChar) {
-            case "-": type = "file"; break;
-            case "d": type = "directory"; break;
-            case "l": type = "symlink"; break;
-            case "b": type = "block"; break;
-            case "c": type = "char"; break;
-            case "s": type = "socket"; break;
-            case "p": type = "pipe"; break;
-        }
-
-        result.push({
-            name,
-            size,
-            permissions,
-            owner,
-            group,
-            date,
-            type,
-            fullPath: path.join(dir, name),
-        });
-    }
-
-    return result;
-}
-
 
 export function getFileHash(fileInfo: FileInfo): string {
     let str = fileInfo.name + fileInfo.size.toString() + fileInfo.date + fileInfo.fullPath;
     return md5Text(str);
+}
+
+export function getFileNameMd5(fileInfo: FileInfo): string {
+    let name = `${fileInfo.devId}_${fileInfo.inode}`;
+    let md5 = getBufferMd5(Buffer.from(name));
+    return `${md5.slice(0, 2)}_${md5.slice(2, 4)}_${name}`
 }

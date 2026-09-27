@@ -34,14 +34,16 @@ systemInit();
 //事件监听
 import "@/services/emits";
 import { getUrl } from './pathUtils';
+import { errorHandler } from './middlewares/errorHandler';
 // import { getMqttDate } from './services/Aether';
 // import { readAHT10Data } from './services/sensor';
 
 
+// 全局错误处理
+app.use(errorHandler);
 
 
-
-
+    
 
 
 

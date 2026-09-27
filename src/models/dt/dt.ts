@@ -5,7 +5,7 @@ import { dbSql } from "@/utils/dbSql";
 import moment from "moment";
 import { chinese_English } from "@/tool/chineseTrEnglish";
 import { prisma } from '@/config/prisma';
-import { delDtData, dtComment, getChatAll, getDtFile, getDtVideoFile, getDtVideoProportion, getImgShowProportion, getKeepBadmintonList, getKeepRunList, getText, setDtVideo, setImgDt, setKeyword, sqlGetDtIndex, sqlGetDtIndexAll } from "./queries";
+import { delDtData, dtComment, getChatAll, getDtFile, getDtVideoFile, getDtVideoProportion, getImgShowProportion, getKeepBadmintonList, getKeepRunList, getText,setKeyword, sqlGetDtIndex, sqlGetDtIndexAll } from "./queries";
 import { formatComment, fusionObj, iskeywords, jiamiConmit } from "./helpers";
 import path from "path";
 import { getUrl } from "@/pathUtils";
@@ -363,22 +363,22 @@ export async function getDtUser(dtid: string) {
 }
 
 //添加图片
-export async function setImg(id: string, imgArr: string[], imgSrc: string, headNum?: number) {
-    let falg = true;
-    if (!headNum) {
-        headNum = 0;
-    }
+// export async function setImg(id: string, imgArr: string[], imgSrc: string, headNum?: number) {
+//     let falg = true;
+//     if (!headNum) {
+//         headNum = 0;
+//     }
 
-    for (let i = headNum; i < imgArr.length; i++) {
-        let imgSrc = getUrl('assets', 'a/', process.env.aNew!, "img/original");
-        let newImgSrc = await convertRawToPngIfNeeded(imgSrc, imgArr[i]);
-        let a = await setImgDt(id, i, newImgSrc);
-        if (!a) {
-            return false
-        }
-    }
-    return true;
-}
+//     for (let i = headNum; i < imgArr.length; i++) {
+//         let imgSrc = getUrl('assets', 'a/', process.env.aNew!, "img/original");
+//         let newImgSrc = await convertRawToPngIfNeeded(imgSrc, imgArr[i]);
+//         let a = await setImgDt(id, i, newImgSrc);
+//         if (!a) {
+//             return false
+//         }
+//     }
+//     return true;
+// }
 
 // 修改dt内容
 export async function setDtData(dtid: string, newDtData: any) {
@@ -392,40 +392,40 @@ export async function setDtData(dtid: string, newDtData: any) {
 }
 
 
-//添加视频
-export async function setVideo(id: string, videoArr: string[], headNum?: number) {
-    let falg = true;
-    if (!headNum) {
-        headNum = 0;
-    }
-    for (let i = headNum; i < videoArr.length; i++) {
-        let a = await setDtVideo(id, i, videoArr[i]);
-        if (!a) {
-            return false
-        }
-    }
+// //添加视频
+// export async function setVideo(id: string, videoArr: string[], headNum?: number) {
+//     let falg = true;
+//     if (!headNum) {
+//         headNum = 0;
+//     }
+//     for (let i = headNum; i < videoArr.length; i++) {
+//         let a = await setDtVideo(id, i, videoArr[i]);
+//         if (!a) {
+//             return false
+//         }
+//     }
 
 
 
-    let inPathArr: string[] = [];
-    let outPathArr: string[] = [];
-    let video_src = process.env.aNew as string;
-    let videoSrcOriginal = path.join(getUrl('assets'), 'a', video_src, 'video/original');
-    let videoSrcCompressed = path.join(getUrl('assets'), 'a', video_src, 'video/compressed');
+//     let inPathArr: string[] = [];
+//     let outPathArr: string[] = [];
+//     let video_src = process.env.aNew as string;
+//     let videoSrcOriginal = path.join(getUrl('assets'), 'a', video_src, 'video/original');
+//     let videoSrcCompressed = path.join(getUrl('assets'), 'a', video_src, 'video/compressed');
 
-    for (let i = 0; i < videoArr.length; i++) {
-        let inPath = path.join(videoSrcOriginal, videoArr[i]);
-        let outPath = path.join(videoSrcCompressed, videoArr[i]);
-        inPathArr.push(inPath);
-        outPathArr.push(outPath);
-    }
+//     for (let i = 0; i < videoArr.length; i++) {
+//         let inPath = path.join(videoSrcOriginal, videoArr[i]);
+//         let outPath = path.join(videoSrcCompressed, videoArr[i]);
+//         inPathArr.push(inPath);
+//         outPathArr.push(outPath);
+//     }
 
-    setTimeout(() => {
-        ensureVideoToh254(inPathArr, outPathArr);
-    }, 5000);
+//     setTimeout(() => {
+//         ensureVideoToh254(inPathArr, outPathArr);
+//     }, 5000);
 
-    return true;
-}
+//     return true;
+// }
 
 // 对特点评论进行处理
 export async function Conmit13text(comList: Comtent[]) {

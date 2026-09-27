@@ -1,11 +1,10 @@
 // socketRequest.ts
 import http from "http";
 import { Buffer } from "node:buffer";
+import  { Writable } from "node:stream";
 
 export let socketPathLib = process.env.socketPathLib! as string;
 export let socketPathFs = process.env.socketPathFs! as string;
-
-console.log(socketPathFs);
 
 export type SocketRequestMethod = "GET" | "POST" | "PUT" | "DELETE";
 export type SocketResponseType = "json" | "buffer" | "text";
@@ -16,7 +15,8 @@ export function socketRequest<T>(
     method: SocketRequestMethod = "GET",
     data?: any,
     responseType: SocketResponseType = "json",
-    headers?: Record<string, string>
+    headers?: Record<string, string>,
+    resStream ? :Writable
 ): Promise<{ data: T, header: any }> {
     return new Promise((resolve, reject) => {
 
@@ -53,10 +53,27 @@ export function socketRequest<T>(
             (res) => {
                 const chunks: Buffer[] = [];
                 let head = res.headers;
+                 if (responseType === "buffer" && resStream) {
+
+                    res.on("error", reject);
+                    resStream.on("error", reject);
+
+                    res.pipe(resStream);
+
+                    resStream.on("finish", () => {
+                        resolve({
+                            data: undefined as T,
+                            header: head
+                        });
+                    });
+                    return;
+                }
+
                 res.on("data", (chunk) => {
                     chunks.push(chunk);
                 });
 
+     
                 res.on("end", () => {
                     const buffer = Buffer.concat(chunks);
 
@@ -123,3 +140,60 @@ export function socketRequest<T>(
 
 
 
+import { Request, Response } from "express";
+import { IncomingHttpHeaders } from "node:http";
+
+export function forwardRequest(
+    socket: 'lib' | 'fs' = 'lib',
+    path: string,
+    req: Request,
+    res: Response,
+    headers: Record<string, string> = {}
+): void {
+
+    const socketPath =
+        socket === 'fs' ? socketPathFs : socketPathLib;
+
+    const requestHeaders: IncomingHttpHeaders = {
+        ...req.headers,
+        ...headers,
+    };
+
+    const proxyReq = http.request(
+        {
+            socketPath,
+            path,
+            method: req.method,
+            headers: requestHeaders,
+        },
+        (proxyRes) => {
+
+            res.status(proxyRes.statusCode ?? 500);
+
+            for (const [key, value] of Object.entries(proxyRes.headers)) {
+                if (value !== undefined) {
+                    res.setHeader(key, value);
+                }
+            }
+
+            proxyRes.pipe(res);
+        }
+    );
+
+    proxyReq.on("error", (err) => {
+        if (res.headersSent) {
+            res.destroy(err);
+        } else {
+            res.status(502).json({
+                code: 502,
+                message: "Forward request failed",
+            });
+        }
+    });
+
+    req.on("error", (err) => {
+        proxyReq.destroy(err);
+    });
+
+    req.pipe(proxyReq);
+}

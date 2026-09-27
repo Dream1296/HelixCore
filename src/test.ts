@@ -1,19 +1,10 @@
 //读取环境变量
 import { envStart } from '@/utils/env';
+import { getDirList } from './models/list/fsList';
 
-import { socketRequest } from "./tool/socketReq";
-import { dtLists } from './models/dt/dt';
-
-
-let a = dtLists('yw',1);
-a.then(e =>{
-    console.log(e);
-    
-})
-    
+envStart;
 
 
-// socketRequest('/')
-//     .then(e=>{
-//         console.log(e);
-//     })
+
+
+

@@ -101,7 +101,6 @@ export function verifySignature(data: string, signature: string, secretKey: stri
  */
 export function md5Text(text: string) {
     return md5(text);
-
 }
 
 

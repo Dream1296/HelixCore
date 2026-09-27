@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, setImg, setVideo, getLongVideoList, setDtBgStyle, getRedisListData, setDtM, setShareDb, setUserss, getShareDbToken, dtidS, getDtLongData, setDtComB, getVideoSrc, isDtExist, serviceDate, setDtData, uploadData, setDtDate } from '../models/dt/dt';
+import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, getLongVideoList, setDtBgStyle, getRedisListData, setDtM, setShareDb, setUserss, getShareDbToken, dtidS, getDtLongData, setDtComB, getVideoSrc, isDtExist, serviceDate, setDtData, uploadData, setDtDate } from '../models/dt/dt';
 import { getemojis } from '../models/emoji';
 import { Lists, MulterRequest, Reqs, setDtDataT, user } from '../type';
 import path, { join } from 'path';
@@ -1042,75 +1042,75 @@ export async function getLongText(req: Reqs, res: Response) {
 
 }
 
-export function getFile(dtid: string, imgNun: number, videoNum: number) {
-    let urls = getUrl('assets', 'dtimgUpTemp');
-    let urls2 = getUrl('assets', 'dtimg');
-    let urls3 = getUrl('assets', 'dtvideo');
-    let falg = fs.existsSync(urls);
+// export function getFile(dtid: string, imgNun: number, videoNum: number) {
+//     let urls = getUrl('assets', 'dtimgUpTemp');
+//     let urls2 = getUrl('assets', 'dtimg');
+//     let urls3 = getUrl('assets', 'dtvideo');
+//     let falg = fs.existsSync(urls);
 
-    let video = [];
-    let img = [];
+//     let video = [];
+//     let img = [];
 
-    if (!falg) {
-        return console.error(500);
+//     if (!falg) {
+//         return console.error(500);
 
-    }
+//     }
 
-    // 生成唯一的时间戳（毫秒级）  
-    const uniqueTimestamp = Date.now().toString();
-    // 用于生成不重名的文件名  
-    let fileCounter = 0;
-    const files = fs.readdirSync(urls);
-    for (const file of files) {
-        const filePath = path.join(urls, file);
-        const fileStats = fs.statSync(filePath);
-        // 只处理文件，忽略目录  
-        if (!fileStats.isFile()) {
-            continue;
-        }
-        const ext = path.extname(file); // 获取文件扩展名  
-        if (ext == '.jpg' || ext == '.png') {
-            const newFileName = `${uniqueTimestamp}_${fileCounter}.${ext}`; // 生成新文件名  
-            const newFilePath = path.join(urls, newFileName); // 生成新文件路径  
-            const targetFilePath = path.join(urls2, newFileName); // 生成目标文件路径  
+//     // 生成唯一的时间戳（毫秒级）  
+//     const uniqueTimestamp = Date.now().toString();
+//     // 用于生成不重名的文件名  
+//     let fileCounter = 0;
+//     const files = fs.readdirSync(urls);
+//     for (const file of files) {
+//         const filePath = path.join(urls, file);
+//         const fileStats = fs.statSync(filePath);
+//         // 只处理文件，忽略目录  
+//         if (!fileStats.isFile()) {
+//             continue;
+//         }
+//         const ext = path.extname(file); // 获取文件扩展名  
+//         if (ext == '.jpg' || ext == '.png') {
+//             const newFileName = `${uniqueTimestamp}_${fileCounter}.${ext}`; // 生成新文件名  
+//             const newFilePath = path.join(urls, newFileName); // 生成新文件路径  
+//             const targetFilePath = path.join(urls2, newFileName); // 生成目标文件路径  
 
-            if (fileIsDir(urls2, newFileName)) {
-                return console.error(300);
+//             if (fileIsDir(urls2, newFileName)) {
+//                 return console.error(300);
 
-            }
-            // 重命名文件  
-            fs.renameSync(filePath, newFilePath);
+//             }
+//             // 重命名文件  
+//             fs.renameSync(filePath, newFilePath);
 
-            // 移动文件到目标目录  
-            fs.renameSync(newFilePath, targetFilePath);
-            img.push('./dtimg/' + newFileName);
-            fileCounter++;
-        }
-        if (ext == '.mp4') {
-            const newFileName = `${uniqueTimestamp}_${fileCounter}.${ext}`; // 生成新文件名  
-            const newFilePath = path.join(urls, newFileName); // 生成新文件路径  
-            const targetFilePath = path.join(urls3, newFileName); // 生成目标文件路径  
+//             // 移动文件到目标目录  
+//             fs.renameSync(newFilePath, targetFilePath);
+//             img.push('./dtimg/' + newFileName);
+//             fileCounter++;
+//         }
+//         if (ext == '.mp4') {
+//             const newFileName = `${uniqueTimestamp}_${fileCounter}.${ext}`; // 生成新文件名  
+//             const newFilePath = path.join(urls, newFileName); // 生成新文件路径  
+//             const targetFilePath = path.join(urls3, newFileName); // 生成目标文件路径  
 
-            if (fileIsDir(urls3, newFileName)) {
-                return console.error(301);
-            }
-            // 重命名文件  
-            fs.renameSync(filePath, newFilePath);
+//             if (fileIsDir(urls3, newFileName)) {
+//                 return console.error(301);
+//             }
+//             // 重命名文件  
+//             fs.renameSync(filePath, newFilePath);
 
-            // 移动文件到目标目录  
-            fs.renameSync(newFilePath, targetFilePath);
-            video.push('./dtvideo/' + newFileName);
-            fileCounter++;
-        }
-
-
-    }
+//             // 移动文件到目标目录  
+//             fs.renameSync(newFilePath, targetFilePath);
+//             video.push('./dtvideo/' + newFileName);
+//             fileCounter++;
+//         }
 
 
+//     }
 
-    const im = setImg(dtid, img, 'dtimg', imgNun);
-    const vi = setVideo(dtid, video, videoNum);
-}
+
+
+//     const im = setImg(dtid, img, 'dtimg', imgNun);
+//     const vi = setVideo(dtid, video, videoNum);
+// }
 
 
 

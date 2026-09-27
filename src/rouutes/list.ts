@@ -5,19 +5,19 @@ const router = Router();
 
 
 // router.use(onlyUser(['yw','234']));
-let allowUserArr = ['yw','dlhe'];
+let allowUserArr = ['yw','dlhe','guest'];
 
 // 获取目录文件列表
-router.get('/listPath',allowUsers(...allowUserArr),getPathListR);
+router.get('/listPath', allowUsers(...allowUserArr), getPathListR);
 
 // 获取缩略图
-router.get('/listImgT',allowUsers(...allowUserArr),listImgT);
+router.get('/listImgT', allowUsers(...allowUserArr), listImgT);
 
-router.get('/listImg',allowUsers(...allowUserArr),listImg);
+router.get('/listImg', allowUsers(...allowUserArr), listImg);
 
-router.get('/listVideo',allowUsers(...allowUserArr),listVideo);
+router.get('/listVideo', allowUsers(...allowUserArr), listVideo);
 
-router.get('/listFile',allowUsers(...allowUserArr),listFile);
+router.get('/listFile', allowUsers(...allowUserArr), listFile);
 
 
 

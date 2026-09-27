@@ -114,49 +114,50 @@ export async function getDtFile() {
 
 
 //插入视频
-export async function setDtVideo(id: string, videoIndex: number, videoName: string) {
-    let video_src = process.env.aNew;
-    if (!video_src) {
-        return new Error('请先配置视频目录');
-    }
-    try {
-        await prisma.dt_video.create({
-            data: {
-                dt_id: id,
-                video_index: videoIndex,
-                video_src: video_src,
-                show_proportion: process.env.showProportion!,
-                video_name: videoName,
-            },
-        });
-    } catch {
-        return false
-    }
-    return true;
+// export async function setDtVideo(id: string, videoIndex: number, videoName: string) {
+//     let video_src = process.env.aNew;
+//     if (!video_src) {
+//         return new Error('请先配置视频目录');
+//     }
+//     try {
+//         await prisma.dt_video.create({
+//             data: {
+//                 dt_id: id,
+//                 video_index: videoIndex,
+//                 video_src: video_src,
+//                 show_proportion: process.env.showProportion!,
+//                 video_name: videoName,
 
-}
+//             },
+//         });
+//     } catch {
+//         return false
+//     }
+//     return true;
+
+// }
 
 //插入图片
-export async function setImgDt(id: string, imgIndex: number, imgName: string) {
-    let img_src = process.env.aNew;
-    if (!img_src) {
-        return new Error('请先配置视频目录');
-    }
-    try {
-        await prisma.dt_img.create({
-            data: {
-                dt_id: id,
-                img_index: imgIndex,
-                img_src: img_src,
-                img_name: imgName,
-                show_proportion: process.env.showProportion!
-            },
-        });
-    } catch {
-        return false
-    }
-    return true;
-}
+// export async function setImgDt(id: string, imgIndex: number, imgName: string) {
+//     let img_src = process.env.aNew;
+//     if (!img_src) {
+//         return new Error('请先配置视频目录');
+//     }
+//     try {
+//         await prisma.dt_img.create({
+//             data: {
+//                 dt_id: id,
+//                 img_index: imgIndex,
+//                 img_src: img_src,
+//                 img_name: imgName,
+//                 show_proportion: process.env.showProportion!
+//             },
+//         });
+//     } catch {
+//         return false
+//     }
+//     return true;
+// }
 
 
 
