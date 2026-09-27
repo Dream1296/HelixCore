@@ -45,7 +45,7 @@ function fromBase62(value: string): number {
 /**
  * 生成动态id
  */
-export function getDtId(): string {
+export function getNowDtId(): string {
     const now = Math.floor(Date.now() / 1000);
 
     const offset = now - EPOCH;

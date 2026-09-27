@@ -13,13 +13,12 @@ import {
     linkScreenShow,
     dtFile,
     keepRun,
-    linksc,
     linkScreenControl,
     dtimgCom,
     getYear,
     setdt,userIndex,
     getDtId,
-    upImg,
+    upImgVideo,
     upImgVideoNum,
     upDtImgTemp
 }  from '@/controllers/dt';
@@ -63,10 +62,10 @@ app.get('/preUpDt', getDtId);
 app.post('/upDt', updt);
 
 // 新的图片上传接口
-app.post('/upImg', upImg);
+app.post('/upImgVideo',  upImgVideo);
 
 // 新的视频上传接口
-app.post('/upVideo', upvideo);
+// app.post('/upVideo', upvideo);
 
 // 更新图片视频数量
 app.post('/upImgVideoNum', upImgVideoNum);
@@ -150,7 +149,7 @@ app.get('/dtFile', dtFile);
  */ 
 
 //墨水屏图片生成
-app.get('/linksc', linksc)
+//app.get('/linksc', linksc)
 
 //墨水屏图片数据请求
 app.get('/linkScreenShow', linkScreenShow);

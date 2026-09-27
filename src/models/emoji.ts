@@ -3,7 +3,6 @@ import fs from 'fs';
 import { getUrl } from "@/pathUtils";
 import { getEmoji } from "@/services/fs";
 import { emojiErrorIco } from "@/assets/emoji";
-const emojiPath = getUrl('public', 'emoji');
 
 
 export async function getemojis(lei: string) {

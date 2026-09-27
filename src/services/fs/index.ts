@@ -6,7 +6,7 @@ import http from "http";
 import { Stream } from "nodemailer/lib/xoauth2";
 
 //图片获取
-export async function getDtImgFs(dtid: number, index: number, size: number, type: 'buffer') {
+export async function getDtImgFs(dtid: string, index: number, size: number, type: 'buffer') {
     let url = '/img/getDtImgFs?dtid=' + dtid + '&index=' + index + '&size=' + size + '&type=' + type;
     let data = await socketRequest<Buffer>('fs', url, 'GET', null, 'buffer');
     return {
@@ -16,7 +16,7 @@ export async function getDtImgFs(dtid: number, index: number, size: number, type
 }
 
 // 评论图片获取
-export async function getDtComImgFs(dtid: number, index: number, size: number, type: 'buffer') {
+export async function getDtComImgFs(dtid: string, index: number, size: number, type: 'buffer') {
     let url = '/img/getDtComImgFs?comid=' + dtid + '&index=' + index + '&size=' + size + '&type=' + type;
     let data = await socketRequest<Buffer>('fs', url, 'GET', null, 'buffer');
     return {
@@ -26,7 +26,7 @@ export async function getDtComImgFs(dtid: number, index: number, size: number, t
 }
 
 // 视频获取
-export async function getDtvideoFs(dtid: number, index: number, start: number, end: number, maxChunkSize: number, type: 'buffer') {
+export async function getDtvideoFs(dtid: string, index: number, start: number, end: number, maxChunkSize: number, type: 'buffer') {
     // let data = await getDtvideoFsService(dtid, index, start, end, maxChunkSize, type);
     // return data;
     let url = '/video/getVideo?dtid=' + dtid + '&index=' + index + '&start=' + start + '&end=' + end + '&maxChunkSize=' + maxChunkSize + '&type=' + type;
@@ -43,7 +43,7 @@ export async function getDtvideoFs(dtid: number, index: number, start: number, e
 }
 
 //视频封面
-export async function getDtvideoCoverFs(dtid: number, index: number, size: number, type: 'buffer') {
+export async function getDtvideoCoverFs(dtid: string, index: number, size: number, type: 'buffer') {
     // let data = await getDtvideoCoverFsService(dtid, index, size, type);
     // return data;
     let url = '/video/getDtvideoCoverFs?dtid=' + dtid + '&index=' + index + '&type=' + type;
@@ -64,26 +64,24 @@ export async function getEmoji(id: string, type: 'buffer') {
     };
 }
 
-// 图片上传
-export async function upImgFs(dtid: number, index: number, fileName: string, fileMd5: string, fileBuffer: Buffer | Stream, nullFile  = '0') {
-    let url = '/fileUp/upImg';
-    if(nullFile && nullFile === '1') {
-        url += '?nullFile=1';
-    }
+// 图片视频上传
+export async function upImgVideoFs(dtid: string, index: number, fileName: string, fileType: 'img' | 'video', fileMd5: string, fileBuffer: Buffer | Stream) {
+    let url = '/fileUp/upImgVideo';
     let headers = {
         'x-file-name': fileName,
         'x-file-md5': fileMd5,
         'x-dt-id': dtid.toString(),
-        'x-dt-index': index.toString()
+        'x-dt-index': index.toString(),
+        'x-file-type': fileType
     };
     let data = await socketRequest<{ code: number }>('fs', url, 'POST', fileBuffer, 'json', headers);
     return data.data;
 }
 
 // 视频上传
-export async function upVideoFs(dtid: number, index: number, fileName: string, fileMd5: string, fileBuffer: Buffer | Stream, nullFile = '0') {
+export async function upVideoFs(dtid: string, index: number, fileName: string, fileMd5: string, fileBuffer: Buffer | Stream, nullFile = '0') {
     let url = '/fileUp/upVideo';
-    if(nullFile && nullFile === '1') {
+    if (nullFile && nullFile === '1') {
         url += '?nullFile=1';
     }
     let headers = {
@@ -126,3 +124,4 @@ export function getFileFsStream(
         req.end();
     });
 }
+

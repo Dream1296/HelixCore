@@ -6,12 +6,6 @@ import { Reqs } from '@/type';
 
 export async function getPathListR(req: Reqs, res: Response) {
     let pathStr = req.query.path as string;
-    if (req.user?.username !== 'yw') {
-        res.status(400).send({
-            code: 400,
-        });
-        return
-    }
 
     // let pathStr = '/havens/img/2023/2023.12'
     if (!pathStr) {
@@ -29,12 +23,6 @@ export async function getPathListR(req: Reqs, res: Response) {
 }
 
 export async function listImgT(req: Reqs, res: Response) {
-    if (req.user?.username !== 'yw') {
-        res.status(400).send({
-            code: 400,
-        });
-        return
-    }
     let dir = req.query.path;
     let hash = req.query.hash;
     if (!dir || !hash) {
@@ -55,12 +43,6 @@ export async function listImgT(req: Reqs, res: Response) {
 }
 
 export async function listImg(req: Reqs, res: Response) {
-    if (req.user?.username !== 'yw') {
-        res.status(400).send({
-            code: 400,
-        });
-        return
-    }
     let filePath = req.query.path;
     if (!filePath) {
         return res.status(400).send({ code: 400 });

@@ -19,7 +19,7 @@ export async function getKeepBadmintonList() {
 }
 
 
-export async function setKeyword(id: number, keyword: string, isAi: number): Promise<boolean> {
+export async function setKeyword(id: string, keyword: string, isAi: number): Promise<boolean> {
     let sqlStr = `INSERT INTO dt_index (id, keyword, dt_id, isAi) VALUES (null, ?, ?, ?);`;
     let falg = await dbSql<number>(sqlStr, [keyword, id, isAi], true)
     if (falg == 1) {
@@ -29,7 +29,7 @@ export async function setKeyword(id: number, keyword: string, isAi: number): Pro
 }
 
 //查询单条动态对应的标签
-export async function sqlGetDtIndex(id: number): Promise<{ keyword: string, isAi: number }[]> {
+export async function sqlGetDtIndex(id: string): Promise<{ keyword: string, isAi: number }[]> {
     let sqlStr = `SELECT keyword,isAi FROM dt_index WHERE dt_id = ${id}`;
     let data = await dbSql<{ keyword: string, isAi: number }[]>(sqlStr);
     if (data.length == 0) {
@@ -55,11 +55,11 @@ export async function sqlGetDtIndex(id: number): Promise<{ keyword: string, isAi
 //     return res;
 // }
 
-export async function delDtData(dtId: number) {
+export async function delDtData(dtId: string) {
     try {
         await prisma.dt.update({
             where: {
-                id: Number(dtId),
+                dt_id: dtId,
             },
             data: {
                 shows: false
@@ -71,11 +71,11 @@ export async function delDtData(dtId: number) {
     }
 }
 
-export async function dtComment(findId?: number) {
+export async function dtComment(findId?: string) {
     return await prisma.dt_comments.findMany({
         where: {
             shoes: 1,
-            dtId: findId
+            dt_id: findId
         },
         orderBy: {
             date: 'asc'
@@ -114,7 +114,7 @@ export async function getDtFile() {
 
 
 //插入视频
-export async function setDtVideo(id: number, videoIndex: number, videoName: string) {
+export async function setDtVideo(id: string, videoIndex: number, videoName: string) {
     let video_src = process.env.aNew;
     if (!video_src) {
         return new Error('请先配置视频目录');
@@ -137,7 +137,7 @@ export async function setDtVideo(id: number, videoIndex: number, videoName: stri
 }
 
 //插入图片
-export async function setImgDt(id: number, imgIndex: number, imgName: string) {
+export async function setImgDt(id: string, imgIndex: number, imgName: string) {
     let img_src = process.env.aNew;
     if (!img_src) {
         return new Error('请先配置视频目录');
@@ -161,7 +161,7 @@ export async function setImgDt(id: number, imgIndex: number, imgName: string) {
 
 
 
-export async function getDtVideoFile(dtid: number, index: number) {
+export async function getDtVideoFile(dtid: string, index: number) {
     return await prisma.dt_video.findMany({
         where: {
             dt_id: dtid,

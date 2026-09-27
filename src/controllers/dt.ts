@@ -26,7 +26,6 @@ import { Query } from '../middlewares/routesType';
 import * as t from 'io-ts';
 import { getlinkScreen } from '@/services/linkScreen';
 import { linkScreenRefresh } from '@/services/Aether';
-import { addDB, processImage } from '@/services/imgdataArr';
 import { fileIsDir, isImgTemp, isVideoTemp, mvImg, mvVideo } from '@/tool/filePath';
 import { formatString, mvFileName } from '@/utils/time';
 import { prisma } from '@/config/prisma';
@@ -35,10 +34,12 @@ import { checkFileType } from '@/tool/checkFile';
 import { generateRandomString } from '@/tool/Text';
 import { hasAccessDtFileLoa, hasAccessDtloa } from '@/services/authorization';
 import { getnowDate } from '@/tool/Time';
-import { getDtComImgFs, getDtImgFs, getDtvideoCoverFs, getDtvideoFs, getFileFsStream, upImgFs, upVideoFs } from '@/services/fs';
+import { getDtComImgFs, getDtImgFs, getDtvideoCoverFs, getDtvideoFs, getFileFsStream, upImgVideoFs, upVideoFs } from '@/services/fs';
 import { imgErrorIco } from '@/assets/imgArr';
 import { getBufferMd5 } from '@/cryptoTool';
 import { socketPathFs, socketRequest } from '@/tool/socketReq';
+import { upNullFile, upRepeatFile } from '@/services/fs/localFs';
+import { logger } from '@/utils/logger';
 
 //获取列表信息和评论信息
 export async function getDtList(req: Reqs, res: Response) {
@@ -58,7 +59,7 @@ export async function getDtList(req: Reqs, res: Response) {
 
     let user = (req.user?.username) ? req.user.username : "guest";
 
-    if (req.user?.dtid && req.user.dtid != -1) {
+    if (req.user?.dtid && req.user.dtid != '-1') {
         user = process.env.Guest!;
     }
 
@@ -100,19 +101,19 @@ export async function setDtBgStyles(req: Reqs, res: Response) {
 
 
 export async function getdt(req: Reqs, res: Response) {
-    const dtid = Number(req.query.id);
+    const dtid = req.query.id as string;
     let user = req.user?.username!;
     // let loa = Number(req.query.loa);
 
-    if (!dtid || dtid == -1) {
+    if (!dtid || dtid == '-1') {
         return res.status(400).send({ code: 400, msg: "参数不全" });
     }
 
-    if (req.user?.dtid != dtid && req.user?.dtid != -1) {
+    if (req.user?.dtid != dtid && req.user?.dtid != '-1') {
         user = process.env.Guest!;
     }
 
-    if (!isDtExist(dtid)) {
+    if (!await isDtExist(dtid)) {
         return res.status(404).send({ code: 404, msg: "dt不存在" });
     }
 
@@ -146,7 +147,7 @@ export async function dtfinds(req: Reqs, res: Response) {
     }
 
     let numArr: {
-        id: number;
+        id: string;
         num: number;
     }[];
 
@@ -187,7 +188,7 @@ export async function dtindex(req: Reqs, res: Response) {
             code: 400,
         })
     }
-    let falg = await setdtindex(Number(dtid), dtindex.toString(), 0);
+    let falg = await setdtindex(dtid, dtindex.toString(), 0);
     if (falg) {
         return res.send({ tf: 1 })
     } else {
@@ -204,7 +205,7 @@ export async function postCom(req: Reqs, res: Response) {
     }
     const user = req.user.username;
     let content = req.body.content;
-    const dtId = req.body.dtId as number;
+    const dtId = req.body.dtId as string;
     const imgNameArr = req.body.imgNameArr as string[];
     const imgNum = imgNameArr.length;
     const date = getnowDate();
@@ -253,7 +254,7 @@ export async function dtDates(req: Request, res: Response) {
 
 export async function setdt(req: Request, res: Response) {
     const setData: setDtDataT = req.body;
-    const id = Number(setData.id);
+    const id =setData.dtId;
 
     if (!id) {
         return res.status(400).send({ code: 400, msg: '缺少dt id' });
@@ -301,7 +302,7 @@ export async function setdt(req: Request, res: Response) {
 
     try {
         await prisma.dt.update({
-            where: { id },
+            where: { dt_id: id },
             data,
         });
         myEvent.emit('upDtList', 'setdt');
@@ -356,7 +357,7 @@ export async function dtimg(req: Reqs, res: Response) {
     let index;
 
     if (Reqdtid && Reqindex) {
-        dtid = Number(Reqdtid);
+        dtid = Reqdtid as string;
         index = Number(Reqindex);
     } else {
         return res.send({ code: 402, msg: "参数不全" });
@@ -410,7 +411,7 @@ export async function dtimgCom(req: Reqs, res: Response) {
     let index;
 
     if (Reqdtid && Reqindex) {
-        dtid = Number(Reqdtid);
+        dtid = Reqdtid as string;
         index = Number(Reqindex);
     } else {
         return res.send({ code: 402, msg: "参数不全" });
@@ -448,7 +449,7 @@ export async function dtvideo(req: Reqs, res: Response) {
     let index;
 
     if (Reqdtid && Reqindex) {
-        dtid = Number(Reqdtid);
+        dtid = Reqdtid as string;
         index = Number(Reqindex);
     } else {
         return res.send({ code: 402 });
@@ -508,7 +509,7 @@ export async function dtvideoImg(req: Reqs, res: Response) {
     let index;
 
     if (Reqdtid && Reqindex) {
-        dtid = Number(Reqdtid);
+        dtid = Reqdtid as string;
         index = Number(Reqindex);
     } else {
         return res.send({ code: 402 });
@@ -584,6 +585,8 @@ const uploadVideo = multer({ storage: storageVideo });
 export const uploadSingleFile = upload.single('file');
 //导出视频文件上传中间件
 export const uploadVideos = uploadVideo.single('file');
+
+
 //文件上传处理
 // export async function updt(req: MulterRequest, res: Response) {
 //     if (!req.file) {
@@ -602,23 +605,33 @@ export const uploadVideos = uploadVideo.single('file');
 
 
 
-export async function upImg(req: Reqs, res: Response) {
+export async function upImgVideo(req: Reqs, res: Response) {
     let fileName = req.headers['x-file-name'] as string ?? '';
     let fileMd5 = req.headers['x-file-md5'] as string ?? '';
     let dtId = req.headers['x-dt-id'] as string ?? '';
     let dtIndex = req.headers['x-dt-index'] as string ?? '';
-
+    let fileType = req.headers['x-file-type'] as 'img' | 'video';
     let nullFile = req.query.nullFile as string ?? '0';
 
-    if (!fileName || !fileMd5) {
+    if (!fileName || !fileMd5 || (fileType !== 'img' && fileType !== 'video')) {
         return res.send({ code: 401 });
     }
+
     let fileBuffer: Buffer = Buffer.alloc(0);
     let fsRes;
-    // 发送空数据，文件在数据库中用md5占位，以后再上传实际文件
+
+    //匹配曾经的文件
+    fsRes = await upRepeatFile(fileType, dtId, Number(dtIndex), fileMd5);
+    if(fsRes){
+        logger.log('文件已存在，直接返回');
+        return res.status(200).send({ code: 200 });
+    }
+
+    // 文件在数据库中用md5占位，以后再上传实际文件
     if (nullFile && nullFile === '1') {
-        let fsRes = await upImgFs(Number(dtId), Number(dtIndex), fileName, fileMd5, fileBuffer, '1');
-        if (fsRes.code == 200) {
+        let fsRes = await upNullFile(fileType, dtId, Number(dtIndex), fileMd5);
+        if (fsRes) {
+            logger.log('文件直接插入,不请求')
             return res.status(200).send({ code: 200 });
         } else {
             return res.status(200).send({ code: 400 });
@@ -626,7 +639,7 @@ export async function upImg(req: Reqs, res: Response) {
     }
 
     // 将空数据和文件md5发送给文件服务器，文件服务器根据md5找到文件并链接，如果不存在，则返回400，成功返回200
-    fsRes = await upImgFs(Number(dtId), Number(dtIndex), fileName, fileMd5, fileBuffer);
+    fsRes = await upImgVideoFs((dtId), Number(dtIndex), fileName, fileType, fileMd5, fileBuffer);
 
     if (fsRes.code == 200) {
         console.log('直接成功');
@@ -637,7 +650,7 @@ export async function upImg(req: Reqs, res: Response) {
 
     console.log('需要上传文件');
     // 如果没成功，流式传输文件数据
-    fsRes = await upImgFs(Number(dtId), Number(dtIndex), fileName, fileMd5, req);
+    fsRes = await upImgVideoFs(dtId, Number(dtIndex), fileName, fileType, fileMd5, req);
 
     // 异常情况
     if (fsRes.code !== 200) {
@@ -661,7 +674,7 @@ export async function upvideo(req: MulterRequest, res: Response) {
     let fileBuffer: Buffer = Buffer.alloc(0);
     let fsRes;
     if(nullFile && nullFile === '1') {
-        fsRes = await upVideoFs(Number(dtId), Number(dtIndex), fileName, fileMd5, fileBuffer, '1');
+        fsRes = await upVideoFs(dtId, Number(dtIndex), fileName, fileMd5, fileBuffer, '1');
         if (fsRes.code == 200) {
             return res.status(200).send({ code: 200 });
         } else {
@@ -670,7 +683,7 @@ export async function upvideo(req: MulterRequest, res: Response) {
     }
 
     // 写入空文件，文件服务会先验证文件md5进行之前文件匹配的，成功后直接链接
-    fsRes = await upVideoFs(Number(dtId), Number(dtIndex), fileName, fileMd5, fileBuffer);
+    fsRes = await upVideoFs(dtId, Number(dtIndex), fileName, fileMd5, fileBuffer);
     if (fsRes.code == 200) {
         // 如果成功，直接响应200
         res.status(200).send({ code: 200 });
@@ -678,7 +691,7 @@ export async function upvideo(req: MulterRequest, res: Response) {
         return
     }
 
-    fsRes = await upVideoFs(Number(dtId), Number(dtIndex), fileName, fileMd5, req);
+    fsRes = await upVideoFs(dtId, Number(dtIndex), fileName, fileMd5, req);
 
     // 异常情况
     if (fsRes.code !== 200) {
@@ -715,10 +728,10 @@ export async function updt(req: Reqs, res: Response) {
 
     // 当正文以"上传#123"的格式，以上传开始，后面的数字为dtId
     if (text && text.startsWith('上传')) {
-        let dtId = Number(text.split('#')[1]);
-        if (!isNaN(dtId)) {
+        let dtId = text.split('#')[1];
+        if (dtId) {
             let dt = await prisma.dt.findUnique({
-                where: { id: dtId },
+                where: { dt_id: dtId },
                 select: { img_all_num: true, video_num: true }
             });
             return res.send({
@@ -763,7 +776,7 @@ export async function updt(req: Reqs, res: Response) {
         .then((e) => {
             res.send({
                 tf: 1,
-                dtId: e.id,
+                dtId: e.dt_id,
                 imgNum: img_all_num,
                 videoNum: videoNum
             });
@@ -774,7 +787,7 @@ export async function updt(req: Reqs, res: Response) {
 }
 
 export async function upImgVideoNum(req: Reqs, res: Response) {
-    let dtId = req.body.dtId as number;
+    let dtId = req.body.dtId as string;
 
     // 获取图片数量
     let imgNum = await prisma.dt_img.count({
@@ -791,7 +804,7 @@ export async function upImgVideoNum(req: Reqs, res: Response) {
 
     // 获取dt表中的img_show_num和video_show_num
     let dtRecord = await prisma.dt.findUnique({
-        where: { id: dtId },
+        where: { dt_id: dtId },
         select: {
             img_show_num: true,
             video_show_num: true,
@@ -802,7 +815,7 @@ export async function upImgVideoNum(req: Reqs, res: Response) {
     let video_show_num = dtRecord?.video_show_num == 0 ? Math.min(videoNum, 6) : dtRecord?.video_show_num;
     // 更新到dt表
     await prisma.dt.update({
-        where: { id: dtId },
+        where: { dt_id: dtId },
         data: {
             img_all_num: imgNum,
             video_num: videoNum,
@@ -1007,12 +1020,12 @@ export async function getLongText(req: Reqs, res: Response) {
 
     const fileObj = await prisma.dt_text.findMany({
         where: {
-            dtid: Number(dtid)
+            dt_id: dtid,
         }
     });
 
     if (fileObj[0].loa != 0) {
-        let tf = await hasAccessDtFileLoa(req.user!, fileObj[0].dtid, fileObj[0].loa);
+        let tf = await hasAccessDtFileLoa(req.user!, fileObj[0].dt_id, fileObj[0].loa);
         if (!tf) {
             return res.send({ code: 403 });
         }
@@ -1029,7 +1042,7 @@ export async function getLongText(req: Reqs, res: Response) {
 
 }
 
-export function getFile(dtid: number, imgNun: number, videoNum: number) {
+export function getFile(dtid: string, imgNun: number, videoNum: number) {
     let urls = getUrl('assets', 'dtimgUpTemp');
     let urls2 = getUrl('assets', 'dtimg');
     let urls3 = getUrl('assets', 'dtvideo');
@@ -1339,26 +1352,26 @@ export async function setShare(req: Reqs, res: Response) {
         })
 }
 
-export async function linksc(req: Reqs, res: Response) {
-    let dtNum = req.query.dtid;
-    if (!dtNum) {
-        return res.send({ code: 400 });
-    }
+// export async function linksc(req: Reqs, res: Response) {
+//     let dtNum = req.query.dtid as string;
+//     if (!dtNum) {
+//         return res.send({ code: 400 });
+//     }
 
-    let resc = await getdts('guest', Number(dtNum), 0);
-    if (!resc) {
-        res.send({ code: 400 });
-    }
+//     let resc = await getdts('guest', dtNum, 0);
+//     if (!resc) {
+//         res.send({ code: 400 });
+//     }
 
-    let buffer = await getlinkScreen(resc!.id, resc!.name, resc!.text, resc!.date);
-    let data = await processImage(buffer.data);
-    if (data) {
-        let a = await addDB(data.blackArr, data.redArr);
-    }
+//     let buffer = await getlinkScreen(resc!.id, resc!.name, resc!.text, resc!.date);
+//     let data = await processImage(buffer.data);
+//     if (data) {
+//         let a = await addDB(data.blackArr, data.redArr);
+//     }
 
-    res.setHeader('content-type', 'image/png');
-    res.send(buffer);
-}
+//     res.setHeader('content-type', 'image/png');
+//     res.send(buffer);
+// // }
 
 
 

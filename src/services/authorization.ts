@@ -9,10 +9,10 @@ import { user } from "@/type";
  * @param userDtID 当前用户是否限制访问
  * @returns 是否运行访问
  */
-export async function hasAccessDtloa(User: user, dtid: number) {
+export async function hasAccessDtloa(User: user, dtid: string) {
     let userT1 = await prisma?.dt.findMany({
         where: {
-            id: dtid
+            dt_id: dtid
         },
         select: {
             user: true,
@@ -45,11 +45,11 @@ export async function hasAccessDtloa(User: user, dtid: number) {
  * @param loa 
  * @returns 
  */
-export async function hasAccessDtFileLoa(User: user, dtid: number,loa: number) {
+export async function hasAccessDtFileLoa(User: user, dtid: string,loa: number) {
     //从dt表中查用户
     let userM = await prisma?.dt.findMany({
         where: {
-            id: dtid
+            dt_id: dtid
         },
         select: {
             user: true
@@ -66,13 +66,13 @@ export async function hasAccessDtFileLoa(User: user, dtid: number,loa: number) {
 
 
 // 基础验证，传入user,loa,id，和用户鉴权对象
-async function hasAccess(userT: { loa: number, user: string }, User: user,dtid:number) {
+async function hasAccess(userT: { loa: number, user: string }, User: user,dtid:string) {
     //如果访问的公开内容
     if (userT.loa != undefined && userT.loa == 0) {
         return true;
     }
     //如果访问者和动态作者一样
-    if (User.username == userT?.user && User.dtid == -1) {
+    if (User.username == userT?.user && User.dtid == '-1') {
         return true;
     }
 

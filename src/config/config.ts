@@ -29,21 +29,21 @@ configs.use(bodyParser.json());
 // const caBundle = fs.readFileSync(path.join( getUrl('root','ssl') ,'ca_bundle.crt'), 'utf8');
 
 // 读取 SSL 证书文件
-const privateKey = fs.readFileSync(path.join(getUrl('root', 'ssl'), 'frp-fix.top.key'), 'utf8');
-const certificate = fs.readFileSync(path.join(getUrl('root', 'ssl'), 'frp-fix.top.crt'), 'utf8');
+// const privateKey = fs.readFileSync(path.join(getUrl('root', 'ssl'), 'frp-fix.top.key'), 'utf8');
+// const certificate = fs.readFileSync(path.join(getUrl('root', 'ssl'), 'frp-fix.top.crt'), 'utf8');
 
 // caBundle 可以留空，因为你是使用自签名证书
 const caBundle = ''; // 或者根据需要提供证书链
 
 
 // 配置 SSL 选项
-const sslConfig = {
-  key: privateKey,
-  cert: certificate,
-  ca: caBundle
-};
+// const sslConfig = {
+//   key: privateKey,
+//   cert: certificate,
+//   ca: caBundle
+// };
 
 
 
 
-export  {configs,sslConfig};
+export  {configs};

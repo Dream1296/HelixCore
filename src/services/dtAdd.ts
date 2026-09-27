@@ -35,7 +35,7 @@ let dataImgArr = [
 
 async function loa13(dtData: Lists[]) {
 
-    let data = dtData.find(e => e.id == 1010);
+    let data = dtData.find(e => e.id == '1010');
     if (!data) {
         return
     }
@@ -56,10 +56,10 @@ export async function imgcl( dtid: number, index: number, user?: string) {
 }
 
 //拦截添加评论
-export async function dtComPro(dtId: number, content: string): Promise<string> {
+export async function dtComPro(dtId: string, content: string): Promise<string> {
     if (content.startsWith('刷新#')) {
         let text = content.slice(3).trim();
-        if (dtId == 1010) {
+        if (dtId == '1010') {
             await setLoaDate(undefined, text);
         } else {
             await setLoaDate(dtId, text);
@@ -91,7 +91,7 @@ export async function dtComPro(dtId: number, content: string): Promise<string> {
         await prisma?.dt_index.create({
             data: {
                 keyword: text,
-                dt_id: Number(dtId),
+                dt_id: dtId,
                 isAi: false
             }
         })
@@ -104,7 +104,7 @@ export async function dtComPro(dtId: number, content: string): Promise<string> {
 }
 
 export async function dtAdd(dtData: Lists[], user: string, loa: number) {
-    let dtTime = dtData.find(e => e.id == 1010);
+    let dtTime = dtData.find(e => e.id == '1010');
     if (dtTime) {
         let date = await getLoaDate();
         let text = `此轮服务器已连续运行${date.d}天${date.h}小时`;

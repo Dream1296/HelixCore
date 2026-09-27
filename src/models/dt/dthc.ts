@@ -25,7 +25,7 @@ export async function getImgDB(req: Reqs, res: Response){
     let resData = [];
     for(let a of DtList){
         resData.push({
-            id:a.id,
+            id:a.dt_id,
             user:a.user,
             imgShowNum:a.img_show_num,
             imgAllNum:a.img_all_num,

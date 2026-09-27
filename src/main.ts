@@ -7,7 +7,7 @@ envStart;
 const app = express();
 
 //杂乱配置项
-import { configs, sslConfig } from './config/config';
+import { configs } from './config/config';
 app.use(configs);
 
 //中间件

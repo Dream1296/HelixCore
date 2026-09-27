@@ -88,7 +88,7 @@ async function dyBack() {
             keyword: "抖音"
         }
     });
-    let dtIdArr = new Set<number>();
+    let dtIdArr = new Set<string>();
     for (let a of dtIndexArr) {
         dtIdArr.add(a.dt_id);
     }
@@ -97,13 +97,13 @@ async function dyBack() {
 
         // 先查询记录是否存在
         const existingRecord = await prisma.dt.findUnique({
-            where: { id: a } // 假设 a 是你要更新的记录ID
+            where: { dt_id: a } // 假设 a 是你要更新的记录ID
         });
 
         if (existingRecord) {
             // 记录存在才执行更新
             await prisma.dt.update({
-                where: { id: a },
+                where: { dt_id: a },
                 data: {
                     save: true,
                 }

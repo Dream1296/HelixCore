@@ -3,7 +3,7 @@ import { socketRequest } from '@/tool/socketReq';
 
 
 
-export async function getlinkScreen(id: number, name: string, content: string, date: string) {
+export async function getlinkScreen(id: string, name: string, content: string, date: string) {
    return socketRequest<Buffer>('lib','/canvas/getlinkScreen','POST',{id,name,content,date},'buffer');
 }
 

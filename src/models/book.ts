@@ -3,7 +3,6 @@ import path, { resolve } from 'path';
 import fs from 'fs';
 import zlib from 'zlib';
 const m3s = require('../utils/audios.js');
-import { aus } from '../utils/setAu';
 import { getUrl } from '@/pathUtils';
 import { dbSql } from '@/utils/dbSql';
 
@@ -93,8 +92,9 @@ export async function getAu(bookId: string, id: number | string) {
         //     return pathFile;
         // }
 
-
-        let a = await aus(data.text, pathFile, 1);
+        // TODO: 后续在lib服务中写请求
+        // let a = await aus(data.text, pathFile, 1);
+        let a = 'false'
         if (a == 'OK') {
             // 等待1秒  
             setAuduilie(bookId, id.toString(), pathFile, 5, outPath);
@@ -167,7 +167,8 @@ function setAuduilie(bookId: string, id: string, pathFile: string, juli: number,
 async function auss(bookId: string, id: string, pathFile: string) {
     let datas = await getData(bookId);
     const data = datas.find((obj: A) => obj.id == id) as A;
-    let po = aus(data.text, pathFile, 1);
+    // let po = aus(data.text, pathFile, 1);
+    let po = Promise.resolve('false'); // TODO: 后续在lib服务中写请求
     auduilie.push({
         fileName: `${bookId}-${id}.mp3`,
         po: po,

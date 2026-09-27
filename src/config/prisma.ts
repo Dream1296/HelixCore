@@ -1,4 +1,14 @@
-import { PrismaClient } from '@prisma/client';
+import 'dotenv/config';
+import { PrismaMariaDb } from '@prisma/adapter-mariadb';
+import { PrismaClient } from '../generated/prisma/client';
+
+const databaseUrl = process.env.DATABASE_URL;
+
+if (!databaseUrl) {
+  throw new Error('DATABASE_URL is required to initialize Prisma');
+}
+
+const adapter = new PrismaMariaDb(databaseUrl);
 
 declare global {
   // 防止开发环境下多次new PrismaClient报错
@@ -11,7 +21,8 @@ declare global {
 export const prisma: PrismaClient =
   globalThis.prisma ??
   new PrismaClient({
-    log: [ 'error'],
+    adapter,
+    log: ['error'],
   });
 
 if (process.env.NODE_ENV !== 'production') globalThis.prisma = prisma;

@@ -30,7 +30,7 @@ function setToken(msg: ParsedMessage, socket: net.Socket) {
 
 async function setVideo(msg: ParsedMessage, socket: net.Socket) {
     type reqVideoData = {
-        dtid: number,
+        dtid: string,
         index: number,
         range: number,
     }

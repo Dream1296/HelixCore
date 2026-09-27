@@ -4,10 +4,7 @@ declare namespace NodeJS {
     PORT: string
     rootPath: string
     assets: string
-    publicPath: string
 
-    // 新资源目录
-    aNew: string
 
     // MySQL 配置
     mysqlHost: string

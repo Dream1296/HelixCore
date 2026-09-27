@@ -2,7 +2,7 @@ import { Request } from 'express';
 
 export type user = {
     username: string,
-    dtid: number,
+    dtid: string,
     type: "ltk" | "rat",    //ltk为永久令牌  rat为临时令牌
 }
 
@@ -17,7 +17,7 @@ export type MulterRequest = Request & { file?: {filename:string} }
 
 //主数据列表
 export interface Lists {
-    id: number;
+    id: string;
     user: string;
     name: string;
     touxian: string;
@@ -33,7 +33,7 @@ export interface Lists {
     date: string;
     po: number;
     com?: Comtent[];
-    longVideo?: { id: number, name: string, src: string }[];
+    longVideo?: { id: string, name: string, src: string }[];
     keyword?: { keyword: string, isAi: number }[];
     File?: { name: string, fileId: string , loa: number}[];
     map: {id:number,name:string,E:number,N:number}[];
@@ -43,7 +43,7 @@ export interface Lists {
     // textTile:string;
     longText: {
         id: number,
-        dtid: number,
+        dtid: string,
         tetile: string
     }[];
     chatRoot?: chatRoot[];
@@ -92,7 +92,7 @@ export interface Comtent {
     id: number,
     date: string,
     content: string,
-    dtId: number,
+    dtId: string,
     user: string,
     imgAllNum: number,
     name: string,
@@ -101,8 +101,8 @@ export interface Comtent {
 
 //动态的文件
 export interface dtFile {
-    id: number,
-    dt_id: number,
+    id: string,
+    dt_id: string,
     name: string,
     file_src: string,
     loa: number
@@ -140,8 +140,8 @@ export interface KeepRunRecord {
 }
 
 export type BadmintonData = {
-    dt_id: number;
-    id: number
+    dt_id: string;
+    id: string; 
     type: string; // 运动类型
     date: string; // 运动日期时间段
     xiaohao: number; // 运动消耗（单位：千卡）
@@ -157,7 +157,7 @@ export type BadmintonData = {
 
 
 export type setDtDataT = {
-    id:number,
+    dtId:string,
   user?: string,
   date?: string,
   imgShowAll?: number,

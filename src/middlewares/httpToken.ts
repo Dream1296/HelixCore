@@ -22,7 +22,7 @@ export function setToken(req: Reqs, res: Response, next: NextFunction) {
 
     req.user = {
         username: decryptedObject.user_id,
-        dtid: Number(decryptedObject.dtid),
+        dtid: decryptedObject.dtid,
         type: decryptedObject.type,
     };
 

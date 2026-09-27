@@ -109,6 +109,8 @@ export interface FileInfo {
     date: string;        // 修改日期
     type: "file" | "directory" | "symlink" | "block" | "char" | "socket" | "pipe" | "unknown";
     fullPath: string;    // 完整路径
+    // inode: number;       // 文件的 inode 号
+    // devId: number;        // 文件的设备 ID
 }
 
 /**

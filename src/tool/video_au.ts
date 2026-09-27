@@ -19,7 +19,7 @@ async function test() {
     // 从数据库中获取视频信息
     const dyDtList = await prisma.dt.findMany({
         select: {
-            id: true,
+            dt_id: true,
             video_num: true,
         },
         where: {
@@ -32,7 +32,7 @@ async function test() {
 
     const dyDtIdArr = dyDtList.map(item => {
         return {
-            id: item.id,
+            dt_id: item.dt_id,
             video_num: item.video_num,
         }
     });
@@ -45,18 +45,18 @@ async function test() {
 
             // 查询该id+index是否有写入过
             let sql = "SELECT * FROM `dt_video_text` where dt_id = ? and dt_index = ? ";
-            if((await dbSql<any[]>(sql, [dtInfo.id, index],undefined,'ai')).length != 0){
+            if((await dbSql<any[]>(sql, [dtInfo.dt_id, index],undefined,'ai')).length != 0){
                 continue;
             }
 
-            let videoAuBuffer = await getVideoAu(dtInfo.id, index);;
+            let videoAuBuffer = await getVideoAu(dtInfo.dt_id, index);;
             
             let text = await fn1(videoAuBuffer.data);
             
             let a = parseSRT(text);
             for (let cout = 0; cout < a.length; cout++) {
                 let sql = "INSERT INTO `dt_video_text` ( `dt_id`, `dt_index`, `cout`, `time_start`, `time_end`, `text`) VALUES (?,?,?,?,?,?);"
-                await dbSql(sql, [dtInfo.id, index, a[cout].cout, a[cout].time_start, a[cout].time_end, a[cout].text], undefined, 'ai');
+                await dbSql(sql, [dtInfo.dt_id, index, a[cout].cout, a[cout].time_start, a[cout].time_end, a[cout].text], undefined, 'ai');
             }
         }
     }
@@ -163,7 +163,7 @@ function timeToMs(time: string): number {
 }
 
 
-async function getVideoAu(dtid: number, index: number) {
+async function getVideoAu(dtid: string, index: number) {
     let url = '/video/getVideoAudio?dtid=' + dtid + '&index=' + index;
     // 获取视频音频
     let videoAuBuffer = await socketRequest<ArrayBuffer>('fs', url, 'GET', null, 'buffer');

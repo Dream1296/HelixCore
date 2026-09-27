@@ -9,7 +9,7 @@ const db = require('../config/db/mysql');
 // setWorld()
 export async function dtFind(word: string) {
     let List = await dtList('yw', 1);
-    let idArr: { id: number, num: number }[] = [];
+    let idArr: { id: string, num: number }[] = [];
 
     //预计算所有标签与搜索词相识度
     let bqArr: Set<string> = new Set();
@@ -46,7 +46,7 @@ type MArr = {
  */
 export async function dtFinds(word: string, user: string | undefined, loa: number) {
     let List: Lists[] = [];
-    let idArr: { id: number, num: number }[] = [];
+    let idArr: { id: string, num: number }[] = [];
 
     if (user) {
         List = await dtList(user, loa);
@@ -56,9 +56,9 @@ export async function dtFinds(word: string, user: string | undefined, loa: numbe
 
     //如果搜索词为以"#"开头的数字，则直接返回null
     if (word.startsWith('#') && Number(word.slice(1, word.length))) {
-        let id = Number(word.slice(1, word.length));
+        let id = word.slice(1, word.length);
         if (List.some(dt => dt.id == id)) {
-            idArr.push({ id, num: 1000 });
+            idArr.push({ id: id, num: 1000 });
         }
     }
 
@@ -66,8 +66,8 @@ export async function dtFinds(word: string, user: string | undefined, loa: numbe
 
 
     //媒体文件信息采集
-    let mediaArr: Map<number, MArr> = new Map();
-    function mediaArrAdd(dt_id: number) {
+    let mediaArr: Map<string, MArr> = new Map();
+    function mediaArrAdd(dt_id: string) {
         mediaArr.set(dt_id, {
             imgNameText: new Set(),
             videoName: new Set(),
@@ -91,7 +91,7 @@ export async function dtFinds(word: string, user: string | undefined, loa: numbe
 
     //查询视频名匹配文本
     let sql1 = `SELECT dt_id,video_name as text FROM dt_video`;
-    let videoText = await dbSql<{ dt_id: number, text: string }[]>(sql1);
+    let videoText = await dbSql<{ dt_id: string, text: string }[]>(sql1);
 
     for (let a of videoText) {
         if (mediaArr.has(a.dt_id)) {
@@ -104,7 +104,7 @@ export async function dtFinds(word: string, user: string | undefined, loa: numbe
 
     // 查询视频字幕匹配文本
     let sql2 = `SELECT DISTINCT dt_id FROM dt_video_text WHERE text LIKE CONCAT('%', ?, '%');`;
-    let videoSubtitles = await dbSql<{ dt_id: number }[]>(sql2, [word], undefined, 'ai');
+    let videoSubtitles = await dbSql<{ dt_id: string }[]>(sql2, [word], undefined, 'ai');
 
     for(let a of videoSubtitles) {
         if (mediaArr.has(a.dt_id)) {
@@ -142,8 +142,8 @@ export async function dtFinds(word: string, user: string | undefined, loa: numbe
  * @param world 关键词
  * @returns 返回匹配结果
  */
-function listFind(List: Lists[], mediaArr: Map<number, MArr>, word: string) {
-    let idArr: { id: number, num: number }[] = [];
+function listFind(List: Lists[], mediaArr: Map<string, MArr>, word: string) {
+    let idArr: { id: string, num: number }[] = [];
 
     for (let dt of List) {
         let num = 0;

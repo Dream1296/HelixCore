@@ -11,7 +11,7 @@ import path from "path";
 import { getUrl } from "@/pathUtils";
 import { convertRawToPngIfNeeded } from "@/tool/ramToPng";
 import { ensureVideoToh254 } from "@/tool/media";
-import { List } from "microsoft-cognitiveservices-speech-sdk/distrib/lib/src/common/List";
+import { getNowDtId } from "@/utils/getdtId";
 
 
 
@@ -121,14 +121,14 @@ export async function dtList(user: string, loa: number) {
 
 
     for (let textObj of textList) {
-        let id = textObj.dtid;
+        let id = textObj.dt_id;
         let dt = list.find((b) => b.id == id);
         if (!dt) {
             continue;
         }
         dt.longText.push({
             id: textObj.id,
-            dtid: textObj.dtid,
+            dtid: textObj.dt_id,
             tetile: textObj.title
         })
     }
@@ -186,14 +186,14 @@ export async function dtList(user: string, loa: number) {
 //从redis中找动态列表数据
 export async function getRedisListData(user: string, loa: Number, aes: Number) {
     let key = user + loa.toString() + aes.toString();
-    let data = await redisDB.get(key) as string;
+    let data = await redisDB?.get(key) as string;
     return JSON.parse(data) as Lists[];
 }
 
 //从数据库中获取动态主数据
 export async function dtLists(user: string, loa: number, findId?: number | string) {
     let data1: {
-        id: number;
+        dt_id: string;
         text: string;
         name: string;
         date: Date;
@@ -269,7 +269,7 @@ export async function dtLists(user: string, loa: number, findId?: number | strin
 
     let data = data1.map(a => {
         return {
-            id: a.id,
+            id: a.dt_id,
             user: a.user,
             name: a.name,
             touxian: '',
@@ -322,8 +322,10 @@ export async function getLongVideoList(id?: number) {
 
 // 
 export async function uploadData() {
+    let newDtId = getNowDtId();
     let a = await prisma.dt.create({
         data: {
+            dt_id: newDtId,
             user: 'upload',
             text: '等待上传中',
             img_show_num: 0,
@@ -339,7 +341,7 @@ export async function uploadData() {
             date_real: new Date().toISOString()
         }
     })
-    return a.id;
+    return a.dt_id;
 }
 
 
@@ -355,14 +357,13 @@ export async function findFile(id: string) {
 }
 
 //查询动态id对应信息
-export async function getDtUser(dtid: number) {
-    let sql = `SELECT user,loa FROM dt WHERE id = ?`;
-    return dbSql<{ user: string, loa: number }[]>(sql, [dtid.toString()]);
-
+export async function getDtUser(dtid: string) {
+    let sql = `SELECT user,loa FROM dt WHERE dt_id = ?`;
+    return dbSql<{ user: string, loa: number }[]>(sql, [dtid]);
 }
 
 //添加图片
-export async function setImg(id: number, imgArr: string[], imgSrc: string, headNum?: number) {
+export async function setImg(id: string, imgArr: string[], imgSrc: string, headNum?: number) {
     let falg = true;
     if (!headNum) {
         headNum = 0;
@@ -380,9 +381,9 @@ export async function setImg(id: number, imgArr: string[], imgSrc: string, headN
 }
 
 // 修改dt内容
-export async function setDtData(dtid: number, newDtData: any) {
+export async function setDtData(dtid: string, newDtData: any) {
     let a = await prisma.dt.update({
-        where: { id: dtid },
+        where: { dt_id: dtid },
         data: {
             ...newDtData
         }
@@ -392,7 +393,7 @@ export async function setDtData(dtid: number, newDtData: any) {
 
 
 //添加视频
-export async function setVideo(id: number, videoArr: string[], headNum?: number) {
+export async function setVideo(id: string, videoArr: string[], headNum?: number) {
     let falg = true;
     if (!headNum) {
         headNum = 0;
@@ -643,7 +644,7 @@ export async function dtidS(dtid: string) {
 
 
 //添加标签
-export async function setdtindex(id: number, keyword: string, isAi: number) {
+export async function setdtindex(id: string, keyword: string, isAi: number) {
     //判断keyworld表中是否已存在
     let falg = await iskeywords(id, keyword);
     if (falg) {
@@ -688,11 +689,13 @@ export async function serviceDate(year: number | string) {
 
 
 //添加主数据
-export async function setDt( user: string, text: string, img_show_num: string, img_all_num: string, video_num: string,
+export async function setDt(user: string, text: string, img_show_num: string, img_all_num: string, video_num: string,
     date: Date, loa: number) {
+    let newDtId = getNowDtId()
     let dateReal = moment().format('YYYY-MM-DD HH:mm');
     return await prisma.dt.create({
         data: {
+            dt_id: newDtId,
             user,
             text,
             img_show_num: Number(img_show_num),
@@ -708,11 +711,11 @@ export async function setDt( user: string, text: string, img_show_num: string, i
 }
 
 // 修改主数据
-export async function setDtDate(id: string, user: string, text: string, img_show_num: string, img_all_num: string, video_num: string,
-    date: Date, loa: number){
+export async function setDtDate(dtId: string, user: string, text: string, img_show_num: string, img_all_num: string, video_num: string,
+    date: Date, loa: number) {
     let dateReal = moment().format('YYYY-MM-DD HH:mm');
     return await prisma.dt.update({
-        where: { id: Number(id) },
+        where: { dt_id: dtId },
         data: {
             user,
             text,
@@ -729,7 +732,7 @@ export async function setDtDate(id: string, user: string, text: string, img_show
 }
 
 
-export async function setDtCom(date: string, content: string, dtId: number, user: string, imgNum?: number) {
+export async function setDtCom(date: string, content: string, dtId: string, user: string, imgNum?: number) {
 
     imgNum = imgNum || 0;
     let sql = "INSERT INTO dt_comments (date, content, dtId, user,img_all_num,loa) VALUES (?,?,?,?,?,1)";
@@ -747,8 +750,8 @@ export async function setDtCom(date: string, content: string, dtId: number, user
  * @param dtId 
  * @returns 
  */
-export async function delDt(dtId: number) {
-    let a = await delDtData(Number(dtId))
+export async function delDt(dtId: string) {
+    let a = await delDtData(dtId)
     if (a) {
         return { tf: 1 }
     }
@@ -764,7 +767,7 @@ export async function delDt(dtId: number) {
  * @param loa 
  * @returns 
  */
-export async function getdts(user: string, id: number, loa: number) {
+export async function getdts(user: string, id: string, loa: number) {
     let data: Lists[] = await dtLists(user, loa, id) as Lists[];
     if (data.length == 0) {
         return null;
@@ -785,10 +788,10 @@ export async function getdts(user: string, id: number, loa: number) {
 }
 
 //判断某个动态是否存在
-export async function isDtExist(dtid: number) {
+export async function isDtExist(dtid: string) {
     let po = await prisma.dt.findFirst({
         where: {
-            id: dtid
+            dt_id: dtid
         }
     })
 
@@ -802,7 +805,7 @@ export async function isDtExist(dtid: number) {
 }
 
 // 查询位置数组
-export async function getDtMap(dtid?: number) {
+export async function getDtMap(dtid?: string) {
     if (!dtid) {
         return prisma.dt_map.findMany({});
     }
@@ -817,7 +820,7 @@ export async function getDtMap(dtid?: number) {
 
 
 //获取视频的地址
-export async function getVideoSrc(dtid: number, index: number) {
+export async function getVideoSrc(dtid: string, index: number) {
     let videoSrc = await getDtVideoFile(dtid, index);
     if (!videoSrc || videoSrc.length == 0) {
         return false

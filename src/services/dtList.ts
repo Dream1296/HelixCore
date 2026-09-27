@@ -40,6 +40,6 @@ export async function reDtListData() {
 
 async function setData(user: string, loa: number, aes: number, value: string) {
     let key = user + loa + aes;
-    await redisDB.set(key, value);
+    await redisDB?.set(key, value);
 }
 

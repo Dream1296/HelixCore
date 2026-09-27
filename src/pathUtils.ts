@@ -8,7 +8,7 @@ let rootPath = process.env.rootPath as string;
 
 // console.log(rootPath);
 
-export function getUrl(root: 'src' | 'root' | 'assets' | 'public', ...paths: string[]) {
+export function getUrl(root: 'src' | 'root' | 'assets' , ...paths: string[]) {
     
     let url = '';
     if (root == 'src') {
@@ -20,9 +20,9 @@ export function getUrl(root: 'src' | 'root' | 'assets' | 'public', ...paths: str
     if (root == 'root') {
         url = rootPath;
     }
-    if(root == 'public'){
-        url = process.env.publicPath!;
-    }
+    // if(root == 'public'){
+    //     url = process.env.publicPath!;
+    // }
 
     for (let a of paths) {
         url = path.join(url, a);

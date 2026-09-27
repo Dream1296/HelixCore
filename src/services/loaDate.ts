@@ -27,14 +27,14 @@ export async function getLoaDate() {
 
 
 //添加新时间
-export async function setLoaDate(dtid?: number,text?: string) {
+export async function setLoaDate(dtid?: string,text?: string) {
     let text1 = text || "null";
-    let dtid1 = Number(dtid) || -1;
+    let dtid1 = (dtid || '-1') as string;
     let now = (new Date()).getTime() + 8 * 60 * 60 * 1000;
     await prisma.dt_date.create({
         data: {
             date: (new Date(now)).toISOString(),
-            dtid: dtid1,
+            dt_id: dtid1 as string,
             text: text1
         }
     });

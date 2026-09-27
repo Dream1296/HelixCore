@@ -26,7 +26,7 @@ export function jiamiConmit(Comtent: Comtent[], loa: number | string) {
 
 
 //判断标签是否存在
-export async function iskeywords(id: number, keyword: string) {
+export async function iskeywords(id: string, keyword: string) {
     let arr = await sqlGetDtIndex(id);
     for (let e of arr) {
         if (e.keyword == keyword) {
@@ -116,7 +116,7 @@ export function fusionObj(list: Lists[], obj: any[], name: string, dataName?: st
 }
 
 type commentData = ( {
-    dtId: number;
+    dt_id: string;
     id: number;
     date: Date;
     content: string;
@@ -134,7 +134,7 @@ export function formatComment(dtComment: commentData) {
     for (let a of dtComment) {
         comment.push({
             id: a.id,
-            dtId: a.dtId,
+            dtId: a.dt_id,
             date: a.date.toString(),
             content: a.content,
             imgAllNum: a.img_all_num,

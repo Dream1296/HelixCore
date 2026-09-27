@@ -1,11 +1,9 @@
 //读取环境变量
-import { jie } from '@/utils/cryptoUtils';
-import { envStart } from '@/utils/env';
-envStart;
+import { jie } from '../src/utils/cryptoUtils';
+import { envStart } from '../src/utils/env';
+envStart();
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "../src/config/prisma";
 
 
 // 你的解密函数
@@ -20,7 +18,7 @@ async function convertAES2Base64() {
         // 查询全部dt数据
         const list = await prisma.dt.findMany({
             select: {
-                id: true,
+                dt_id: true,
                 text: true,
             },
         });
@@ -60,7 +58,7 @@ async function convertAES2Base64() {
                 // 写回数据库
                 await prisma.dt.update({
                     where: {
-                        id: item.id,
+                        dt_id: item.dt_id,
                     },
                     data: {
                         text: newText,
@@ -69,14 +67,14 @@ async function convertAES2Base64() {
 
 
                 console.log(
-                    `id=${item.id} 转换成功`
+                    `id=${item.dt_id} 转换成功`
                 );
 
 
             } catch (err) {
 
                 console.error(
-                    `id=${item.id} 转换失败`,
+                    `id=${item.dt_id} 转换失败`,
                     err
                 );
 

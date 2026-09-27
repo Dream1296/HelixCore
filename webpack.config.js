@@ -1,7 +1,12 @@
 const path = require('path');
-const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
 const nodeExternals = require('webpack-node-externals');
 const TerserPlugin = require('terser-webpack-plugin'); // 引入 TerserPlugin
+
+// 是否将依赖文件打包入最终的 bundle
+const isNodeModules = true;
+
+
+
 
 module.exports = {
   mode: 'development', // 或 'production'
@@ -33,7 +38,8 @@ module.exports = {
     ],
   },
   externals: [
-    nodeExternals(), // 保持原有功能：排除 node_modules
+    ...(!isNodeModules ? [nodeExternals()] : []), // 根据 isNodeModules 决定是否排除 node_modules
+    // nodeExternals(), // 保持原有功能：排除 node_modules
     function ({ request }, callback) {
       if (request && request.endsWith(".node")) {
         // 排除所有 .node 文件
@@ -44,9 +50,6 @@ module.exports = {
 
 
   ], // 排除 Node.js 内置模块
-  plugins: [
-    new NodePolyfillPlugin(), // 使用 Node.js Polyfills
-  ],
   devtool: 'source-map', // 生成源映射文件，方便调试
 
   // 添加 optimization 部分
@@ -55,6 +58,8 @@ module.exports = {
     minimizer: [
       new TerserPlugin({
         terserOptions: {
+          keep_fnames: true,
+          keep_classnames: true,
           compress: {
             drop_console: false, // 删除 console.log 语句
           },

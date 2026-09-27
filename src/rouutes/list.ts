@@ -1,21 +1,23 @@
 import { getPathListR, listImg, listImgT ,listVideo , listFile} from '@/controllers/list/list';
-import { onlyUser } from '@/middlewares/onlyUser';
 import express, { Request, Response, Router } from 'express';
+import { allowUsers } from '@/middlewares/allowUsers';
 const router = Router();
 
 
 // router.use(onlyUser(['yw','234']));
+let allowUserArr = ['yw','dlhe'];
 
+// 获取目录文件列表
+router.get('/listPath',allowUsers(...allowUserArr),getPathListR);
 
-router.get('/listPath',getPathListR);
+// 获取缩略图
+router.get('/listImgT',allowUsers(...allowUserArr),listImgT);
 
-router.get('/listImgT',listImgT);
+router.get('/listImg',allowUsers(...allowUserArr),listImg);
 
-router.get('/listImg',listImg);
+router.get('/listVideo',allowUsers(...allowUserArr),listVideo);
 
-router.get('/listVideo',listVideo);
-
-router.get('/listFile',listFile);
+router.get('/listFile',allowUsers(...allowUserArr),listFile);
 
 
 
