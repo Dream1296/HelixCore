@@ -10,6 +10,7 @@ ssl/
 .env
 log.md
 file.md
+src/generated/
 
 *.mp4
 *.png
