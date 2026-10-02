@@ -5,7 +5,7 @@ const router = Router();
 
 
 // router.use(onlyUser(['yw','234']));
-let allowUserArr = ['yw','dlhe','guest'];
+let allowUserArr = ['yw','dlhe'];
 
 // 获取目录文件列表
 router.get('/listPath', allowUsers(...allowUserArr), getPathListR);

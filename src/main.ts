@@ -1,8 +1,7 @@
 import express, { Application, Request, Response } from 'express';
-import fs from 'fs';
 //读取环境变量
-import { envStart } from '@/utils/env';
-envStart;
+import { envInit } from '@/utils/env';
+envInit();
 
 const app = express();
 
@@ -56,14 +55,12 @@ app.get('/', (req: Request, res: Response) => {
 
 // getMqttDate();
 
-
+import standard from '@/assets/standard.md';
 
 app.listen(process.env.PORT, () => {
     // console.log('启动成功，端口3010');
-    let fontSrc = getUrl('assets', 'system/font/standard.flf');
-    let fontData = fs.readFileSync(fontSrc, "utf8");
     // 注册字体到 figlet
-    figlet.parseFont('standard', fontData);
+    figlet.parseFont('standard', standard);
 
     figlet.text(
         "Dream1296", {

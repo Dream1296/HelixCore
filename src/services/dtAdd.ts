@@ -42,9 +42,6 @@ async function loa13(dtData: Lists[]) {
     let date = await getLoaDate();
     let text = `此轮服务器已连续运行${date.d}天${date.h}小时`;
     data.text = text;
-    let dataCom = data.com?.pop()
-    data.com = dataCom ? [dataCom] : [];
-
 }
 
 //拦截图片
@@ -109,8 +106,6 @@ export async function dtAdd(dtData: Lists[], user: string, loa: number) {
         let date = await getLoaDate();
         let text = `此轮服务器已连续运行${date.d}天${date.h}小时`;
         dtTime.text = text;
-        let dataCom = dtTime.com?.pop();
-        dtTime.com = dataCom ? [dataCom] : [];
     }
 
 

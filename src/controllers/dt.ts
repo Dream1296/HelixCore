@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, getLongVideoList, setDtBgStyle, getRedisListData, setDtM, setShareDb, setUserss, getShareDbToken, dtidS, getDtLongData, setDtComB, getVideoSrc, isDtExist, serviceDate, setDtData, uploadData, setDtDate } from '../models/dt/dt';
+import { dtList, dtDate, setDt, setDtCom, delDt, getdts, setdtindex, getIdMax, getLongVideoList, setDtBgStyle, getRedisListData, setDtM, setShareDb, setUserss, getShareDbToken, dtidS, getDtLongData, setDtComB, getVideoSrc, isDtExist, serviceDate, setDtData, uploadData, setDtDate, getdtRelation } from '../models/dt/dt';
 import { getemojis } from '../models/emoji';
 import { Lists, MulterRequest, Reqs, setDtDataT, user } from '../type';
 import path, { join } from 'path';
@@ -71,6 +71,9 @@ export async function getDtList(req: Reqs, res: Response) {
     // 对一些数据进行修改
     await dtAdd(listData, user, loa);
 
+    let dtRelation = await getdtRelation();
+
+    handleDtRelation(listData, dtRelation);
 
     //插入其他组件数据
     let datas = await dtDataAdd(listData, req.user!, loa);
@@ -96,6 +99,43 @@ export async function setDtBgStyles(req: Reqs, res: Response) {
         return res.send({ tf: 1 });
     } else {
         return res.send({ tf: 0 });
+    }
+}
+
+// 处理动态的父子关联关系
+export function handleDtRelation(listData: Lists[],
+    dtRelation: { dt_id: string; child_id: string; }[]) {
+
+    for (let relation of dtRelation) {
+        let parent = listData.find(a => a.id == relation.dt_id);
+        let child = listData.find(a => a.id == relation.child_id);
+
+        if (parent && child) {
+            parent.childId.push(child.id);
+        }
+        if (!parent && child) {
+            const index = listData.findIndex(a => a.id === child.id);
+            if (index !== -1) {
+                listData.splice(index, 1);
+            }
+        }
+
+        // 如果父子节点都在，子节点在父节点的childId中，并从列表中删除
+        // if (parent && child) {
+        //     parent.childId.push(child);
+        //     // 删除列表中的子节点
+        //     const index = listData.findIndex(a => a.id === child.id);
+        //     if (index !== -1) {
+        //         listData.splice(index, 1);
+        //     }
+        // }
+        // // 如果父节点不在，子节点不能单独存在，删除子节点
+        // if (!parent && child) {
+        //     const index = listData.findIndex(a => a.id === child.id);
+        //     if (index !== -1) {
+        //         listData.splice(index, 1);
+        //     }
+        // }
     }
 }
 
@@ -198,12 +238,7 @@ export async function dtindex(req: Reqs, res: Response) {
 
 export async function postCom(req: Reqs, res: Response) {
 
-    if (!req.user?.username || req.user.username == 'guest') {
-        return res.send({
-            code: 400,
-        })
-    }
-    const user = req.user.username;
+    const user = req.user!.username;
     let content = req.body.content;
     const dtId = req.body.dtId as string;
     const imgNameArr = req.body.imgNameArr as string[];
@@ -211,7 +246,6 @@ export async function postCom(req: Reqs, res: Response) {
     const date = getnowDate();
 
     if (imgNameArr && imgNum > 0) {
-
         if (!isImgTemp(imgNameArr)) {
             return res.send({
                 code: 400,
@@ -232,7 +266,7 @@ export async function postCom(req: Reqs, res: Response) {
         return res.send({ tf: 1 });
     }
 
-    if (req.user.username == 'dlhe') {
+    if (req.user!.username == 'dlhe') {
         content = "^base64^" + Buffer.from(content).toString('base64');
     }
 
@@ -252,9 +286,32 @@ export async function dtDates(req: Request, res: Response) {
     res.send(data);
 }
 
+export async function postDtRelation(req: Reqs, res: Response) {
+    const { dtId, childId } = req.body;
+    if (!dtId || !childId) {
+        return res.send({
+            code: 400,
+            msg: '缺少参数'
+        });
+    }
+
+    // 这里可以根据实际需求处理动态关系的逻辑
+    await prisma.dt_relation.create({
+        data: {
+            dt_id: dtId,
+            child_id: childId
+        }
+    });
+
+    return res.send({
+        code: 200,
+        msg: '提交成功'
+    });
+}
+
 export async function setdt(req: Request, res: Response) {
     const setData: setDtDataT = req.body;
-    const id =setData.dtId;
+    const id = setData.dtId;
 
     if (!id) {
         return res.status(400).send({ code: 400, msg: '缺少dt id' });
@@ -366,22 +423,18 @@ export async function dtimg(req: Reqs, res: Response) {
     let tf = await hasAccessDtloa(req.user!, dtid);
 
     if (!tf) {
-        return res.send({ code: 402 });
+        return res.send({ code: 403 });
     }
     let buffer: {
         data: Buffer<ArrayBufferLike>;
         ContentType: any;
     };
-    try {
-        buffer = await getDtImgFs(dtid, index, Number(size), 'buffer');
-    } catch (error) {
-        console.error('图片获取失败，主服务请求失败');
+    buffer = await getDtImgFs(dtid, index, Number(size), 'buffer');
 
-        buffer = {
-            data: Buffer.from(imgErrorIco),
-            ContentType: 'image/png',
-        }
+    if (buffer.data.length == 0 || buffer.ContentType === undefined) {
+        throw new Error('图片获取失败，主服务请求失败');
     }
+
     res.writeHead(200, {
         'Content-Type': buffer.ContentType,
         'Content-Length': buffer.data.length
@@ -393,7 +446,7 @@ export async function upDtImgTemp(req: Reqs, res: Response) {
     let t = req.query.t;
     if (req.user?.username !== 'dlhe' && req.user?.username !== 'yw') {
         console.log(req.user?.username);
-        
+
         return res.send({ code: 403, msg: "无权限" });
     }
     let url = `/fileUp/upDtImgTemp?t=${t}`;
@@ -542,6 +595,8 @@ export async function dtvideoImg(req: Reqs, res: Response) {
 
 // 预上传
 export async function getDtId(req: Reqs, res: Response) {
+    console.log(1);
+
     const dtId = await uploadData();
     res.send({ dtId });
 }
@@ -622,7 +677,7 @@ export async function upImgVideo(req: Reqs, res: Response) {
 
     //匹配曾经的文件
     fsRes = await upRepeatFile(fileType, dtId, Number(dtIndex), fileMd5);
-    if(fsRes){
+    if (fsRes) {
         logger.log('文件已存在，直接返回');
         return res.status(200).send({ code: 200 });
     }
@@ -673,7 +728,7 @@ export async function upvideo(req: MulterRequest, res: Response) {
     // 空文件
     let fileBuffer: Buffer = Buffer.alloc(0);
     let fsRes;
-    if(nullFile && nullFile === '1') {
+    if (nullFile && nullFile === '1') {
         fsRes = await upVideoFs(dtId, Number(dtIndex), fileName, fileMd5, fileBuffer, '1');
         if (fsRes.code == 200) {
             return res.status(200).send({ code: 200 });
@@ -720,12 +775,6 @@ export async function updt(req: Reqs, res: Response) {
     // const imgDir = req.body.imgDir as string | undefined;
     let loa: number = isNaN(Number(req.body.loa)) ? 0 : Number(req.body.loa);
 
-    if (!req.user?.username || req.user.username == process.env.Guest) {
-        res.send({
-            code: 403
-        });
-    }
-
     // 当正文以"上传#123"的格式，以上传开始，后面的数字为dtId
     if (text && text.startsWith('上传')) {
         let dtId = text.split('#')[1];
@@ -742,6 +791,22 @@ export async function updt(req: Reqs, res: Response) {
             });
         }
     }
+
+    // if (text.startsWith('&')) {
+    //     let con = text.slice(1).trim().replace(/！/g, '!');
+
+    //     await prisma?.dt_index.create({
+    //         data: {
+    //             keyword: text,
+    //             dt_id: dtId,
+    //             isAi: false
+    //         }
+    //     })
+
+    //     return 'null';
+
+    // }
+
 
 
 

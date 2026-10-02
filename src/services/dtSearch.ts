@@ -151,16 +151,6 @@ function listFind(List: Lists[], mediaArr: Map<string, MArr>, word: string) {
         if (dt.text.includes(word)) {
             num += 100;
         }
-        //评论匹配
-        if (dt.com) {
-            let falg = false;
-            for (let i = 0; i < dt.com.length; i++) {
-                if (dt.com[i].content.includes(word)) {
-                    num += 100;
-                    break;
-                }
-            }
-        }
         //标签匹配
         if (dt.keyword) {
             for (let bq of dt.keyword) {

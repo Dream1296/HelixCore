@@ -8,7 +8,6 @@ import { getFileFsStreamList, getVideoFsStream } from '@/models/list/fsList';
 
 export async function getPathListR(req: Reqs, res: Response) {
     let pathStr = req.query.path as string;
-    throw new Error('全局error测试');
     if (!pathStr) {
         return res.status(400).send({
             code: 400,

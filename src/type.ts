@@ -23,30 +23,27 @@ export interface Lists {
     touxian: string;
     touxianUrl?: string;
     text: string;
-    textArr?: { type: string, text: string }[],
-    imgShowAll: number;
-    imgShowProportion: string[];
-    imgAllNum: number;
-    videoShowAll: number;
-    videoNum: number;
-    imgUrl?: string;
+    imgShowAll: number;  // 显示图片数
+    imgShowProportion: string[];   // 图片显示比例
+    imgAllNum: number;     // 图片总数
+    videoShowAll: number;  // 显示视频数
+    videoNum: number;      // 视频总数
     date: string;
-    po: number;
-    com?: Comtent[];
-    longVideo?: { id: string, name: string, src: string }[];
-    keyword?: { keyword: string, isAi: number }[];
-    File?: { name: string, fileId: string , loa: number}[];
+    po: number;   // 顶置 排序优先级
+    childId:string[];
+    longVideo: { id: string, name: string, src: string }[];
+    keyword: { keyword: string, isAi: number }[];
+    File: { name: string, fileId: string , loa: number}[];
     map: {id:number,name:string,E:number,N:number}[];
     bgStyle: number;
-    KeepRun?: KeepRunRecord;
-    KeepBadminton?: BadmintonData;
-    // textTile:string;
+    KeepRun: KeepRunRecord[];
+    KeepBadminton: BadmintonData[];
     longText: {
         id: number,
         dtid: string,
         tetile: string
     }[];
-    chatRoot?: chatRoot[];
+    chatRoot: chatRoot[];
     loa: number
 }
 

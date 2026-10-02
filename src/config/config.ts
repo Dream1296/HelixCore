@@ -9,7 +9,7 @@ const bodyParser = require('body-parser');   //post请求接收模块
 
 
 
-configs.use(express.json()); // 用于解析 JSON 请求体 
+// configs.use(express.json()); // 用于解析 JSON 请求体 
 
 // 使用 cors 中间件,解决跨域问题
 configs.use(cors());

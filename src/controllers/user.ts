@@ -6,6 +6,7 @@ import path from 'path'
 import fs from 'fs';
 import { getUrl } from '@/pathUtils';
 import moment from 'moment';
+import { getUserBgImgFs, getUserImgFs } from '@/services/fs';
 
 async function userClass(req: Reqs, res: Response) {
     res.send({
@@ -36,10 +37,7 @@ async function userImg(req: Reqs, res: Response) {
             code: 400,
         })
     }
-    // url = getUrl('public', 'userImg', url);
-    url = getUrl('assets', 'system/userImg', url);
-    
-    let data = fs.readFileSync(url);
+   let data = await getUserImgFs(url)
     res.setHeader('Content-Type', 'image/png');
     res.send(data);
 }
@@ -84,9 +82,9 @@ export async function userBgImg(req: Reqs, res: Response){
         }
     })
     if(imgNmae && imgNmae.length == 1 && imgNmae[0].bg_img != 'null'){
-        // assets/system/user_bg_img
-        let pathImg = getUrl('assets','system/user_bg_img',imgNmae[0].bg_img);
-        return res.sendFile(pathImg);
+        let data = await getUserBgImgFs(imgNmae[0].bg_img);
+        res.setHeader('Content-Type', 'image/png');
+        return res.send(data);
     }
     return res.send('null');
 }

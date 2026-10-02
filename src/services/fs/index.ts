@@ -1,7 +1,7 @@
 // 实现fs文件系统调用
 
 import { getVideoSrc } from "@/models/dt/dt";
-import { socketPathFs, socketRequest } from "@/tool/socketReq";
+import { createRequest, socketPathFs, socketRequest } from "@/tool/socketReq";
 import http from "http";
 import { Stream } from "nodemailer/lib/xoauth2";
 
@@ -100,11 +100,10 @@ export function getFileFsStream(
 ): Promise<{ stream: http.IncomingMessage, size: number, fileName: string }> {
     return new Promise((resolve, reject) => {
 
-        let socketPath = socketPathFs
-        const req = http.request(
+        const req = createRequest(
+            socketPathFs,
+            '/file/fileDow?fileId=' + fileId,
             {
-                socketPath,
-                path: '/file/fileDow?fileId=' + fileId,
                 method: 'GET',
             },
             (res) => {
@@ -125,3 +124,16 @@ export function getFileFsStream(
     });
 }
 
+// 头像获取
+export async function getUserImgFs(fileName:string){
+    let url = '/img/userImg?fileName=' + fileName;
+    let data = await socketRequest<Buffer>('fs', url, 'GET', null, 'buffer');
+    return data.data;
+}
+
+// 背景图
+export async function getUserBgImgFs(fileName:string){
+    let url = '/img/userBgImg?fileName=' + fileName;
+    let data = await socketRequest<Buffer>('fs', url, 'GET', null, 'buffer');
+    return data.data;
+}

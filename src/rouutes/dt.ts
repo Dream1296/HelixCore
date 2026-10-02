@@ -20,13 +20,15 @@ import {
     getDtId,
     upImgVideo,
     upImgVideoNum,
-    upDtImgTemp
+    upDtImgTemp,
+    postDtRelation
 }  from '@/controllers/dt';
 import { PublishAfterExecution } from '@/services/upListData';
 
 import * as t from '../middlewares/routesType';
 import { isRequest } from '../middlewares/types';
 import { getImgDB } from '@/models/dt/dthc';
+import { allowUsers } from '@/middlewares/allowUsers';
 
 
 /**
@@ -56,34 +58,37 @@ app.get('/dtvideoImg', dtvideoImg);
  */ 
 
 // 预上传，拿到dt_id
-app.get('/preUpDt', getDtId);
+// app.get('/preUpDt', getDtId);
 
 // 内容上传
-app.post('/upDt', updt);
+app.post('/upDt', allowUsers('yw','dlhe','code','dy','now','new'), updt);
 
 // 新的图片上传接口
-app.post('/upImgVideo',  upImgVideo);
+app.post('/upImgVideo', allowUsers('yw','dlhe','code','dy','now','new'), upImgVideo);
 
 // 新的视频上传接口
 // app.post('/upVideo', upvideo);
 
 // 更新图片视频数量
-app.post('/upImgVideoNum', upImgVideoNum);
+app.post('/upImgVideoNum', allowUsers('yw','dlhe','code','dy','now','new'), upImgVideoNum);
 
 // 更新临时存储目录内容记录
-app.get('/upDtImgTemp', upDtImgTemp);
+app.get('/upDtImgTemp', allowUsers('yw','dlhe','code','dy','now','new'), upDtImgTemp);
 
 //提交动态
-app.post("/postdt", postdt);
+app.post("/postdt", allowUsers('yw','dlhe','code','dy','now','new'), postdt);
+
+// 提交动态关系
+app.post("/postDtRelation",allowUsers('yw','dlhe','code','dy','now','new'),postDtRelation)
 
 //修改单个动态数据
-app.post('/setdt',setdt);
+app.post('/setdt',allowUsers('yw','dlhe','code','dy','now','new'), setdt);
 
 //设置动态的标签
-app.post('/dtindex', dtindex);
+app.post('/dtindex', allowUsers('yw','dlhe'), dtindex);
 
 //删除动态
-app.post('/delDt', delDts)
+app.post('/delDt', allowUsers('yw','dlhe'), delDts)
 
 
 
@@ -125,19 +130,19 @@ app.get('/emoji', getemoji);
  */ 
 
 //修改背景样式
-app.post('/setBgStyle', setDtBgStyles);
+app.post('/setBgStyle', allowUsers('yw','dlhe'), setDtBgStyles);
 
 //提交动态评论
-app.post('/postCom', postCom);
+app.post('/postCom', allowUsers('yw','dlhe','dy'), postCom);
 
 //修改动态数据
-app.post('/setDt', setDts);
+app.post('/setDt', allowUsers('yw','dlhe'), setDts);
 
 //分享动态
 app.get('/getShare', getShare);
 
 //设置分享
-app.post('/setShare', setShare);
+app.post('/setShare', allowUsers('yw','dlhe'), setShare);
 
 //文件链接
 app.get('/dtFile', dtFile);

@@ -9,4 +9,7 @@ esbuild.build({
   target: 'node22', // 针对 Node.js 版本
   sourcemap: true, // 生成 source map，便于调试
   external: [], // 需要排除的模块
-}).catch(() => process.exit(1));
+  loader: {    //将.md映射为text文本
+        '.md': 'text',
+    },
+}).catch(() => process.exit(1));  

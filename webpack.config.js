@@ -3,7 +3,7 @@ const nodeExternals = require('webpack-node-externals');
 const TerserPlugin = require('terser-webpack-plugin'); // 引入 TerserPlugin
 
 // 是否将依赖文件打包入最终的 bundle
-const isNodeModules = false;
+const isNodeModules = true;
 
 
 
@@ -33,8 +33,12 @@ module.exports = {
       },
       {
         test: /\.node$/,
-        use: 'node-loader'
-      }
+        use: 'node-loader',
+      },
+      {
+        test: /\.md$/i,
+        type: 'asset/source',
+      },
     ],
   },
   externals: [

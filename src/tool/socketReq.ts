@@ -1,13 +1,51 @@
 // socketRequest.ts
 import http from "http";
+import https from "https";
 import { Buffer } from "node:buffer";
 import  { Writable } from "node:stream";
+import { ClientRequest, OutgoingHttpHeaders } from "node:http";
 
 export let socketPathLib = process.env.socketPathLib! as string;
 export let socketPathFs = process.env.socketPathFs! as string;
 
 export type SocketRequestMethod = "GET" | "POST" | "PUT" | "DELETE";
 export type SocketResponseType = "json" | "buffer" | "text";
+
+export function createRequest(
+    target: string,
+    path: string,
+    options: {
+        method?: string;
+        headers?: OutgoingHttpHeaders;
+    },
+    callback: (res: http.IncomingMessage) => void
+): ClientRequest {
+    if (/^https?:\/\//i.test(target)) {
+        const url = new URL(target);
+        const requestPath = path.startsWith("/") ? path : `/${path}`;
+        const requestOptions = {
+            protocol: url.protocol,
+            hostname: url.hostname,
+            port: url.port || undefined,
+            path: requestPath,
+            ...options,
+        };
+
+        return (url.protocol === "https:" ? https : http).request(
+            requestOptions,
+            callback
+        );
+    }
+
+    return http.request(
+        {
+            socketPath: target,
+            path,
+            ...options,
+        },
+        callback
+    );
+}
 
 export function socketRequest<T>(
     socket: 'lib' | 'fs' = 'lib',
@@ -40,13 +78,15 @@ export function socketRequest<T>(
             finalHeaders["Content-Type"] = "application/json";
         }
 
+        finalHeaders['Authorization'] = `${getmoduleToken()}`;
+
         let socketPath = socket === 'fs' ? socketPathFs : socketPathLib;
 
 
-        const req = http.request(
+        const req = createRequest(
+            socketPath,
+            path,
             {
-                socketPath,
-                path,
                 method,
                 headers: finalHeaders,
             },
@@ -142,6 +182,7 @@ export function socketRequest<T>(
 
 import { Request, Response } from "express";
 import { IncomingHttpHeaders } from "node:http";
+import { getmoduleToken } from "@/services/authorization";
 
 export function forwardRequest(
     socket: 'lib' | 'fs' = 'lib',
@@ -158,11 +199,12 @@ export function forwardRequest(
         ...req.headers,
         ...headers,
     };
+    requestHeaders["Authorization"] = `${getmoduleToken()}`;
 
-    const proxyReq = http.request(
+    const proxyReq = createRequest(
+        socketPath,
+        path,
         {
-            socketPath,
-            path,
             method: req.method,
             headers: requestHeaders,
         },

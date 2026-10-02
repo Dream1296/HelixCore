@@ -34,7 +34,7 @@ export async function hasAccessDtloa(User: user, dtid: string) {
     if (!userT.shows) {
         return false;
     }
-    return hasAccess(userT, User,dtid);
+    return hasAccess(userT, User, dtid);
 }
 
 // user从dt表中查，对应数据表中包含loa信息的
@@ -45,7 +45,7 @@ export async function hasAccessDtloa(User: user, dtid: string) {
  * @param loa 
  * @returns 
  */
-export async function hasAccessDtFileLoa(User: user, dtid: string,loa: number) {
+export async function hasAccessDtFileLoa(User: user, dtid: string, loa: number) {
     //从dt表中查用户
     let userM = await prisma?.dt.findMany({
         where: {
@@ -56,17 +56,17 @@ export async function hasAccessDtFileLoa(User: user, dtid: string,loa: number) {
         }
     });
     // 如果不存在，则返回0
-    if(!userM || userM.length != 1 ){
+    if (!userM || userM.length != 1) {
         return false;
     }
-    return hasAccess({loa,user:userM[0].user}, User,dtid);
+    return hasAccess({ loa, user: userM[0].user }, User, dtid);
 }
 
 
 
 
 // 基础验证，传入user,loa,id，和用户鉴权对象
-async function hasAccess(userT: { loa: number, user: string }, User: user,dtid:string) {
+async function hasAccess(userT: { loa: number, user: string }, User: user, dtid: string) {
     //如果访问的公开内容
     if (userT.loa != undefined && userT.loa == 0) {
         return true;
@@ -92,4 +92,17 @@ async function hasAccess(userT: { loa: number, user: string }, User: user,dtid:s
     }
 
     return false;
+}
+import crypto from 'crypto';
+const moduleToken = process.env.moduleToken!;
+const moduleTokenExpire = parseInt(process.env.moduleTokenExpire || '120');
+
+export function getmoduleToken() {
+    const timestamp = Math.floor(Date.now() / 1000);
+    const timeWindow = Math.floor(timestamp / moduleTokenExpire);
+    return crypto
+        .createHmac('sha256', moduleToken)
+        .update(String(timeWindow))
+        .digest('hex');
+
 }

@@ -12,6 +12,7 @@ import { getUrl } from "@/pathUtils";
 import { convertRawToPngIfNeeded } from "@/tool/ramToPng";
 import { ensureVideoToh254 } from "@/tool/media";
 import { getNowDtId } from "@/utils/getdtId";
+import { logger } from "@/utils/logger";
 
 
 
@@ -24,10 +25,6 @@ export async function dtList(user: string, loa: number) {
     //获取主列表
     let list: Lists[] = await dtLists(user, loa);
 
-    //初始化评论数组
-    list.forEach(e => {
-        e.com = []
-    })
 
 
     let imgProportion = await getImgShowProportion();
@@ -58,21 +55,21 @@ export async function dtList(user: string, loa: number) {
 
 
     //获取评论信息
-    let comment: Comtent[] = formatComment((await dtComment()));
+    // let comment: Comtent[] = formatComment((await dtComment()));
     //混淆非公开评论
-    jiamiConmit(comment, loa);
+    // jiamiConmit(comment, loa);
 
     // 对评论中特定格式的进行处理
-    await Conmit13text(comment);
-
+    // await Conmit13text(comment);
+// 
     //评论添加
-    let addCommentCb = (b: Lists, a: any) => {
-        if (!b.com) {
-            b.com = [];
-        }
-        b.com?.push(a);
-    }
-    fusionObj(list, comment, 'com', undefined, undefined, addCommentCb);
+    // let addCommentCb = (b: Lists, a: any) => {
+    //     if (!b.com) {
+    //         b.com = [];
+    //     }
+    //     b.com?.push(a);
+    // }
+    // fusionObj(list, comment, 'com', undefined, undefined, addCommentCb);
 
     //文件外链
     let dtFile = await getDtFile();
@@ -286,7 +283,13 @@ export async function dtLists(user: string, loa: number, findId?: number | strin
             longText: [],
             loa: a.loa,
             chatRoot: [],
-            map: []
+            map: [],
+            childId:[],
+            longVideo:[],
+            keyword:[],
+            File: [],
+            KeepRun:[],
+            KeepBadminton:[],
         } as Lists;
     }).filter(e => {
         //过滤掉黑名单中的用户
@@ -307,6 +310,9 @@ export async function dtLists(user: string, loa: number, findId?: number | strin
 
 }
 
+export async function getdtRelation(){
+    return await prisma.dt_relation.findMany();
+}
 
 // 获取长视频列表
 export async function getLongVideoList(id?: number) {
@@ -776,9 +782,9 @@ export async function getdts(user: string, id: string, loa: number) {
 
     let dtCommnetData = await dtComment(id);
     //评论
-    let comment: Comtent[] = formatComment(dtCommnetData);
+    // let comment: Comtent[] = formatComment(dtCommnetData);
 
-    list.com = comment;
+    // list.com = comment;
 
     //标签
     let keyword = await sqlGetDtIndex(id);

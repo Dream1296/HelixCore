@@ -6,7 +6,7 @@ import { getVideoSrc } from '@/models/dt/dt';
 import { getUrl } from '@/pathUtils';
 import fs from 'fs';
 import path from 'path';
-const PORT = 5000;
+const PORT = process.env.SOCKET_PORT ? parseInt(process.env.SOCKET_PORT) : 4010;
 
 const socketInfo = new Map<net.Socket, { token: string }>();
 
